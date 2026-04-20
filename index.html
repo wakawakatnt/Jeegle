@@ -7,355 +7,194 @@
 <title>Jeegle!</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
-font-family: ‘Hiragino Kaku Gothic ProN’, ‘ヒラギノ角ゴ ProN’, Meiryo, ‘MS Gothic’, Arial, sans-serif;
-background: #fff;
-color: #202124;
+  font-family: 'Hiragino Kaku Gothic ProN','ヒラギノ角ゴ ProN',Meiryo,'MS Gothic',Arial,sans-serif;
+  background:#fff; color:#202124;
 }
 
-/* ===================== トップページ ===================== */
-.top-page {
-display: flex; flex-direction: column; align-items: center;
-justify-content: center; min-height: 100vh;
-}
-.top-page.hidden { display: none; }
-
-.logo {
-font-size: 72px; font-weight: bold; margin-bottom: 30px; cursor: pointer;
-font-family: Arial, sans-serif;
-}
-.logo span:nth-child(1) { color: #4285F4; }
-.logo span:nth-child(2) { color: #EA4335; }
-.logo span:nth-child(3) { color: #FBBC05; }
-.logo span:nth-child(4) { color: #4285F4; }
-.logo span:nth-child(5) { color: #34A853; }
-.logo span:nth-child(6) { color: #EA4335; }
-.logo span:nth-child(7) { color: #FBBC05; }
-
+/* ===== トップページ ===== */
+.top-page { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; }
+.top-page.hidden { display:none; }
+.logo { font-size:72px; font-weight:bold; margin-bottom:30px; cursor:pointer; font-family:Arial,sans-serif; }
+.logo span:nth-child(1){color:#4285F4}.logo span:nth-child(2){color:#EA4335}
+.logo span:nth-child(3){color:#FBBC05}.logo span:nth-child(4){color:#4285F4}
+.logo span:nth-child(5){color:#34A853}.logo span:nth-child(6){color:#EA4335}
+.logo span:nth-child(7){color:#FBBC05}
 .search-box {
-display: flex; align-items: center;
-width: 90%; max-width: 584px;
-border: 1px solid #dfe1e5; border-radius: 24px;
-padding: 10px 16px; background: #fff;
+display:flex; align-items:center; width:90%; max-width:584px;
+border:1px solid #dfe1e5; border-radius:24px; padding:10px 16px; background:#fff;
 }
-.search-box:hover, .search-box:focus-within {
-box-shadow: 0 1px 6px rgba(32,33,36,.28);
-border-color: transparent;
-}
-.search-box svg { flex-shrink: 0; margin-right: 12px; color: #9aa0a6; }
-.search-box input {
-flex: 1; border: none; outline: none; font-size: 16px;
-background: transparent;
-font-family: inherit;
-}
-.search-btn-wrap { margin-top: 24px; }
+.search-box:hover,.search-box:focus-within { box-shadow:0 1px 6px rgba(32,33,36,.28); border-color:transparent; }
+.search-box svg { flex-shrink:0; margin-right:12px; color:#9aa0a6; }
+.search-box input { flex:1; border:none; outline:none; font-size:16px; background:transparent; font-family:inherit; }
+.search-btn-wrap { margin-top:24px; }
 .search-btn {
-background: #f8f9fa; border: 1px solid #f8f9fa;
-border-radius: 4px; color: #3c4043; cursor: pointer;
-font-size: 14px; padding: 10px 20px; margin: 0 6px;
-font-family: inherit;
+background:#f8f9fa; border:1px solid #f8f9fa; border-radius:4px;
+color:#3c4043; cursor:pointer; font-size:14px; padding:10px 20px; margin:0 6px; font-family:inherit;
 }
-.search-btn:hover { border-color: #dadce0; box-shadow: 0 1px 1px rgba(0,0,0,.1); }
+.search-btn:hover { border-color:#dadce0; box-shadow:0 1px 1px rgba(0,0,0,.1); }
 
-/* ===================== 結果ページ ===================== */
-.result-page { display: none; }
-.result-page.active { display: block; }
+/* ===== 共通ページ制御 ===== */
+.result-page { display:none; }
+.result-page.active { display:block; }
+.thread-detail-page { display:none; }
+.thread-detail-page.active { display:block; }
 
+/* ===== ヘッダー ===== */
 .result-header {
-display: flex; align-items: center;
-padding: 12px 20px; border-bottom: 1px solid #ebebeb;
-position: sticky; top: 0; background: #fff; z-index: 100;
-gap: 16px;
+display:flex; align-items:center; padding:12px 20px;
+border-bottom:1px solid #ebebeb; position:sticky; top:0; background:#fff; z-index:100; gap:16px;
 }
-
-.result-logo {
-font-size: 28px; font-weight: bold; cursor: pointer;
-white-space: nowrap; font-family: Arial, sans-serif;
-}
-.result-logo span:nth-child(1) { color: #4285F4; }
-.result-logo span:nth-child(2) { color: #EA4335; }
-.result-logo span:nth-child(3) { color: #FBBC05; }
-.result-logo span:nth-child(4) { color: #4285F4; }
-.result-logo span:nth-child(5) { color: #34A853; }
-.result-logo span:nth-child(6) { color: #EA4335; }
-.result-logo span:nth-child(7) { color: #FBBC05; }
-
+.result-logo { font-size:28px; font-weight:bold; cursor:pointer; white-space:nowrap; font-family:Arial,sans-serif; }
+.result-logo span:nth-child(1){color:#4285F4}.result-logo span:nth-child(2){color:#EA4335}
+.result-logo span:nth-child(3){color:#FBBC05}.result-logo span:nth-child(4){color:#4285F4}
+.result-logo span:nth-child(5){color:#34A853}.result-logo span:nth-child(6){color:#EA4335}
+.result-logo span:nth-child(7){color:#FBBC05}
 .result-search-box {
-display: flex; align-items: center;
-flex: 1; max-width: 692px;
-border: 1px solid #dfe1e5; border-radius: 24px;
-padding: 8px 16px;
+display:flex; align-items:center; flex:1; max-width:692px;
+border:1px solid #dfe1e5; border-radius:24px; padding:8px 16px;
 }
-.result-search-box:focus-within {
-box-shadow: 0 1px 6px rgba(32,33,36,.28);
-border-color: transparent;
+.result-search-box:focus-within { box-shadow:0 1px 6px rgba(32,33,36,.28); border-color:transparent; }
+.result-search-box input { flex:1; border:none; outline:none; font-size:16px; font-family:inherit; }
+.result-search-box svg { flex-shrink:0; margin-right:10px; color:#9aa0a6; }
+.share-btn {
+background:#f8f9fa; border:1px solid #dadce0; border-radius:4px;
+color:#3c4043; cursor:pointer; font-size:13px; padding:7px 14px; white-space:nowrap; font-family:inherit; flex-shrink:0;
 }
-.result-search-box input {
-flex: 1; border: none; outline: none; font-size: 16px;
-font-family: inherit;
-}
-.result-search-box svg { flex-shrink: 0; margin-right: 10px; color: #9aa0a6; }
+.share-btn:hover { background:#e8eaed; }
 
-/* ===================== 検索オプションバー ===================== */
+/* ===== 検索オプション ===== */
 .search-options-bar {
-background: #f8f9fa;
-border-bottom: 1px solid #ebebeb;
-padding: 8px 20px;
-display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
-font-size: 13px;
+background:#f8f9fa; border-bottom:1px solid #ebebeb;
+padding:8px 20px; display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-size:13px;
 }
+.option-group { display:flex; align-items:center; gap:8px; }
+.option-group strong { color:#5f6368; font-size:12px; white-space:nowrap; }
+.option-group label { display:inline-flex; align-items:center; gap:4px; cursor:pointer; color:#3c4043; white-space:nowrap; }
+.option-group label:hover { color:#1a73e8; }
+.option-group input[type=“radio”] { accent-color:#1a73e8; }
 
-.option-group {
-display: flex; align-items: center; gap: 8px;
-}
-.option-group strong {
-color: #5f6368; font-size: 12px; white-space: nowrap;
-}
-.option-group label {
-display: inline-flex; align-items: center; gap: 4px;
-cursor: pointer; color: #3c4043; white-space: nowrap;
-}
-.option-group label:hover { color: #1a73e8; }
-.option-group input[type=“radio”] { accent-color: #1a73e8; }
-
-/* ===================== 統計・ソート ===================== */
+/* ===== 統計・ソート ===== */
 .result-stats-bar {
-padding: 8px 20px;
-display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
-border-bottom: 1px solid #f1f3f4;
+padding:8px 20px; display:flex; align-items:center; flex-wrap:wrap; gap:12px;
+border-bottom:1px solid #f1f3f4;
 }
-.result-stats {
-color: #70757a; font-size: 13px; flex: 1;
-}
-.sort-bar {
-display: none;
-align-items: center; gap: 8px; font-size: 13px;
-}
-.sort-bar.visible { display: flex; }
-.sort-bar strong { color: #5f6368; font-size: 12px; }
-.sort-bar label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; color: #3c4043; }
-.sort-bar label:hover { color: #1a73e8; }
-.sort-bar input[type=“radio”] { accent-color: #1a73e8; }
+.result-stats { color:#70757a; font-size:13px; flex:1; }
+.sort-bar { display:none; align-items:center; gap:8px; font-size:13px; flex-wrap:wrap; }
+.sort-bar.visible { display:flex; }
+.sort-bar strong { color:#5f6368; font-size:12px; }
+.sort-bar label { display:inline-flex; align-items:center; gap:4px; cursor:pointer; color:#3c4043; }
+.sort-bar label:hover { color:#1a73e8; }
+.sort-bar input[type=“radio”] { accent-color:#1a73e8; }
 
-/* ===================== 検索サマリー ===================== */
-.search-summary {
-background: #fff3cd; border-left: 4px solid #f9ab00;
-padding: 10px 20px; font-size: 13px; color: #856404;
-display: none;
-}
-.search-summary strong { font-weight: 600; }
+/* ===== サマリー ===== */
+.search-summary { background:#fff3cd; border-left:4px solid #f9ab00; padding:10px 20px; font-size:13px; color:#856404; display:none; }
 
-/* ===================== 結果一覧 ===================== */
-.results-container {
-padding: 12px 20px 40px;
-max-width: 900px;
-}
-
-/* スレッドカード */
+/* ===== スレッドカード ===== */
+.results-container { padding:12px 20px 40px; max-width:900px; }
 .thread-result {
-border: 1px solid #dadce0; border-radius: 8px;
-margin-bottom: 10px; background: #fff;
-box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-transition: box-shadow 0.15s;
+border:1px solid #dadce0; border-radius:8px; margin-bottom:10px;
+background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s;
 }
-.thread-result:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-
+.thread-result:hover { box-shadow:0 2px 6px rgba(0,0,0,0.1); }
 .thread-header {
-padding: 12px 16px; cursor: pointer;
-display: flex; justify-content: space-between; align-items: center;
-gap: 12px;
-transition: background 0.15s;
+padding:12px 16px; cursor:pointer; display:flex; justify-content:space-between;
+align-items:center; gap:12px; transition:background 0.15s;
 }
-.thread-header:hover { background: #f8f9fa; }
+.thread-header:hover { background:#f8f9fa; }
+.thread-header-arrow { color:#9aa0a6; font-size:11px; flex-shrink:0; transition:transform 0.2s; }
+.thread-header-arrow.open { transform:rotate(180deg); }
+.thread-title-area { flex:1; min-width:0; }
+.thread-title { font-weight:600; color:#1a0dab; font-size:15px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.thread-url { font-size:11px; color:#70757a; margin-top:2px; }
+.thread-meta-line { font-size:12px; color:#5f6368; margin-top:3px; }
+.thread-badge-area { text-align:right; flex-shrink:0; }
+.badge-total { font-size:12px; color:#70757a; display:block; }
+.badge-match { font-size:13px; font-weight:700; color:#c0392b; display:block; }
+.thread-details { display:none; padding:0 16px 16px; border-top:1px solid #f1f3f4; }
+.thread-action-bar { padding:10px 0 8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.thread-ext-link { font-size:13px; color:#1a73e8; text-decoration:none; }
+.thread-ext-link:hover { text-decoration:underline; }
 
-.thread-title-area { flex: 1; min-width: 0; }
-.thread-title {
-font-weight: 600; color: #1a0dab; font-size: 15px;
-display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.thread-url {
-font-size: 11px; color: #70757a; margin-top: 2px;
-}
-.thread-meta-line {
-font-size: 12px; color: #5f6368; margin-top: 3px;
-}
+/* ===== ボタン ===== */
+.btn { padding:5px 12px; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-family:inherit; transition:background 0.15s; line-height:1.4; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-success { background:#34a853; color:#fff; }
+.btn-success:hover:not(:disabled) { background:#2d9248; }
+.btn-secondary { background:#f1f3f4; color:#3c4043; border:1px solid #dadce0; }
+.btn-secondary:hover:not(:disabled) { background:#e8eaed; }
+.btn-sm { padding:3px 8px; font-size:11px; }
+.btn-copy { background:#17a2b8; color:#fff; }
+.btn-copy:hover:not(:disabled) { background:#138496; }
+.btn-newpage { background:#5f6368; color:#fff; }
+.btn-newpage:hover:not(:disabled) { background:#3c4043; }
 
-.thread-badge-area {
-text-align: right; flex-shrink: 0;
-}
-.badge-total {
-font-size: 12px; color: #70757a; display: block;
-}
-.badge-match {
-font-size: 13px; font-weight: 700; color: #c0392b; display: block;
-}
+/* ===== レス ===== */
+.post { border-top:1px dashed #e0e0e0; padding:10px 0; }
+.post:first-child { border-top:none; }
+.post-meta { font-size:13px; color:#5f6368; margin-bottom:6px; display:flex; flex-wrap:wrap; align-items:baseline; line-height:1.7; }
+.post-num { font-weight:700; color:#1a73e8; cursor:pointer; font-size:13px; }
+.post-num:hover { text-decoration:underline; }
+.post-author { color:#008000; font-weight:500; }
+.post-time { color:#80868b; font-size:12px; }
+.post-id { color:#5f6368; font-size:12px; }
+.post-nusi { background:#ea4335; color:#fff; font-size:10px; padding:1px 5px; border-radius:3px; margin-left:2px; vertical-align:middle; }
+.post-buttons { display:flex; gap:4px; flex-wrap:wrap; margin-left:auto; align-items:center; }
+.post-content { font-size:14px; line-height:1.65; background:#fafafa; padding:8px 10px; border-radius:4px; white-space:pre-wrap; word-wrap:break-word; color:#202124; }
+.highlight { background:#ffeb3b; padding:0 2px; border-radius:2px; }
+@keyframes flashBg { 0%{background:#fffde7}70%{background:#fffde7}100%{background:transparent} }
+.flash-post { animation:flashBg 1.6s ease-out forwards; }
 
-/* スレッド詳細 */
-.thread-details {
-display: none; padding: 0 16px 16px;
-border-top: 1px solid #f1f3f4;
+/* ===== 安価プレビュー ===== */
+.anchor-link { color:#1a73e8; text-decoration:underline; cursor:pointer; }
+#anchorPreview {
+position:fixed; background:#fff; border:2px solid #1a73e8; border-radius:6px;
+padding:10px 12px; max-width:380px; z-index:9999;
+box-shadow:0 4px 16px rgba(0,0,0,0.18); font-size:13px; pointer-events:none; display:none;
 }
+#anchorPreview .p-meta { font-weight:700; color:#008000; margin-bottom:4px; font-size:12px; }
+#anchorPreview .p-body { white-space:pre-wrap; line-height:1.5; color:#202124; font-size:13px; }
 
-.thread-action-bar {
-padding: 10px 0 8px;
-display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-}
-.thread-ext-link {
-font-size: 13px; color: #1a73e8; text-decoration: none;
-}
-.thread-ext-link:hover { text-decoration: underline; }
+/* ===== 範囲レス ===== */
+.range-posts { border-left:3px solid #e8f0fe; padding-left:8px; margin:2px 0; }
 
-/* アクションボタン */
-.btn {
-padding: 5px 12px; border: none; border-radius: 4px;
-cursor: pointer; font-size: 12px; font-family: inherit;
-transition: background 0.15s, opacity 0.15s;
-}
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: #1a73e8; color: #fff; }
-.btn-primary:hover:not(:disabled) { background: #1557b0; }
-.btn-success { background: #34a853; color: #fff; }
-.btn-success:hover:not(:disabled) { background: #2d9248; }
-.btn-secondary { background: #f1f3f4; color: #3c4043; border: 1px solid #dadce0; }
-.btn-secondary:hover:not(:disabled) { background: #e8eaed; }
-.btn-sm { padding: 3px 8px; font-size: 11px; }
-.btn-copy { background: #17a2b8; color: #fff; }
-.btn-copy:hover:not(:disabled) { background: #138496; }
+/* ===== メディア ===== */
+.media-embed { margin:8px 0; border:1px solid #dadce0; border-radius:6px; overflow:hidden; }
+.media-embed img { max-width:100%; max-height:400px; height:auto; display:block; }
+.media-embed iframe { width:100%; height:360px; border:none; }
 
-/* レス */
-.post {
-border-top: 1px dashed #e0e0e0;
-padding: 10px 0;
-}
-.post:first-child { border-top: none; }
+/* ===== ローディング ===== */
+.loading { text-align:center; padding:40px; color:#70757a; font-size:14px; }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid #e0e0e0; border-radius:50%; border-top-color:#1a73e8; animation:spin 0.8s linear infinite; margin-left:6px; vertical-align:middle; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.no-results { padding:24px 0; color:#70757a; font-size:14px; text-align:center; }
 
-.post-meta {
-font-size: 12px; color: #5f6368; margin-bottom: 6px;
-display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px;
-}
-.post-num {
-font-weight: 700; color: #1a73e8; cursor: pointer;
-flex-shrink: 0;
-}
-.post-num:hover { text-decoration: underline; }
-.post-author {
-color: #008000; font-weight: 500; cursor: pointer;
-}
-.post-author:hover { text-decoration: underline; }
-.post-sage { color: #888; font-size: 11px; }
-.post-id { color: #5f6368; }
-.post-time { color: #80868b; }
-.post-nusi {
-background: #ea4335; color: #fff;
-font-size: 10px; padding: 1px 5px; border-radius: 3px;
-}
+/* ===== 詳細ページ ===== */
+.thread-detail-posts { padding:12px 20px 40px; max-width:900px; }
+.back-btn { display:inline-flex; align-items:center; gap:4px; color:#1a73e8; font-size:14px; cursor:pointer; padding:4px 0; margin-bottom:8px; }
+.back-btn:hover { text-decoration:underline; }
 
-.post-buttons {
-display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto;
-}
-
-.post-content {
-font-size: 14px; line-height: 1.65;
-background: #fafafa; padding: 8px 10px;
-border-radius: 4px; white-space: pre-wrap;
-word-wrap: break-word; color: #202124;
-}
-
-/* ハイライト */
-.highlight { background: #ffeb3b; padding: 1px 2px; border-radius: 2px; }
-
-/* 安価リンク */
-.anchor-link {
-color: #1a73e8; text-decoration: underline; cursor: pointer;
-}
-.anchor-preview {
-position: fixed;
-background: #fff; border: 2px solid #1a73e8; border-radius: 6px;
-padding: 10px 12px; max-width: 380px; z-index: 9999;
-box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-font-size: 13px; pointer-events: none;
-}
-.anchor-preview .preview-meta {
-font-weight: 700; color: #008000; margin-bottom: 5px; font-size: 12px;
-}
-.anchor-preview .preview-body {
-white-space: pre-wrap; line-height: 1.5; color: #202124;
-}
-
-/* 範囲表示コンテナ */
-.range-posts {
-border-left: 3px solid #e8f0fe;
-padding-left: 10px; margin: 4px 0;
-}
-
-/* ローディング */
-.loading {
-text-align: center; padding: 40px; color: #70757a; font-size: 14px;
-}
-.spinner {
-display: inline-block; width: 18px; height: 18px;
-border: 2px solid #e0e0e0; border-radius: 50%; border-top-color: #1a73e8;
-animation: spin 0.8s linear infinite; margin-left: 8px;
-vertical-align: middle;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* 結果なし */
-.no-results {
-padding: 24px 0; color: #70757a; font-size: 14px; text-align: center;
-}
-
-/* スレッド詳細ビュー */
-.thread-detail-page { display: none; }
-.thread-detail-page.active { display: block; }
-
-.thread-detail-header {
-padding: 12px 20px; border-bottom: 1px solid #ebebeb;
-background: #fff; position: sticky; top: 0; z-index: 100;
-}
-.thread-detail-title {
-font-size: 17px; font-weight: 700; color: #202124; margin-top: 8px;
-}
-.thread-detail-info {
-font-size: 13px; color: #5f6368; margin-top: 4px;
-}
-.thread-detail-posts {
-padding: 12px 20px 40px; max-width: 900px;
-}
-.back-btn {
-display: inline-flex; align-items: center; gap: 4px;
-color: #1a73e8; font-size: 14px; cursor: pointer;
-padding: 4px 0;
-}
-.back-btn:hover { text-decoration: underline; }
-
-/* メディア埋め込み */
-.media-embed { margin: 8px 0; border: 1px solid #dadce0; border-radius: 6px; overflow: hidden; }
-.media-embed img { max-width: 100%; max-height: 400px; height: auto; display: block; }
-.media-embed iframe { width: 100%; height: 360px; border: none; }
-
-/* レスポンシブ */
-@media (max-width: 640px) {
-.result-header { padding: 8px 12px; gap: 8px; }
-.result-logo { font-size: 22px; }
-.search-options-bar { padding: 8px 12px; }
-.results-container { padding: 8px 12px 40px; }
-.thread-detail-posts { padding: 8px 12px 40px; }
-.logo { font-size: 48px; }
-.thread-header { padding: 10px 12px; }
-.thread-details { padding: 0 12px 12px; }
-.post-buttons { margin-left: 0; margin-top: 4px; width: 100%; }
+@media(max-width:640px){
+.result-header{padding:8px 12px;gap:8px}
+.result-logo{font-size:22px}
+.search-options-bar{padding:8px 12px}
+.results-container{padding:8px 12px 40px}
+.thread-detail-posts{padding:8px 12px 40px}
+.logo{font-size:48px}
+.thread-header{padding:10px 12px}
+.thread-details{padding:0 12px 12px}
+.post-buttons{margin-left:0;margin-top:4px;width:100%}
+.share-btn{display:none}
 }
 </style>
 
 </head>
 <body>
 
-<!-- ===================== トップページ ===================== -->
+<!-- トップページ -->
 
 <div class="top-page" id="topPage">
-  <div class="logo" onclick="goHome()">
+  <div class="logo" id="logoTop">
     <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
   </div>
   <div class="search-box">
@@ -365,15 +204,15 @@ padding: 4px 0;
     <input type="text" id="topInput" placeholder="スレッド・レスを検索" autocomplete="off">
   </div>
   <div class="search-btn-wrap">
-    <button class="search-btn" onclick="doSearch()">Jeegle 検索</button>
+    <button class="search-btn" id="topSearchBtn">Jeegle 検索</button>
   </div>
 </div>
 
-<!-- ===================== 結果ページ ===================== -->
+<!-- 結果ページ -->
 
 <div class="result-page" id="resultPage">
   <div class="result-header">
-    <div class="result-logo" onclick="goHome()">
+    <div class="result-logo" id="logoResult">
       <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
     </div>
     <div class="result-search-box">
@@ -382,10 +221,8 @@ padding: 4px 0;
       </svg>
       <input type="text" id="resultInput" autocomplete="off" placeholder="スレッド・レスを検索">
     </div>
+    <button class="share-btn" id="shareBtn">🔗 URL共有</button>
   </div>
-
-  <!-- 検索オプション -->
-
   <div class="search-options-bar">
     <div class="option-group">
       <strong>検索モード:</strong>
@@ -400,9 +237,6 @@ padding: 4px 0;
       <label><input type="radio" name="searchType" value="body"> レス本文</label>
     </div>
   </div>
-
-  <!-- 統計・ソート -->
-
   <div class="result-stats-bar">
     <div class="result-stats" id="resultStats"></div>
     <div class="sort-bar" id="sortBar">
@@ -412,21 +246,15 @@ padding: 4px 0;
       <label><input type="radio" name="sortOrder" value="relevance"> ヒット数</label>
     </div>
   </div>
-
-  <!-- サマリー -->
-
   <div class="search-summary" id="searchSummary"></div>
-
-  <!-- 結果 -->
-
   <div class="results-container" id="results"></div>
 </div>
 
-<!-- ===================== スレッド詳細ページ ===================== -->
+<!-- スレッド詳細ページ -->
 
 <div class="thread-detail-page" id="threadDetailPage">
   <div class="result-header">
-    <div class="result-logo" onclick="goHome()">
+    <div class="result-logo" id="logoDetail">
       <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
     </div>
     <div class="result-search-box">
@@ -439,686 +267,743 @@ padding: 4px 0;
   <div class="thread-detail-posts" id="threadDetailPosts"></div>
 </div>
 
-<!-- 安価プレビュー（グローバル） -->
+<!-- 安価プレビュー -->
 
-<div class="anchor-preview" id="anchorPreview" style="display:none;"></div>
+<div id="anchorPreview">
+  <div class="p-meta" id="apMeta"></div>
+  <div class="p-body" id="apBody"></div>
+</div>
 
 <script>
+"use strict";
+
 const SB_URL = "https://jvhcgllunsfncjintjba.supabase.co";
 const SB_KEY = "sb_publishable_nWh8Ixmel4JrlaK4D2hK0w_iZ4k_nxl";
-
-// スレッドキャッシュ: thread_id -> posts[]
 const threadCache = new Map();
-// 現在の検索結果
 let currentResults = [];
-// 現在表示中のスレッドID（詳細ページ用）
-let currentThreadId = null;
-// 現在の検索キーワード
 let currentKeyword = "";
 
-// ===================== Supabase API =====================
+/* ===================== Supabase ===================== */
 async function sbFetch(path) {
-  const r = await fetch(SB_URL + "/rest/v1/" + path, {
-    headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
   });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
 
-// ===================== 検索メイン =====================
+/* ===================== XSS ===================== */
+function esc(s) {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+/* ===================== 日時フォーマット（曜日付き）===================== */
+const DAYS = ["日","月","火","水","木","金","土"];
+function fmtDate(str) {
+  if (!str) return "";
+  const d = new Date(str);
+  if (isNaN(d)) return "";
+  const yy = String(d.getFullYear()).slice(2);
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  const dw = DAYS[d.getDay()];
+  const hh = String(d.getHours()).padStart(2,"0");
+  const mi = String(d.getMinutes()).padStart(2,"0");
+  const ss = String(d.getSeconds()).padStart(2,"0");
+  return `${yy}/${mm}/${dd}(${dw}) ${hh}:${mi}:${ss}`;
+}
+
+/* ===================== DOMハイライト（XSS安全）===================== */
+function getWords(q) {
+  if (!q) return [];
+  const m = q.match(/^id:\s*(.+)/i);
+  return (m ? m[1].trim() : q).split(/\s+/).filter(Boolean);
+}
+function hlDOM(el, q) {
+  const words = getWords(q);
+  if (words.length) walkNodes(el, words);
+}
+function walkNodes(node, words) {
+  if (node.nodeType === 3) { // TEXT_NODE
+    const txt = node.textContent;
+    if (!words.some(w => txt.toLowerCase().includes(w.toLowerCase()))) return;
+    const pattern = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|");
+    const re = new RegExp(`(${pattern})`, "gi");
+    const parts = txt.split(re);
+    if (parts.length <= 1) return;
+    const frag = document.createDocumentFragment();
+    parts.forEach((p, i) => {
+      if (i % 2 === 1) {
+        const s = document.createElement("span");
+        s.className = "highlight"; s.textContent = p;
+        frag.appendChild(s);
+      } else if (p) {
+        frag.appendChild(document.createTextNode(p));
+      }
+    });
+    node.parentNode.replaceChild(frag, node);
+  } else if (node.nodeType === 1 && !["SCRIPT","STYLE","TEXTAREA","INPUT"].includes(node.tagName)) {
+    Array.from(node.childNodes).forEach(c => walkNodes(c, words));
+  }
+}
+
+/* ===================== 安価変換（escapeHtml済みHTML用）===================== */
+function processAnchors(html, tid) {
+  const id = parseInt(tid, 10);
+  if (isNaN(id)) return html;
+  return html.replace(/(&gt;&gt;|&gt;)(\d+)/g, (m, gt, n) => {
+    const pn = parseInt(n, 10);
+    if (isNaN(pn) || pn <= 0) return m;
+    return `<span class="anchor-link" data-pn="${pn}" data-tid="${id}">${m}</span>`;
+  });
+}
+
+/* ===================== メディア埋め込み ===================== */
+function embedMedia(html) {
+  html = html.replace(
+    /https?:\/\/(?:i\.)?imgur\.com\/([a-zA-Z0-9]{5,12})(?:\.[a-zA-Z]{2,4})?(?=[<\s\n]|&|$)/g,
+    (u, id) => `<div class="media-embed"><img src="https://i.imgur.com/${id}.jpg" loading="lazy" alt="imgur" onerror="this.parentElement.style.display='none'"></div>${u}`
+  );
+  html = html.replace(
+    /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/g,
+    (u, vid) => `<div class="media-embed"><iframe src="https://www.youtube.com/embed/${vid}" allowfullscreen loading="lazy" title="YouTube"></iframe></div>${u}`
+  );
+  return html;
+}
+
+/* ===================== ボタン生成ヘルパー ===================== */
+function mkBtn(text, cls) {
+  const b = document.createElement("button");
+  b.className = cls; b.textContent = text; return b;
+}
+
+/* ===================== レス要素生成（完全DOM操作・XSS安全）===================== */
+// 表示形式: 57: 名無しさん＠おーぷん | 時刻: 25/09/30(火) 13:00:57 | ID:hbrM 主
+function createPost(post, threadInfo, q, showRange) {
+  const div = document.createElement("div");
+  div.className = "post";
+  div.dataset.pn = post.post_num;
+
+  /* -- メタ行 -- */
+  const meta = document.createElement("div");
+  meta.className = "post-meta";
+
+  // レス番
+  const numEl = document.createElement("span");
+  numEl.className = "post-num";
+  numEl.textContent = String(post.post_num);
+  numEl.title = "元スレで開く";
+  numEl.addEventListener("click", () =>
+    window.open(`https://hayabusa.open2ch.net/test/read.cgi/livejupiter/${threadInfo.thread_id}/${post.post_num}-`, "_blank")
+  );
+  meta.appendChild(numEl);
+  meta.appendChild(document.createTextNode(": "));
+
+  // 名前
+  const nameEl = document.createElement("span");
+  nameEl.className = "post-author";
+  nameEl.textContent = post.name || "名無し";
+  meta.appendChild(nameEl);
+
+  // 時刻
+  meta.appendChild(document.createTextNode(" | 時刻: "));
+  const timeEl = document.createElement("span");
+  timeEl.className = "post-time";
+  timeEl.textContent = fmtDate(post.posted_at);
+  meta.appendChild(timeEl);
+
+  // ID
+  meta.appendChild(document.createTextNode(" | ID:"));
+  const idEl = document.createElement("span");
+  idEl.className = "post-id";
+  idEl.textContent = post.user_id || "";
+  meta.appendChild(idEl);
+
+  // 主バッジ
+  if (post.is_nusi) {
+    meta.appendChild(document.createTextNode(" "));
+    const nEl = document.createElement("span");
+    nEl.className = "post-nusi"; nEl.textContent = "主";
+    meta.appendChild(nEl);
+  }
+
+  /* -- ボタン -- */
+  const btns = document.createElement("div");
+  btns.className = "post-buttons";
+
+  if (showRange) {
+    const up = mkBtn("上100","btn btn-secondary btn-sm");
+    up.dataset.pn = post.post_num;
+    up.addEventListener("click", e => { e.stopPropagation(); if (!up.disabled) loadRange(up,"up",threadInfo.thread_id,q); });
+    btns.appendChild(up);
+
+    const dn = mkBtn("下100","btn btn-secondary btn-sm");
+    dn.dataset.pn = post.post_num;
+    dn.addEventListener("click", e => { e.stopPropagation(); if (!dn.disabled) loadRange(dn,"down",threadInfo.thread_id,q); });
+    btns.appendChild(dn);
+  }
+
+  const cpBtn = mkBtn("コピペ","btn btn-copy btn-sm");
+  const cpText = `${post.post_num}: ${post.name||"名無し"} | 時刻: ${fmtDate(post.posted_at)} | ID:${post.user_id||""}${post.is_nusi?" 主":""}\n${(post.body||"").trim()}`;
+  cpBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(cpText)
+      .then(()=>{ cpBtn.textContent="コピー完了!"; setTimeout(()=>cpBtn.textContent="コピペ",1300); })
+      .catch(()=>prompt("コピーしてください:",cpText));
+  });
+  btns.appendChild(cpBtn);
+  meta.appendChild(btns);
+  div.appendChild(meta);
+
+  /* -- 本文 -- */
+  const cont = document.createElement("div");
+  cont.className = "post-content";
+  let bhtml = esc((post.body||"").trim());
+  bhtml = processAnchors(bhtml, threadInfo.thread_id);
+  bhtml = embedMedia(bhtml);
+  cont.innerHTML = bhtml; // esc済み + 安全タグのみ
+
+  // DOMベースハイライト
+  if (q) { hlDOM(nameEl, q); hlDOM(idEl, q); hlDOM(cont, q); }
+
+  div.appendChild(cont);
+  return div;
+}
+
+/* ===================== 安価イベント ===================== */
+function addAnchors(container, tid) {
+  const prev = document.getElementById("anchorPreview");
+  const pMeta = document.getElementById("apMeta");
+  const pBody = document.getElementById("apBody");
+
+  container.querySelectorAll(".anchor-link").forEach(link => {
+    link.addEventListener("mouseenter", async e => {
+      const pn = parseInt(e.target.dataset.pn, 10);
+      const threadId = parseInt(e.target.dataset.tid, 10);
+      const posts = await fetchPosts(threadId).catch(()=>[]);
+      const p = posts.find(x => x.post_num === pn);
+      if (!p) return;
+      pMeta.textContent = `${pn}: ${p.name||"名無し"} | ID:${p.user_id||""}`;
+      pBody.textContent = (p.body||"").trim().slice(0,250) + ((p.body||"").length>250?"…":"");
+      prev.style.display = "block";
+      posPreview(e);
+    });
+    link.addEventListener("mousemove", posPreview);
+    link.addEventListener("mouseleave", () => prev.style.display = "none");
+    link.addEventListener("click", async e => {
+      e.preventDefault(); e.stopPropagation();
+      const pn = parseInt(e.target.dataset.pn, 10);
+      const threadId = parseInt(e.target.dataset.tid, 10);
+      await jumpToPost(pn, threadId, e.target);
+    });
+  });
+}
+
+function posPreview(e) {
+  const el = document.getElementById("anchorPreview");
+  const vw = innerWidth, vh = innerHeight;
+  let x = e.clientX + 14, y = e.clientY - 10;
+  const pw = 380, ph = el.offsetHeight || 100;
+  if (x + pw > vw) x = e.clientX - pw - 14;
+  if (y + ph > vh) y = e.clientY - ph - 10;
+  el.style.left = Math.max(4,x) + "px";
+  el.style.top  = Math.max(4,y) + "px";
+}
+
+/* 安価クリック: 安価を含むレスの直後に展開（修正済み）*/
+async function jumpToPost(pn, tid, anchorEl) {
+  // スコープ（thread-details か thread-detail-posts）内で既存レスを探す
+  const scope = anchorEl.closest(".thread-details, .thread-detail-posts");
+
+  if (scope) {
+    const existing = scope.querySelector(`.post[data-pn="${pn}"]`);
+    if (existing) {
+      flashEl(existing);
+      existing.scrollIntoView({ behavior:"smooth", block:"center" });
+      return;
+    }
+  }
+
+  const posts = await fetchPosts(tid).catch(()=>[]);
+  const p = posts.find(x => x.post_num === pn);
+  if (!p) return;
+
+  const newEl = createPost(p, { thread_id: tid }, currentKeyword, false);
+  addAnchors(newEl, tid);
+
+  // ▼ 安価リンクを含む .post 要素の直後に挿入する（ここが修正ポイント）
+  const parentPost = anchorEl.closest(".post");
+  if (parentPost && parentPost.parentNode) {
+    parentPost.insertAdjacentElement("afterend", newEl);
+  } else if (scope) {
+    scope.appendChild(newEl);
+  }
+
+  flashEl(newEl);
+  newEl.scrollIntoView({ behavior:"smooth", block:"nearest" });
+}
+
+function flashEl(el) {
+  el.classList.remove("flash-post");
+  void el.offsetWidth;
+  el.classList.add("flash-post");
+}
+
+/* ===================== 全レス取得（キャッシュ付き）===================== */
+async function fetchPosts(threadId) {
+  const id = parseInt(threadId, 10);
+  if (threadCache.has(id)) return threadCache.get(id);
+  const ps = await sbFetch(
+    `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&thread_id=eq.${id}&order=post_num.asc&limit=2000`
+  );
+  threadCache.set(id, ps);
+  return ps;
+}
+
+/* ===================== 上100・下100 ===================== */
+async function loadRange(btn, dir, tid, q) {
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = "読込中…";
+  const pn = parseInt(btn.dataset.pn, 10);
+  const s = dir === "up" ? Math.max(1, pn-100) : pn+1;
+  const e = dir === "up" ? pn-1 : pn+100;
+  if (s > e) { btn.textContent = orig; btn.disabled = false; return; }
+
+  const posts = await sbFetch(
+    `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi` +
+    `&thread_id=eq.${tid}&post_num=gte.${s}&post_num=lte.${e}&order=post_num.asc`
+  ).catch(()=>[]);
+
+  const wrap = document.createElement("div");
+  wrap.className = "range-posts";
+  posts.forEach(p => wrap.appendChild(createPost(p, { thread_id: tid }, q, false)));
+  addAnchors(wrap, tid);
+
+  const postDiv = btn.closest(".post");
+  if (dir === "up" && postDiv?.parentNode) {
+    const sy = scrollY, rt = postDiv.getBoundingClientRect().top;
+    postDiv.parentNode.insertBefore(wrap, postDiv);
+    window.scrollTo(0, sy + (postDiv.getBoundingClientRect().top - rt));
+  } else if (postDiv?.parentNode) {
+    postDiv.parentNode.insertBefore(wrap, postDiv.nextSibling);
+  }
+  btn.textContent = orig; // disabled のまま（連打防止）
+}
+
+/* ===================== 検索ロジック ===================== */
+function words(q) { return q.split(/\s+/).filter(Boolean); }
+
 async function doSearch(q) {
   q = (q !== undefined ? q : document.getElementById("topInput").value.trim());
   if (!q) return;
 
   currentKeyword = q;
-
   document.getElementById("topPage").classList.add("hidden");
   document.getElementById("resultPage").classList.add("active");
   document.getElementById("threadDetailPage").classList.remove("active");
   document.getElementById("resultInput").value = q;
   document.getElementById("detailInput").value = q;
 
-  const resultsDiv = document.getElementById("results");
-  resultsDiv.innerHTML = `<div class="loading">検索中… <span class="spinner"></span></div>`;
+  const type = document.querySelector('input[name="searchType"]:checked').value;
+  const mode = document.querySelector('input[name="searchMode"]:checked').value;
+  updateUrl(q, type, mode);
+
+  document.getElementById("results").innerHTML = `<div class="loading">検索中… <span class="spinner"></span></div>`;
   document.getElementById("resultStats").textContent = "";
   document.getElementById("searchSummary").style.display = "none";
   document.getElementById("sortBar").classList.remove("visible");
 
-  const searchType = document.querySelector('input[name="searchType"]:checked').value;
-  const searchMode = document.querySelector('input[name="searchMode"]:checked').value;
-
-  const start = performance.now();
-
+  const t0 = performance.now();
   try {
-    let results = [];
-
-    if (searchType === "title") {
-      results = await searchByTitle(q, searchMode);
-    } else if (searchType === "body") {
-      results = await searchByBody(q, searchMode);
-    } else {
-      // 全て: タイトル + 本文
-      const [titleResults, bodyResults] = await Promise.all([
-        searchByTitle(q, searchMode),
-        searchByBody(q, searchMode)
-      ]);
-      // マージ（thread_idで重複除去、bodyResultsがあれば優先）
-      const merged = new Map();
-      titleResults.forEach(r => merged.set(r.thread_id, r));
-      bodyResults.forEach(r => {
-        if (merged.has(r.thread_id)) {
-          const existing = merged.get(r.thread_id);
-          // マッチしたレスをマージ
-          const existingNums = new Set(existing.matchedPosts.map(p => p.post_num));
-          r.matchedPosts.forEach(p => {
-            if (!existingNums.has(p.post_num)) existing.matchedPosts.push(p);
-          });
-          existing.matchedPosts.sort((a,b) => a.post_num - b.post_num);
-        } else {
-          merged.set(r.thread_id, r);
-        }
+    let res = [];
+    if (type === "title") res = await searchTitle(q, mode);
+    else if (type === "body") res = await searchBody(q, mode);
+    else {
+      const [tr, br] = await Promise.all([searchTitle(q,mode), searchBody(q,mode)]);
+      const m = new Map();
+      tr.forEach(r => m.set(r.thread_id, r));
+      br.forEach(r => {
+        if (m.has(r.thread_id)) {
+          const ex = m.get(r.thread_id);
+          const ns = new Set(ex.matchedPosts.map(p => p.post_num));
+          r.matchedPosts.forEach(p => { if (!ns.has(p.post_num)) ex.matchedPosts.push(p); });
+          ex.matchedPosts.sort((a,b)=>a.post_num-b.post_num);
+          ex.titleMatch = ex.titleMatch || r.titleMatch;
+        } else m.set(r.thread_id, r);
       });
-      results = Array.from(merged.values());
+      res = Array.from(m.values());
     }
-
-    const elapsed = ((performance.now() - start) / 1000).toFixed(2);
-
-    currentResults = results;
-    applySortAndRender(q, elapsed);
-
-  } catch(e) {
-    resultsDiv.innerHTML = `<div class="no-results">エラーが発生しました: ${escapeHtml(e.message)}</div>`;
+    currentResults = res;
+    renderSorted(q, ((performance.now()-t0)/1000).toFixed(2));
+  } catch(err) {
+    document.getElementById("results").innerHTML = `<div class="no-results">エラー: ${esc(err.message)}</div>`;
   }
 }
 
-// タイトル検索 -> スレッドごとに返す（matchedPosts = 1レス目）
-async function searchByTitle(q, mode) {
-  const words = splitWords(q);
-  let query = `threads?select=thread_id,title,updated_at&limit=200&order=updated_at.desc`;
-
-  if (mode === "and" || mode === "or" || mode === "default") {
-    // シンプルに全wordをilike（AND）か、後でフィルタ
-    words.forEach(w => {
-      if (mode === "or") return; // OR は後でフィルタ
-      query += `&title=ilike.${encodeURIComponent(`%${w}%`)}`;
-    });
-    if (mode === "or") {
-      // OR: 一語ずつ検索してマージ
-      const sets = await Promise.all(words.map(w =>
-        sbFetch(`threads?select=thread_id,title,updated_at&limit=200&title=ilike.${encodeURIComponent(`%${w}%`)}`)
-      ));
-      const map = new Map();
-      sets.flat().forEach(t => map.set(t.thread_id, t));
-      const threads = Array.from(map.values());
-      return threads.map(t => ({
-        thread_id: t.thread_id, title: t.title,
-        updated_at: t.updated_at, matchedPosts: [], titleMatch: true
-      }));
-    }
-  }
-
-  const threads = await sbFetch(query);
-
-  if (mode === "and" && words.length > 1) {
-    // クライアントでANDフィルタ
-    return threads
-      .filter(t => words.every(w => t.title.toLowerCase().includes(w.toLowerCase())))
-      .map(t => ({ thread_id: t.thread_id, title: t.title, updated_at: t.updated_at, matchedPosts: [], titleMatch: true }));
-  }
-
-  return threads.map(t => ({
-    thread_id: t.thread_id, title: t.title, updated_at: t.updated_at, matchedPosts: [], titleMatch: true
-  }));
-}
-
-// レス本文・名前・ID検索
-async function searchByBody(q, mode) {
-  const words = splitWords(q);
-
-  // ID検索特別処理
-  const idMatch = q.match(/^id:\s*(.+)/i);
-  if (idMatch) {
-    const targetId = idMatch[1].trim();
-    const posts = await sbFetch(
-      `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=500&user_id=ilike.${encodeURIComponent(`%${targetId}%`)}&order=posted_at.desc`
+async function searchTitle(q, mode) {
+  const ws = words(q);
+  if (!ws.length) return [];
+  let threads;
+  if (mode === "or" && ws.length > 1) {
+    const sets = await Promise.all(
+      ws.map(w => sbFetch(`threads?select=thread_id,title,updated_at&limit=200&title=ilike.${encodeURIComponent("%"+w+"%")}`))
     );
-    return groupPostsByThread(posts, q);
-  }
-
-  let allPosts = [];
-
-  if (mode === "or") {
-    // OR: 各ワードで個別に検索してマージ
-    const fieldSets = await Promise.all(words.flatMap(w => [
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&body=ilike.${encodeURIComponent(`%${w}%`)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&name=ilike.${encodeURIComponent(`%${w}%`)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&user_id=ilike.${encodeURIComponent(`%${w}%`)}&order=posted_at.desc`)
-    ]));
-    const map = new Map();
-    fieldSets.flat().forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
-    allPosts = Array.from(map.values());
+    const m = new Map();
+    sets.flat().forEach(t => m.set(t.thread_id, t));
+    threads = Array.from(m.values());
   } else {
-    // 通常/AND: body・name・user_idで並行検索してマージ
-    const mainWord = words[0];
-    const [bodyPosts, namePosts, idPosts] = await Promise.all([
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&body=ilike.${encodeURIComponent(`%${mainWord}%`)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&name=ilike.${encodeURIComponent(`%${mainWord}%`)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&user_id=ilike.${encodeURIComponent(`%${mainWord}%`)}&order=posted_at.desc`)
+    let qstr = `threads?select=thread_id,title,updated_at&limit=200&order=updated_at.desc`;
+    ws.forEach(w => { qstr += `&title=ilike.${encodeURIComponent("%"+w+"%")}`; });
+    threads = await sbFetch(qstr);
+    if (mode === "and" && ws.length > 1)
+      threads = threads.filter(t => ws.every(w => t.title.toLowerCase().includes(w.toLowerCase())));
+  }
+  return threads.map(t => ({ thread_id:t.thread_id, title:t.title, updated_at:t.updated_at, matchedPosts:[], titleMatch:true }));
+}
+
+async function searchBody(q, mode) {
+  const ws = words(q);
+  if (!ws.length) return [];
+
+  // ID検索
+  const idM = q.match(/^id:\s*(.+)/i);
+  if (idM) {
+    const tid = idM[1].trim();
+    const ps = await sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&user_id=ilike.${encodeURIComponent("%"+tid+"%")}&limit=500&order=posted_at.desc`);
+    return groupPosts(ps);
+  }
+
+  let all;
+  if (mode === "or" && ws.length > 1) {
+    const sets = await Promise.all(
+      ws.flatMap(w => {
+        const e = encodeURIComponent("%"+w+"%");
+        const base = `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi`;
+        return [
+          sbFetch(`${base}&body=ilike.${e}&limit=200&order=posted_at.desc`),
+          sbFetch(`${base}&name=ilike.${e}&limit=200&order=posted_at.desc`),
+          sbFetch(`${base}&user_id=ilike.${e}&limit=200&order=posted_at.desc`)
+        ];
+      })
+    );
+    const m = new Map();
+    sets.flat().forEach(p => m.set(`${p.thread_id}_${p.post_num}`, p));
+    all = Array.from(m.values());
+  } else {
+    const w0 = ws[0];
+    const e0 = encodeURIComponent("%"+w0+"%");
+    const base = `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi`;
+    const [bp,np,ip] = await Promise.all([
+      sbFetch(`${base}&body=ilike.${e0}&limit=300&order=posted_at.desc`),
+      sbFetch(`${base}&name=ilike.${e0}&limit=300&order=posted_at.desc`),
+      sbFetch(`${base}&user_id=ilike.${e0}&limit=300&order=posted_at.desc`)
     ]);
-    const map = new Map();
-    [...bodyPosts, ...namePosts, ...idPosts].forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
-    allPosts = Array.from(map.values());
-
-    if (mode === "and" && words.length > 1) {
-      // AND: 残りワードでクライアントフィルタ
-      allPosts = allPosts.filter(p => {
-        const text = `${p.body || ""} ${p.name || ""} ${p.user_id || ""}`.toLowerCase();
-        return words.every(w => text.includes(w.toLowerCase()));
+    const m = new Map();
+    [...bp,...np,...ip].forEach(p => m.set(`${p.thread_id}_${p.post_num}`, p));
+    all = Array.from(m.values());
+    if (mode === "and" && ws.length > 1) {
+      all = all.filter(p => {
+        const txt = `${p.body||""} ${p.name||""} ${p.user_id||""}`.toLowerCase();
+        return ws.every(w => txt.includes(w.toLowerCase()));
       });
     }
   }
-
-  return groupPostsByThread(allPosts, q);
+  return groupPosts(all);
 }
 
-// レスをthread_idでグループ化
-async function groupPostsByThread(posts, q) {
+async function groupPosts(posts) {
   if (!posts.length) return [];
-
-  // スレッドIDを収集してタイトル取得
-  const threadIds = [...new Set(posts.map(p => p.thread_id))];
-  const titleMap = new Map();
-
-  // バッチでスレッドタイトルを取得（最大20件ずつ）
-  for (let i = 0; i < threadIds.length; i += 20) {
-    const batch = threadIds.slice(i, i + 20);
-    const threads = await sbFetch(`threads?select=thread_id,title,updated_at&thread_id=in.(${batch.join(",")})`);
-    threads.forEach(t => titleMap.set(t.thread_id, t));
+  const ids = [...new Set(posts.map(p => p.thread_id))];
+  const tmap = new Map();
+  for (let i = 0; i < ids.length; i += 20) {
+    const batch = ids.slice(i,i+20);
+    if (!batch.length) continue;
+    const ts = await sbFetch(`threads?select=thread_id,title,updated_at&thread_id=in.(${batch.join(",")})`).catch(()=>[]);
+    ts.forEach(t => tmap.set(t.thread_id, t));
   }
-
-  const grouped = new Map();
+  const m = new Map();
   posts.forEach(p => {
-    if (!grouped.has(p.thread_id)) {
-      const t = titleMap.get(p.thread_id) || {};
-      grouped.set(p.thread_id, {
-        thread_id: p.thread_id,
-        title: t.title || `スレッド ${p.thread_id}`,
-        updated_at: t.updated_at || p.posted_at,
-        matchedPosts: [],
-        titleMatch: false
-      });
+    if (!m.has(p.thread_id)) {
+      const t = tmap.get(p.thread_id) || {};
+      m.set(p.thread_id, { thread_id:p.thread_id, title:t.title||`スレッド ${p.thread_id}`, updated_at:t.updated_at||p.posted_at, matchedPosts:[], titleMatch:false });
     }
-    grouped.get(p.thread_id).matchedPosts.push(p);
+    m.get(p.thread_id).matchedPosts.push(p);
   });
-
-  // matchedPostsをpost_num順に
-  grouped.forEach(r => r.matchedPosts.sort((a,b) => a.post_num - b.post_num));
-
-  return Array.from(grouped.values());
+  m.forEach(r => r.matchedPosts.sort((a,b)=>a.post_num-b.post_num));
+  return Array.from(m.values());
 }
 
-// ===================== ソートと描画 =====================
-function applySortAndRender(q, elapsed) {
-  const sortOrder = document.querySelector('input[name="sortOrder"]:checked').value;
-  const sorted = sortResults([...currentResults], sortOrder);
+/* ===================== ソート・描画 ===================== */
+function renderSorted(q, elapsed) {
+  const order = document.querySelector('input[name="sortOrder"]:checked').value;
+  const sorted = sortRes([...currentResults], order);
+  const total = sorted.reduce((s,r)=>s+r.matchedPosts.length,0);
 
-  const totalMatches = sorted.reduce((s, r) => s + r.matchedPosts.length, 0);
   document.getElementById("resultStats").textContent =
-    `約 ${sorted.length} スレッド / ${totalMatches} レス (${elapsed || "0.00"} 秒)`;
+    `約 ${sorted.length} スレッド・${total} レスヒット (${elapsed} 秒)`;
 
-  if (sorted.length === 0) {
-    document.getElementById("results").innerHTML = `<div class="no-results">「${escapeHtml(q)}」に一致する結果はありませんでした。</div>`;
+  if (!sorted.length) {
+    document.getElementById("results").innerHTML = `<div class="no-results">「${esc(q)}」に一致する結果はありませんでした。</div>`;
     document.getElementById("searchSummary").style.display = "none";
     document.getElementById("sortBar").classList.remove("visible");
     return;
   }
 
   document.getElementById("sortBar").classList.add("visible");
-
-  const summaryDiv = document.getElementById("searchSummary");
-  summaryDiv.innerHTML = `<strong>検索:</strong> 「${escapeHtml(q)}」 &nbsp;|&nbsp; <strong>ヒット:</strong> ${sorted.length}スレッド, ${totalMatches}レス`;
-  summaryDiv.style.display = "block";
+  const sum = document.getElementById("searchSummary");
+  sum.textContent = "";
+  const strong = document.createElement("strong"); strong.textContent = q;
+  sum.append("検索: 「", strong, `」 | ヒット: ${sorted.length}スレッド, ${total}レス`);
+  sum.style.display = "block";
 
   renderResults(sorted, q);
 }
 
-function sortResults(results, order) {
-  switch(order) {
-    case "newest":
-      return results.sort((a,b) => new Date(b.updated_at||0) - new Date(a.updated_at||0));
-    case "oldest":
-      return results.sort((a,b) => new Date(a.updated_at||0) - new Date(b.updated_at||0));
-    case "relevance":
-      return results.sort((a,b) => b.matchedPosts.length - a.matchedPosts.length);
-  }
+function sortRes(results, order) {
+  if (order === "newest")    return results.sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0));
+  if (order === "oldest")    return results.sort((a,b)=>new Date(a.updated_at||0)-new Date(b.updated_at||0));
+  if (order === "relevance") return results.sort((a,b)=>b.matchedPosts.length-a.matchedPosts.length);
   return results;
 }
 
-// ===================== 結果描画 =====================
 function renderResults(results, q) {
-  const container = document.getElementById("results");
-  container.innerHTML = "";
+  const cont = document.getElementById("results");
+  cont.innerHTML = "";
 
   results.forEach(thread => {
-    const div = document.createElement("div");
-    div.className = "thread-result";
+    const card = document.createElement("div");
+    card.className = "thread-result";
+
+    /* ヘッダー */
+    const header = document.createElement("div");
+    header.className = "thread-header";
+
+    const tarea = document.createElement("div");
+    tarea.className = "thread-title-area";
+
+    const titleSp = document.createElement("span");
+    titleSp.className = "thread-title";
+    titleSp.textContent = thread.title || `スレッド ${thread.thread_id}`;
+    if (q) hlDOM(titleSp, q);
+    tarea.appendChild(titleSp);
+
+    const urlDiv = document.createElement("div");
+    urlDiv.className = "thread-url";
+    urlDiv.textContent = `hayabusa.open2ch.net › livejupiter › ${thread.thread_id}`;
+    tarea.appendChild(urlDiv);
 
     const date = thread.updated_at ? new Date(thread.updated_at).toLocaleDateString("ja-JP") : "";
-    const titleHtml = highlightText(escapeHtml(thread.title || `スレッド ${thread.thread_id}`), q);
+    const metaDiv = document.createElement("div");
+    metaDiv.className = "thread-meta-line";
+    metaDiv.textContent = `更新: ${date}`;
+    if (thread.titleMatch && !thread.matchedPosts.length) {
+      const badge = document.createElement("span");
+      badge.style.color = "#34a853"; badge.textContent = " · スレタイ一致";
+      metaDiv.appendChild(badge);
+    }
+    tarea.appendChild(metaDiv);
+    header.appendChild(tarea);
 
-    div.innerHTML = `
-      <div class="thread-header" onclick="toggleThread(this)">
-        <div class="thread-title-area">
-          <span class="thread-title">${titleHtml}</span>
-          <div class="thread-url">hayabusa.open2ch.net › livejupiter › ${thread.thread_id}</div>
-          <div class="thread-meta-line">更新: ${date}${thread.titleMatch && thread.matchedPosts.length === 0 ? ' ・ <span style="color:#34a853;">スレタイ一致</span>' : ''}</div>
-        </div>
-        <div class="thread-badge-area">
-          ${thread.matchedPosts.length > 0 ? `<span class="badge-match">${thread.matchedPosts.length}件ヒット</span>` : '<span class="badge-total" style="color:#34a853;">タイトル一致</span>'}
-        </div>
-      </div>
-      <div class="thread-details"></div>
-    `;
+    const badgeArea = document.createElement("div");
+    badgeArea.className = "thread-badge-area";
+    const badge = document.createElement("span");
+    if (thread.matchedPosts.length) {
+      badge.className = "badge-match"; badge.textContent = `${thread.matchedPosts.length}件ヒット`;
+    } else {
+      badge.className = "badge-total"; badge.style.color = "#34a853"; badge.textContent = "タイトル一致";
+    }
+    badgeArea.appendChild(badge);
+    header.appendChild(badgeArea);
 
-    // 詳細エリア
-    const detailsDiv = div.querySelector(".thread-details");
-    buildThreadDetails(detailsDiv, thread, q);
+    const arrow = document.createElement("span");
+    arrow.className = "thread-header-arrow"; arrow.textContent = "▼";
+    header.appendChild(arrow);
 
-    container.appendChild(div);
+    /* 詳細エリア */
+    const details = document.createElement("div");
+    details.className = "thread-details";
+    buildDetails(details, thread, q);
+
+    header.addEventListener("click", () => {
+      const open = details.style.display === "block";
+      details.style.display = open ? "none" : "block";
+      arrow.classList.toggle("open", !open);
+    });
+
+    card.appendChild(header);
+    card.appendChild(details);
+    cont.appendChild(card);
   });
 }
 
-function buildThreadDetails(detailsDiv, thread, q) {
+function buildDetails(details, thread, q) {
   const actionBar = document.createElement("div");
   actionBar.className = "thread-action-bar";
-  actionBar.innerHTML = `
-    <a class="thread-ext-link" href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/${thread.thread_id}/" target="_blank" rel="noopener">↗ 元スレを開く</a>
-    <button class="btn btn-success btn-sm" onclick="viewFullThread(${thread.thread_id}, event)">全レス表示</button>
-    <button class="btn btn-secondary btn-sm" onclick="viewFullThread(${thread.thread_id}, event, true)">別ページで全表示</button>
-  `;
-  detailsDiv.appendChild(actionBar);
 
-  // マッチしたレスを表示
+  const extLink = document.createElement("a");
+  extLink.className = "thread-ext-link";
+  extLink.href = `https://hayabusa.open2ch.net/test/read.cgi/livejupiter/${thread.thread_id}/`;
+  extLink.target = "_blank"; extLink.rel = "noopener noreferrer";
+  extLink.textContent = "↗ 元スレを開く";
+  actionBar.appendChild(extLink);
+
+  const showAllBtn = mkBtn("全レス表示", "btn btn-success btn-sm");
+  const showNewBtn = mkBtn("別ページで全表示", "btn btn-newpage btn-sm");
+
   const postsWrap = document.createElement("div");
   postsWrap.className = "posts-container";
-  detailsDiv.appendChild(postsWrap);
 
-  if (thread.titleMatch && thread.matchedPosts.length === 0) {
-    postsWrap.innerHTML = `<p style="color:#5f6368;font-size:13px;padding:8px 0;">スレッドタイトルが一致しました。「全レス表示」でレスを確認できます。</p>`;
+  showAllBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    showAllBtn.style.display = "none"; showNewBtn.style.display = "none";
+    viewAllInline(thread.thread_id, postsWrap, q);
+  });
+  showNewBtn.addEventListener("click", e => { e.stopPropagation(); openDetailPage(thread.thread_id); });
+
+  actionBar.appendChild(showAllBtn);
+  actionBar.appendChild(showNewBtn);
+  details.appendChild(actionBar);
+
+  if (thread.titleMatch && !thread.matchedPosts.length) {
+    const msg = document.createElement("p");
+    msg.style.cssText = "color:#5f6368;font-size:13px;padding:8px 0;";
+    msg.textContent = "スレッドタイトルが一致しました。「全レス表示」でレスを確認できます。";
+    postsWrap.appendChild(msg);
   } else {
-    thread.matchedPosts.forEach(post => {
-      const postDiv = createPostElement(post, thread, q, true);
-      postsWrap.appendChild(postDiv);
-    });
-    addAnchorEvents(postsWrap, thread.thread_id);
+    thread.matchedPosts.forEach(p => postsWrap.appendChild(createPost(p, thread, q, true)));
+    addAnchors(postsWrap, thread.thread_id);
   }
+  details.appendChild(postsWrap);
 }
 
-// ===================== レス要素生成 =====================
-function createPostElement(post, threadInfo, q, showRangeButtons) {
-  const div = document.createElement("div");
-  div.className = "post";
-  div.dataset.postNum = post.post_num;
-
-  const date = post.posted_at ? new Date(post.posted_at).toLocaleString("ja-JP") : "";
-  const name = post.name || "名無し";
-  const nusi = post.is_nusi ? '<span class="post-nusi">主</span>' : "";
-  const cleanBody = (post.body || "").trim();
-  let bodyHtml = processAnchors(escapeHtml(cleanBody), threadInfo.thread_id);
-  bodyHtml = embedMedia(bodyHtml);
-  if (q) bodyHtml = highlightText(bodyHtml, q);
-  const nameHtml = q ? highlightText(escapeHtml(name), q) : escapeHtml(name);
-  const idHtml = q ? highlightText(escapeHtml(post.user_id || ""), q) : escapeHtml(post.user_id || "");
-
-  const rangeButtons = showRangeButtons ? `
-    <button class="btn btn-secondary btn-sm range-up-btn" data-post-num="${post.post_num}" onclick="loadRangePosts(this,'up',${threadInfo.thread_id},'${escapeAttr(q)}')">上100</button>
-    <button class="btn btn-secondary btn-sm range-down-btn" data-post-num="${post.post_num}" onclick="loadRangePosts(this,'down',${threadInfo.thread_id},'${escapeAttr(q)}')">下100</button>
-  ` : "";
-
-  div.innerHTML = `
-    <div class="post-meta">
-      <span class="post-num" onclick="openPostInThread(${threadInfo.thread_id}, ${post.post_num})">${post.post_num}</span>
-      <span class="post-author">${nameHtml}</span>${nusi}
-      <span class="post-id">ID:${idHtml}</span>
-      <span class="post-time">${date}</span>
-      <div class="post-buttons">
-        ${rangeButtons}
-        <button class="btn btn-copy btn-sm" onclick="copyPost(this, '${escapeAttr(`${post.post_num}: ${name} | ID:${post.user_id || ''} | ${date}\n${cleanBody}`)}')" >コピペ</button>
-      </div>
-    </div>
-    <div class="post-content">${bodyHtml}</div>
-  `;
-  return div;
+async function viewAllInline(tid, wrap, q) {
+  wrap.innerHTML = `<div class="loading">全レス読み込み中… <span class="spinner"></span></div>`;
+  const ps = await fetchPosts(tid).catch(()=>[]);
+  wrap.innerHTML = "";
+  const cnt = document.createElement("div");
+  cnt.style.cssText = "font-size:13px;color:#5f6368;padding:4px 0 8px;";
+  cnt.textContent = `全${ps.length}レス`;
+  wrap.appendChild(cnt);
+  ps.forEach(p => wrap.appendChild(createPost(p, { thread_id: tid }, q, false)));
+  addAnchors(wrap, tid);
 }
 
-// ===================== スレッド内全レス表示 =====================
-async function viewFullThread(threadId, event, newPage) {
-  if (event) event.stopPropagation();
-
-  if (newPage) {
-    // 別ページモード
-    showDetailPage(threadId);
-    return;
-  }
-
-  // インライン全表示: スレッドカードの中に展開
-  const cards = document.querySelectorAll(".thread-result");
-  let targetCard = null;
-  cards.forEach(c => {
-    const header = c.querySelector(".thread-header");
-    if (header && c.querySelector(`.thread-details`)) {
-      // thread_idを特定する（URLから）
-      const urlDiv = c.querySelector(".thread-url");
-      if (urlDiv && urlDiv.textContent.includes(String(threadId))) {
-        targetCard = c;
-      }
-    }
-  });
-
-  if (!targetCard) return;
-
-  const detailsDiv = targetCard.querySelector(".thread-details");
-  detailsDiv.style.display = "block";
-
-  const postsWrap = detailsDiv.querySelector(".posts-container");
-  postsWrap.innerHTML = `<div class="loading">全レス読み込み中… <span class="spinner"></span></div>`;
-
-  const posts = await fetchAllPosts(threadId);
-  const threadInfo = { thread_id: threadId };
-  const q = document.getElementById("resultInput").value.trim();
-
-  postsWrap.innerHTML = `<div style="font-size:13px;color:#5f6368;padding:4px 0;">${posts.length}レス</div>`;
-  posts.forEach(p => {
-    const el = createPostElement(p, threadInfo, q, false);
-    postsWrap.appendChild(el);
-  });
-  addAnchorEvents(postsWrap, threadId);
-
-  // 全レス表示ボタンを非表示
-  const btn = detailsDiv.querySelector(".btn-success");
-  if (btn) btn.style.display = "none";
-}
-
-// ===================== スレッド詳細ページ =====================
-async function showDetailPage(threadId) {
+async function openDetailPage(tid) {
   document.getElementById("resultPage").classList.remove("active");
   document.getElementById("threadDetailPage").classList.add("active");
-  currentThreadId = threadId;
 
-  const postsDiv = document.getElementById("threadDetailPosts");
-  postsDiv.innerHTML = `<div class="loading">読み込み中… <span class="spinner"></span></div>`;
+  const div = document.getElementById("threadDetailPosts");
+  div.innerHTML = `<div class="loading">読み込み中… <span class="spinner"></span></div>`;
 
-  const [threadArr, posts] = await Promise.all([
-    sbFetch(`threads?select=thread_id,title,updated_at&thread_id=eq.${threadId}&limit=1`),
-    fetchAllPosts(threadId)
+  const [tarr, ps] = await Promise.all([
+    sbFetch(`threads?select=thread_id,title,updated_at&thread_id=eq.${parseInt(tid,10)}&limit=1`).catch(()=>[]),
+    fetchPosts(tid).catch(()=>[])
   ]);
+  const thread = tarr[0] || { thread_id: tid, title: `スレッド ${tid}` };
+  const q = currentKeyword;
+  div.innerHTML = "";
 
-  const thread = threadArr[0] || { thread_id: threadId, title: `スレッド ${threadId}` };
-  const q = document.getElementById("detailInput").value.trim();
+  const back = document.createElement("div");
+  back.className = "back-btn"; back.textContent = "← 検索結果に戻る";
+  back.addEventListener("click", goBack);
+  div.appendChild(back);
 
-  postsDiv.innerHTML = `
-    <div class="back-btn" onclick="goBack()">← 検索結果に戻る</div>
-    <h2 style="font-size:17px;font-weight:700;color:#202124;padding:8px 0 4px;">${escapeHtml(thread.title)}</h2>
-    <div style="font-size:13px;color:#5f6368;margin-bottom:12px;">${posts.length}レス</div>
-    <a href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/${threadId}/" target="_blank" style="font-size:13px;color:#1a73e8;text-decoration:none;">↗ 元スレを開く</a>
-  `;
+  const h2 = document.createElement("h2");
+  h2.style.cssText = "font-size:17px;font-weight:700;color:#202124;padding:4px 0;";
+  h2.textContent = thread.title || `スレッド ${tid}`;
+  div.appendChild(h2);
 
-  const container = document.createElement("div");
-  container.className = "posts-container";
-  posts.forEach(p => {
-    const el = createPostElement(p, thread, q, false);
-    container.appendChild(el);
-  });
-  postsDiv.appendChild(container);
-  addAnchorEvents(container, threadId);
+  const info = document.createElement("div");
+  info.style.cssText = "font-size:13px;color:#5f6368;margin:4px 0 8px;";
+  info.textContent = `全${ps.length}レス`;
+  div.appendChild(info);
+
+  const lnk = document.createElement("a");
+  lnk.href = `https://hayabusa.open2ch.net/test/read.cgi/livejupiter/${tid}/`;
+  lnk.target = "_blank"; lnk.rel = "noopener noreferrer";
+  lnk.style.cssText = "font-size:13px;color:#1a73e8;text-decoration:none;display:block;margin-bottom:12px;";
+  lnk.textContent = "↗ 元スレを開く";
+  div.appendChild(lnk);
+
+  const wrap = document.createElement("div");
+  wrap.className = "posts-container";
+  ps.forEach(p => wrap.appendChild(createPost(p, thread, q, false)));
+  div.appendChild(wrap);
+  addAnchors(wrap, tid);
 }
 
-// ===================== レス範囲読み込み =====================
-async function loadRangePosts(btn, direction, threadId, q) {
-  btn.disabled = true;
-  const origText = btn.textContent;
-  btn.textContent = "読込中…";
+/* ===================== URL共有 ===================== */
+const T2P = { all:"subete", title:"suretai", body:"honbun" };
+const P2T = { subete:"all", suretai:"title", honbun:"body" };
+const M2P = { default:"tuuzyou", and:"and", or:"or" };
+const P2M = { tuuzyou:"default", and:"and", or:"or" };
 
-  const postNum = parseInt(btn.dataset.postNum);
-  let startNum, endNum;
-  if (direction === "up") {
-    startNum = Math.max(1, postNum - 100);
-    endNum = postNum - 1;
+function updateUrl(q, type, mode) {
+  const url = new URL(location.href);
+  if (q) {
+    url.searchParams.set("search", q);
+    url.searchParams.set("type", T2P[type]||"subete");
+    url.searchParams.set("mode", M2P[mode]||"tuuzyou");
   } else {
-    startNum = postNum + 1;
-    endNum = postNum + 100;
+    ["search","type","mode"].forEach(k => url.searchParams.delete(k));
   }
-
-  if (startNum > endNum) {
-    btn.textContent = origText;
-    btn.disabled = false;
-    return;
-  }
-
-  const posts = await sbFetch(
-    `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&thread_id=eq.${threadId}&post_num=gte.${startNum}&post_num=lte.${endNum}&order=post_num.asc`
-  );
-
-  const container = document.createElement("div");
-  container.className = `range-posts`;
-  const threadInfo = { thread_id: threadId };
-
-  posts.forEach(p => {
-    const el = createPostElement(p, threadInfo, q, false);
-    container.appendChild(el);
-  });
-  addAnchorEvents(container, threadId);
-
-  const postDiv = btn.closest(".post");
-  if (direction === "up") {
-    const scrollY = window.scrollY;
-    const rect = postDiv.getBoundingClientRect();
-    postDiv.parentNode.insertBefore(container, postDiv);
-    // スクロール位置補正
-    const newRect = postDiv.getBoundingClientRect();
-    window.scrollTo(0, scrollY + (newRect.top - rect.top));
-  } else {
-    postDiv.parentNode.insertBefore(container, postDiv.nextSibling);
-  }
-
-  btn.textContent = origText;
-  // ボタンは無効化したまま（連打防止）
+  history.pushState({}, "", url.toString());
 }
 
-// ===================== 全レス取得（キャッシュ付き） =====================
-async function fetchAllPosts(threadId) {
-  if (threadCache.has(threadId)) return threadCache.get(threadId);
-  const posts = await sbFetch(
-    `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&thread_id=eq.${threadId}&order=post_num.asc&limit=2000`
-  );
-  threadCache.set(threadId, posts);
-  return posts;
+function checkUrl() {
+  const p = new URLSearchParams(location.search);
+  const q = p.get("search");
+  const type = P2T[p.get("type")] || "all";
+  const mode = P2M[p.get("mode")] || "default";
+  const te = document.querySelector(`input[name="searchType"][value="${type}"]`);
+  if (te) te.checked = true;
+  const me = document.querySelector(`input[name="searchMode"][value="${mode}"]`);
+  if (me) me.checked = true;
+  if (q) { document.getElementById("topInput").value = q; doSearch(q); }
 }
 
-// ===================== 安価処理 =====================
-function processAnchors(html, threadId) {
-  return html.replace(/(&gt;&gt;|&gt;)(\d+)/g, (match, gt, num) => {
-    return `<span class="anchor-link" data-post-num="${num}" data-thread-id="${threadId}">${match}</span>`;
-  });
-}
-
-// 安価イベント登録
-function addAnchorEvents(container, threadId) {
-  const preview = document.getElementById("anchorPreview");
-  container.querySelectorAll(".anchor-link").forEach(link => {
-    link.addEventListener("mouseenter", async (e) => {
-      const postNum = parseInt(e.target.dataset.postNum);
-      const tid = parseInt(e.target.dataset.threadId);
-
-      const posts = await fetchAllPosts(tid).catch(() => []);
-      const post = posts.find(p => p.post_num === postNum);
-      if (!post) return;
-
-      const cleanBody = (post.body || "").trim().substring(0, 200);
-      preview.innerHTML = `
-        <div class="preview-meta">${postNum}: ${escapeHtml(post.name || "名無し")} | ID:${escapeHtml(post.user_id || "")}</div>
-        <div class="preview-body">${escapeHtml(cleanBody)}${(post.body||"").length > 200 ? "…" : ""}</div>
-      `;
-      preview.style.display = "block";
-      positionPreview(e);
-    });
-
-    link.addEventListener("mousemove", (e) => positionPreview(e));
-
-    link.addEventListener("mouseleave", () => {
-      preview.style.display = "none";
-    });
-
-    link.addEventListener("click", async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const postNum = parseInt(e.target.dataset.postNum);
-      const tid = parseInt(e.target.dataset.threadId);
-      scrollToOrShowPost(postNum, tid, container);
-    });
-  });
-}
-
-function positionPreview(e) {
-  const preview = document.getElementById("anchorPreview");
-  const vw = window.innerWidth, vh = window.innerHeight;
-  let x = e.clientX + 12, y = e.clientY - 10;
-  preview.style.left = "";
-  preview.style.right = "";
-  preview.style.top = "";
-  preview.style.bottom = "";
-  if (x + 380 > vw) x = e.clientX - 392;
-  if (y + preview.offsetHeight > vh) y = e.clientY - preview.offsetHeight - 10;
-  preview.style.left = Math.max(4, x) + "px";
-  preview.style.top = Math.max(4, y) + "px";
-}
-
-async function scrollToOrShowPost(postNum, threadId, container) {
-  // 既に表示されているか確認
-  const existing = container.querySelector(`[data-post-num="${postNum}"]`);
-  if (existing && existing.classList.contains("post")) {
-    existing.scrollIntoView({ behavior: "smooth", block: "center" });
-    existing.style.background = "#fffde7";
-    setTimeout(() => existing.style.background = "", 1500);
-    return;
-  }
-  // なければ取得して挿入
-  const posts = await fetchAllPosts(threadId);
-  const post = posts.find(p => p.post_num === postNum);
-  if (!post) return;
-  const el = createPostElement(post, { thread_id: threadId }, currentKeyword, false);
-  el.style.background = "#fffde7";
-  container.appendChild(el);
-  setTimeout(() => el.style.background = "", 1500);
-  el.scrollIntoView({ behavior: "smooth", block: "center" });
-  addAnchorEvents(el, threadId);
-}
-
-// ===================== メディア埋め込み =====================
-function embedMedia(html) {
-  // imgur
-  html = html.replace(/https?:\/\/(?:i\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\.[a-zA-Z]+)?/g, (url, id) => {
-    return `<div class="media-embed"><img src="https://i.imgur.com/${id}.jpg" loading="lazy" onerror="this.parentElement.style.display='none'"></div>${url}`;
-  });
-  // YouTube
-  html = html.replace(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/g, (url, vid) => {
-    return `<div class="media-embed"><iframe src="https://www.youtube.com/embed/${vid}" allowfullscreen loading="lazy"></iframe></div>${url}`;
-  });
-  return html;
-}
-
-// ===================== ユーティリティ =====================
-function splitWords(q) {
-  return q.split(/\s+/).filter(Boolean);
-}
-
-function highlightText(html, q) {
-  if (!q) return html;
-  // ID検索なら対象を変える
-  const idMatch = q.match(/^id:\s*(.+)/i);
-  const term = idMatch ? idMatch[1].trim() : q;
-  const words = splitWords(term);
-  words.forEach(w => {
-    const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`(${escaped})`, "gi");
-    html = html.replace(re, '<span class="highlight">$1</span>');
-  });
-  return html;
-}
-
-function escapeHtml(s) {
-  if (!s) return "";
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-function escapeAttr(s) {
-  if (!s) return "";
-  return s.replace(/'/g, "\\'").replace(/\n/g, "\\n");
-}
-
-function openPostInThread(threadId, postNum) {
-  window.open(`https://hayabusa.open2ch.net/test/read.cgi/livejupiter/${threadId}/${postNum}-`, "_blank");
-}
-
-async function copyPost(btn, text) {
-  const decoded = text.replace(/\\n/g, "\n");
-  try {
-    await navigator.clipboard.writeText(decoded);
-    btn.textContent = "コピー完了!";
-    setTimeout(() => btn.textContent = "コピペ", 1200);
-  } catch {
-    prompt("コピーしてください:", decoded);
-  }
-}
-
-function toggleThread(headerEl) {
-  const details = headerEl.nextElementSibling;
-  details.style.display = details.style.display === "block" ? "none" : "block";
-}
-
+/* ===================== ナビ ===================== */
 function goHome() {
   document.getElementById("topPage").classList.remove("hidden");
   document.getElementById("resultPage").classList.remove("active");
   document.getElementById("threadDetailPage").classList.remove("active");
   document.getElementById("topInput").value = "";
+  currentResults = []; currentKeyword = "";
+  history.pushState({}, "", location.pathname);
   document.getElementById("topInput").focus();
-  currentResults = [];
-  currentKeyword = "";
 }
-
 function goBack() {
   document.getElementById("threadDetailPage").classList.remove("active");
   document.getElementById("resultPage").classList.add("active");
 }
 
-// ===================== イベント登録 =====================
-document.getElementById("topInput").addEventListener("keydown", e => {
-  if (e.key === "Enter") doSearch();
-});
-document.getElementById("resultInput").addEventListener("keydown", e => {
-  if (e.key === "Enter") doSearch(e.target.value.trim());
-});
-document.getElementById("detailInput").addEventListener("keydown", e => {
-  if (e.key === "Enter") doSearch(e.target.value.trim());
+/* ===================== イベント ===================== */
+["logoTop","logoResult","logoDetail"].forEach(id => document.getElementById(id).addEventListener("click", goHome));
+document.getElementById("topSearchBtn").addEventListener("click", ()=>doSearch());
+document.getElementById("topInput").addEventListener("keydown", e=>{ if(e.key==="Enter") doSearch(); });
+document.getElementById("resultInput").addEventListener("keydown", e=>{ if(e.key==="Enter") doSearch(e.target.value.trim()); });
+document.getElementById("detailInput").addEventListener("keydown", e=>{ if(e.key==="Enter") doSearch(e.target.value.trim()); });
+
+document.querySelectorAll('input[name="sortOrder"]').forEach(r =>
+  r.addEventListener("change", ()=>{ if(currentResults.length) renderSorted(currentKeyword,"0.00"); })
+);
+document.querySelectorAll('input[name="searchMode"],input[name="searchType"]').forEach(r =>
+  r.addEventListener("change", ()=>{ const q=document.getElementById("resultInput").value.trim(); if(q) doSearch(q); })
+);
+
+document.getElementById("shareBtn").addEventListener("click", ()=>{
+  const btn = document.getElementById("shareBtn");
+  navigator.clipboard.writeText(location.href)
+    .then(()=>{ btn.textContent="✓ コピー完了"; setTimeout(()=>btn.textContent="🔗 URL共有",2000); })
+    .catch(()=>prompt("URLをコピーしてください:", location.href));
 });
 
-// ソート変更
-document.querySelectorAll('input[name="sortOrder"]').forEach(r => {
-  r.addEventListener("change", () => {
-    if (currentResults.length > 0) {
-      const elapsed = "0.00";
-      applySortAndRender(currentKeyword, elapsed);
-    }
-  });
-});
-
-// 検索モード・範囲変更で再検索
-document.querySelectorAll('input[name="searchMode"], input[name="searchType"]').forEach(r => {
-  r.addEventListener("change", () => {
-    const q = document.getElementById("resultInput").value.trim();
-    if (q) doSearch(q);
-  });
-});
+window.addEventListener("popstate", checkUrl);
+document.addEventListener("DOMContentLoaded", checkUrl);
 </script>
 
 </body>
