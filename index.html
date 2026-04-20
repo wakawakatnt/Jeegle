@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeegle</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background: #fff; color: #202124; }
+
+/* トップページ（検索前） */
+.top-page {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 100vh;
+}
+.top-page.hidden { display: none; }
+
+.logo {
+  font-size: 72px; font-weight: bold; margin-bottom: 30px; cursor: pointer;
+}
+.logo span:nth-child(1) { color: #4285F4; }
+.logo span:nth-child(2) { color: #EA4335; }
+.logo span:nth-child(3) { color: #FBBC05; }
+.logo span:nth-child(4) { color: #4285F4; }
+.logo span:nth-child(5) { color: #34A853; }
+.logo span:nth-child(6) { color: #EA4335; }
+.logo span:nth-child(7) { color: #FBBC05; }
+
+.search-box {
+  display: flex; align-items: center;
+  width: 90%; max-width: 584px;
+  border: 1px solid #dfe1e5; border-radius: 24px;
+  padding: 10px 16px; background: #fff;
+}
+.search-box:hover, .search-box:focus-within {
+  box-shadow: 0 1px 6px rgba(32,33,36,.28);
+  border-color: transparent;
+}
+.search-box svg { flex-shrink: 0; margin-right: 12px; color: #9aa0a6; }
+.search-box input {
+  flex: 1; border: none; outline: none; font-size: 16px;
+  background: transparent;
+}
+.search-btn-wrap { margin-top: 24px; }
+.search-btn {
+  background: #f8f9fa; border: 1px solid #f8f9fa;
+  border-radius: 4px; color: #3c4043; cursor: pointer;
+  font-size: 14px; padding: 10px 20px; margin: 0 6px;
+}
+.search-btn:hover { border-color: #dadce0; box-shadow: 0 1px 1px rgba(0,0,0,.1); }
+
+/* 結果ページ（検索後） */
+.result-page { display: none; }
+.result-page.active { display: block; }
+
+.result-header {
+  display: flex; align-items: center;
+  padding: 12px 20px; border-bottom: 1px solid #ebebeb;
+  position: sticky; top: 0; background: #fff; z-index: 10;
+}
+.result-logo {
+  font-size: 28px; font-weight: bold; margin-right: 20px; cursor: pointer;
+}
+.result-logo span:nth-child(1) { color: #4285F4; }
+.result-logo span:nth-child(2) { color: #EA4335; }
+.result-logo span:nth-child(3) { color: #FBBC05; }
+.result-logo span:nth-child(4) { color: #4285F4; }
+.result-logo span:nth-child(5) { color: #34A853; }
+.result-logo span:nth-child(6) { color: #EA4335; }
+.result-logo span:nth-child(7) { color: #FBBC05; }
+
+.result-search-box {
+  display: flex; align-items: center;
+  width: 100%; max-width: 692px;
+  border: 1px solid #dfe1e5; border-radius: 24px;
+  padding: 8px 16px;
+}
+.result-search-box:focus-within {
+  box-shadow: 0 1px 6px rgba(32,33,36,.28);
+  border-color: transparent;
+}
+.result-search-box input {
+  flex: 1; border: none; outline: none; font-size: 16px;
+}
+.result-search-box svg { flex-shrink: 0; margin-right: 10px; color: #9aa0a6; }
+
+.result-tabs {
+  padding: 0 150px; border-bottom: 1px solid #ebebeb;
+  display: flex; gap: 16px;
+}
+.tab {
+  padding: 12px 8px; font-size: 13px; color: #70757a;
+  cursor: pointer; border-bottom: 3px solid transparent;
+}
+.tab.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+
+.result-stats {
+  padding: 12px 150px; color: #70757a; font-size: 13px;
+}
+.results {
+  max-width: 652px; padding: 0 150px 40px;
+}
+
+.result-item { margin-bottom: 28px; }
+.result-item .url {
+  font-size: 12px; color: #202124; margin-bottom: 2px;
+  display: flex; align-items: center;
+}
+.result-item .url span { color: #70757a; margin: 0 4px; }
+.result-item .title {
+  font-size: 20px; color: #1a0dab; cursor: pointer;
+  text-decoration: none; line-height: 1.3;
+}
+.result-item .title:hover { text-decoration: underline; }
+.result-item .snippet {
+  font-size: 14px; color: #4d5156; line-height: 1.58;
+  margin-top: 4px;
+}
+.result-item .snippet em {
+  font-style: normal; font-weight: bold;
+}
+.result-item .meta {
+  font-size: 12px; color: #70757a; margin-top: 4px;
+}
+
+.loading {
+  text-align: center; padding: 40px;
+  color: #70757a; font-size: 14px;
+}
+.no-results {
+  padding: 20px 0; color: #70757a; font-size: 14px;
+}
+
+.thread-detail { display: none; }
+.thread-detail.active { display: block; }
+.thread-detail .back-btn {
+  display: inline-block; padding: 8px 16px;
+  margin: 12px 0; cursor: pointer;
+  color: #1a73e8; font-size: 14px;
+}
+.thread-detail .back-btn:hover { text-decoration: underline; }
+.thread-posts { max-width: 652px; padding: 0 150px 40px; }
+.post-item {
+  padding: 12px 0; border-bottom: 1px solid #ebebeb;
+}
+.post-header {
+  font-size: 12px; color: #70757a; margin-bottom: 4px;
+}
+.post-body {
+  font-size: 14px; color: #202124; line-height: 1.6;
+  white-space: pre-wrap;
+}
+.post-nusi {
+  display: inline-block; background: #ea4335; color: #fff;
+  font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  margin-left: 4px;
+}
+
+@media (max-width: 768px) {
+  .result-tabs, .result-stats, .results, .thread-posts { padding-left: 16px; padding-right: 16px; }
+  .result-header { padding: 8px 12px; }
+  .logo { font-size: 48px; }
+}
+</style>
+</head>
+<body>
+
+<!-- トップページ -->
+<div class="top-page" id="topPage">
+  <div class="logo" onclick="goHome()">
+    <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
+  </div>
+  <div class="search-box">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="text" id="topInput" placeholder="スレッド・レスを検索" autocomplete="off">
+  </div>
+  <div class="search-btn-wrap">
+    <button class="search-btn" onclick="doSearch()">Jeegle 検索</button>
+  </div>
+</div>
+
+<!-- 結果ページ -->
+<div class="result-page" id="resultPage">
+  <div class="result-header">
+    <div class="result-logo" onclick="goHome()">
+      <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
+    </div>
+    <div class="result-search-box">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="resultInput" autocomplete="off">
+    </div>
+  </div>
+  <div class="result-tabs">
+    <div class="tab active" data-mode="posts">レス検索</div>
+    <div class="tab" data-mode="threads">スレッド検索</div>
+  </div>
+  <div class="result-stats" id="resultStats"></div>
+  <div class="results" id="results"></div>
+</div>
+
+<!-- スレッド詳細 -->
+<div class="thread-detail" id="threadDetail">
+  <div class="result-header">
+    <div class="result-logo" onclick="goHome()">
+      <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
+    </div>
+    <div class="result-search-box">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="detailInput" autocomplete="off">
+    </div>
+  </div>
+  <div class="thread-posts" id="threadPosts"></div>
+</div>
+
+<script>
+const SB_URL = "https://jvhcgllunsfncjintjba.supabase.co";
+const SB_KEY = "sb_publishable_nWh8Ixmel4JrlaK4D2hK0w_iZ4k_nxl";
+let searchMode = "posts";
+
+// Supabase REST API呼び出し
+async function sbFetch(path) {
+  const r = await fetch(SB_URL + "/rest/v1/" + path, {
+    headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
+  });
+  return r.json();
+}
+
+// 検索実行
+async function doSearch(q) {
+  q = q || document.getElementById("topInput").value.trim();
+  if (!q) return;
+
+  document.getElementById("topPage").classList.add("hidden");
+  document.getElementById("resultPage").classList.add("active");
+  document.getElementById("threadDetail").classList.remove("active");
+  document.getElementById("resultInput").value = q;
+  document.getElementById("detailInput").value = q;
+  document.getElementById("results").innerHTML = '<div class="loading">検索中...</div>';
+  document.getElementById("resultStats").textContent = "";
+
+  const start = performance.now();
+  let results;
+
+  if (searchMode === "posts") {
+    const words = q.split(/\s+/).map(w => `%${w}%`);
+    let query = "posts?select=thread_id,post_num,user_id,posted_at,body,is_nusi&limit=100&order=posted_at.desc";
+    words.forEach((w, i) => {
+      query += `&body=ilike.${encodeURIComponent(w)}`;
+    });
+    results = await sbFetch(query);
+  } else {
+    const words = q.split(/\s+/).map(w => `%${w}%`);
+    let query = "threads?select=thread_id,title,updated_at&limit=100&order=updated_at.desc";
+    words.forEach(w => {
+      query += `&title=ilike.${encodeURIComponent(w)}`;
+    });
+    results = await sbFetch(query);
+  }
+
+  const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+  document.getElementById("resultStats").textContent =
+    `約 ${results.length} 件 (${elapsed} 秒)`;
+
+  if (!results.length) {
+    document.getElementById("results").innerHTML =
+      '<div class="no-results">一致する結果はありませんでした。</div>';
+    return;
+  }
+
+  let html = "";
+  if (searchMode === "posts") {
+    // スレッドIDでグループ化
+    const grouped = {};
+    results.forEach(p => {
+      if (!grouped[p.thread_id]) grouped[p.thread_id] = [];
+      grouped[p.thread_id].push(p);
+    });
+
+    for (const [tid, posts] of Object.entries(grouped)) {
+      const first = posts[0];
+      const date = first.posted_at ? new Date(first.posted_at).toLocaleDateString("ja-JP") : "";
+      const snippet = highlightQuery(escapeHtml(posts[0].body.substring(0, 200)), q);
+
+      html += `
+        <div class="result-item">
+          <div class="url">hayabusa.open2ch.net<span>›</span>livejupiter<span>›</span>${tid}</div>
+          <a class="title" onclick="viewThread(${tid})">${tid} (${posts.length}件ヒット)</a>
+          <div class="snippet">${snippet}</div>
+          <div class="meta">${date} - ${posts.length}件のレスが一致</div>
+        </div>`;
+    }
+  } else {
+    results.forEach(t => {
+      const date = t.updated_at ? new Date(t.updated_at).toLocaleDateString("ja-JP") : "";
+      const title = highlightQuery(escapeHtml(t.title || "無題"), q);
+      html += `
+        <div class="result-item">
+          <div class="url">hayabusa.open2ch.net<span>›</span>livejupiter<span>›</span>${t.thread_id}</div>
+          <a class="title" onclick="viewThread(${t.thread_id})">${title}</a>
+          <div class="meta">更新: ${date}</div>
+        </div>`;
+    });
+  }
+
+  document.getElementById("results").innerHTML = html;
+}
+
+// スレッド詳細表示
+async function viewThread(tid) {
+  document.getElementById("resultPage").classList.remove("active");
+  document.getElementById("threadDetail").classList.add("active");
+
+  const postsDiv = document.getElementById("threadPosts");
+  postsDiv.innerHTML = '<div class="loading">読み込み中...</div>';
+
+  const thread = await sbFetch(`threads?thread_id=eq.${tid}&limit=1`);
+  const posts = await sbFetch(`posts?thread_id=eq.${tid}&order=post_num.asc&limit=1000`);
+
+  const title = thread[0] ? escapeHtml(thread[0].title) : tid;
+  const q = document.getElementById("detailInput").value.trim();
+
+  let html = `
+    <div class="back-btn" onclick="goBack()">← 検索結果に戻る</div>
+    <h2 style="padding:0 0 12px;font-size:20px;color:#202124">${title}</h2>
+    <div style="font-size:13px;color:#70757a;margin-bottom:16px">${posts.length}件のレス</div>`;
+
+  posts.forEach(p => {
+    const date = p.posted_at ? new Date(p.posted_at).toLocaleString("ja-JP") : "";
+    let body = escapeHtml(p.body);
+    if (q) body = highlightQuery(body, q);
+    const nusi = p.is_nusi ? '<span class="post-nusi">主</span>' : '';
+
+    html += `
+      <div class="post-item">
+        <div class="post-header">
+          ${p.post_num} : ID:${escapeHtml(p.user_id || "?")}${nusi} ${date}
+        </div>
+        <div class="post-body">${body}</div>
+      </div>`;
+  });
+
+  postsDiv.innerHTML = html;
+}
+
+// トップに戻る
+function goHome() {
+  document.getElementById("topPage").classList.remove("hidden");
+  document.getElementById("resultPage").classList.remove("active");
+  document.getElementById("threadDetail").classList.remove("active");
+  document.getElementById("topInput").value = "";
+  document.getElementById("topInput").focus();
+}
+
+// 結果ページに戻る
+function goBack() {
+  document.getElementById("threadDetail").classList.remove("active");
+  document.getElementById("resultPage").classList.add("active");
+}
+
+// ハイライト
+function highlightQuery(text, q) {
+  if (!q) return text;
+  const words = q.split(/\s+/).filter(Boolean);
+  words.forEach(w => {
+    const re = new RegExp(`(${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
+    text = text.replace(re, "<em>$1</em>");
+  });
+  return text;
+}
+
+// HTMLエスケープ
+function escapeHtml(s) {
+  if (!s) return "";
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// Enterキー
+document.getElementById("topInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") doSearch();
+});
+document.getElementById("resultInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") doSearch(e.target.value.trim());
+});
+document.getElementById("detailInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") doSearch(e.target.value.trim());
+});
+
+// タブ切り替え
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    searchMode = tab.dataset.mode;
+    const q = document.getElementById("resultInput").value.trim();
+    if (q) doSearch(q);
+  });
+});
+</script>
+</body>
+</html>
