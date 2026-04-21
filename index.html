@@ -142,6 +142,25 @@ box-shadow:0 4px 16px rgba(0,0,0,.18); font-size:13px; pointer-events:none; disp
 /* ===== 範囲展開 ===== */
 .range-posts { border-left:3px solid #e8f0fe; padding-left:10px; margin:4px 0; }
 
+/* ===== 安価数バッジ ===== */
+.post-footer { margin-top:5px; display:flex; gap:8px; flex-wrap:wrap; }
+.ares-btn {
+display:inline-flex; align-items:center; gap:3px;
+background:none; border:1px solid #dadce0; border-radius:12px;
+padding:2px 8px; font-size:12px; color:#5f6368; cursor:pointer;
+font-family:inherit; transition:background .12s, border-color .12s;
+line-height:1.4;
+}
+.ares-btn:hover { background:#f1f3f4; border-color:#bbb; }
+.ares-btn.open { background:#e8f0fe; border-color:#1a73e8; color:#1a73e8; }
+.ares-count { font-weight:600; }
+.ares-list {
+margin-top:6px; border-left:3px solid #fbbc05;
+padding-left:10px; display:none;
+}
+.ares-list.open { display:block; }
+.ares-list-loading { font-size:12px; color:#70757a; padding:4px 0; }
+
 /* ===== ローディング ===== */
 .loading { text-align:center; padding:40px; color:#70757a; font-size:14px; }
 .spinner { display:inline-block; width:18px; height:18px; border:2px solid #e0e0e0; border-radius:50%; border-top-color:#1a73e8; animation:spin .8s linear infinite; margin-left:8px; vertical-align:middle; }
@@ -299,7 +318,7 @@ async function fetchAllPosts(threadId) {
   const id = Number(threadId);
   if (postsCache.has(id)) return postsCache.get(id);
   const ps = await sbFetch(
-    `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&thread_id=eq.${id}&order=post_num.asc&limit=2000`
+    `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&thread_id=eq.${id}&order=post_num.asc&limit=2000`
   );
   postsCache.set(id, ps);
   return ps;
@@ -393,15 +412,15 @@ async function searchBody(q, mode) {
   const ws = words(q);
   const idm = q.match(/^id:\s*(.+)/i);
   if (idm) {
-    const ps = await sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=500&user_id=ilike.${enc(idm[1].trim())}&order=posted_at.desc`);
+    const ps = await sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=500&user_id=ilike.${enc(idm[1].trim())}&order=posted_at.desc`);
     return groupPosts(ps);
   }
   let all = [];
   if (mode === "or" && ws.length > 1) {
     const fetches = ws.flatMap(w => [
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&body=ilike.${enc(w)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&name=ilike.${enc(w)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&user_id=ilike.${enc(w)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&body=ilike.${enc(w)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&name=ilike.${enc(w)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&user_id=ilike.${enc(w)}&order=posted_at.desc`),
     ]);
     const map = new Map();
     (await Promise.all(fetches)).flat().forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
@@ -409,9 +428,9 @@ async function searchBody(q, mode) {
   } else {
     const w0 = ws[0];
     const [bp,np,ip] = await Promise.all([
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&body=ilike.${enc(w0)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&name=ilike.${enc(w0)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&user_id=ilike.${enc(w0)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&body=ilike.${enc(w0)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&name=ilike.${enc(w0)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&user_id=ilike.${enc(w0)}&order=posted_at.desc`),
     ]);
     const map = new Map();
     [...bp,...np,...ip].forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
@@ -642,6 +661,69 @@ function mkPost(post, tid, q, showRange) {
   const body=document.createElement("div"); body.className="post-content";
   renderBody(body, post.body||"", tid, q);
   div.appendChild(body);
+
+  /* 安価数フッター: anchor_count > 0 の場合のみ表示 */
+  const acount = post.anchor_count || 0;
+  if (acount > 0) {
+    const footer = document.createElement("div"); footer.className="post-footer";
+    const aresBtn = document.createElement("button"); aresBtn.className="ares-btn";
+    aresBtn.title = "このレスへの安価一覧";
+    // 💬 + 件数
+    const emoji = document.createTextNode("💬 ");
+    const countSpan = document.createElement("span"); countSpan.className="ares-count";
+    setText(countSpan, String(acount));
+    aresBtn.appendChild(emoji); aresBtn.appendChild(countSpan);
+    footer.appendChild(aresBtn);
+    div.appendChild(footer);
+
+    // 安価先リスト（折りたたみ）
+    const aresList = document.createElement("div"); aresList.className="ares-list";
+    div.appendChild(aresList);
+
+    aresBtn.addEventListener("click", async e => {
+      e.stopPropagation();
+      const isOpen = aresList.classList.contains("open");
+      if (isOpen) {
+        aresList.classList.remove("open");
+        aresBtn.classList.remove("open");
+        return;
+      }
+      // 初回ロード
+      if (!aresList.dataset.loaded) {
+        aresList.classList.add("open");
+        aresBtn.classList.add("open");
+        const ld = document.createElement("div"); ld.className="ares-list-loading";
+        ld.textContent="読み込み中…"; aresList.appendChild(ld);
+        try {
+          // body に >>post_num を含むレスを検索
+          const pattern = enc(">>"+post.post_num);
+          const rps = await sbFetch(
+            `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&thread_id=eq.${tid}&body=ilike.${pattern}&order=post_num.asc&limit=100`
+          );
+          aresList.innerHTML="";
+          if (!rps.length) {
+            const none=document.createElement("div"); none.className="ares-list-loading";
+            setText(none,"安価レスが見つかりませんでした"); aresList.appendChild(none);
+          } else {
+            rps.forEach(rp => {
+              const el = mkPost(rp, tid, q, false);
+              aresList.appendChild(el);
+            });
+            bindAnchors(aresList);
+          }
+          aresList.dataset.loaded="1";
+        } catch(err) {
+          aresList.innerHTML="";
+          const er=document.createElement("div"); er.className="ares-list-loading"; er.style.color="#c0392b";
+          setText(er,"読み込みエラー: "+err.message); aresList.appendChild(er);
+        }
+      } else {
+        aresList.classList.add("open");
+        aresBtn.classList.add("open");
+      }
+    });
+  }
+
   return div;
 }
 
@@ -850,7 +932,7 @@ async function rangeLoad(btn, dir, tid, q, postEl) {
 
   try {
     const ps = await sbFetch(
-      `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi` +
+      `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count` +
       `&thread_id=eq.${tid}&post_num=gte.${start}&post_num=lte.${end}&order=post_num.asc`
     );
 
