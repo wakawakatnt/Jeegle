@@ -310,7 +310,11 @@ async function sbFetch(path) {
   const r = await fetch(SB_URL + "/rest/v1/" + path, {
     headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
   });
-  if (!r.ok) throw new Error("HTTP " + r.status);
+  if (!r.ok) {
+    let detail = "";
+    try { const j = await r.json(); detail = j.message || j.hint || JSON.stringify(j); } catch(e) {}
+    throw new Error("HTTP " + r.status + (detail ? ": " + detail : ""));
+  }
   return r.json();
 }
 
@@ -318,7 +322,7 @@ async function fetchAllPosts(threadId) {
   const id = Number(threadId);
   if (postsCache.has(id)) return postsCache.get(id);
   const ps = await sbFetch(
-    `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&thread_id=eq.${id}&order=post_num.asc&limit=2000`
+    `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&thread_id=eq.${id}&order=post_num.asc&limit=2000`
   );
   postsCache.set(id, ps);
   return ps;
@@ -412,15 +416,15 @@ async function searchBody(q, mode) {
   const ws = words(q);
   const idm = q.match(/^id:\s*(.+)/i);
   if (idm) {
-    const ps = await sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=500&user_id=ilike.${enc(idm[1].trim())}&order=posted_at.desc`);
+    const ps = await sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=500&user_id=ilike.${enc(idm[1].trim())}&order=posted_at.desc`);
     return groupPosts(ps);
   }
   let all = [];
   if (mode === "or" && ws.length > 1) {
     const fetches = ws.flatMap(w => [
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&body=ilike.${enc(w)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&name=ilike.${enc(w)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&user_id=ilike.${enc(w)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&body=ilike.${enc(w)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&name=ilike.${enc(w)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&user_id=ilike.${enc(w)}&order=posted_at.desc`),
     ]);
     const map = new Map();
     (await Promise.all(fetches)).flat().forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
@@ -428,9 +432,9 @@ async function searchBody(q, mode) {
   } else {
     const w0 = ws[0];
     const [bp,np,ip] = await Promise.all([
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&body=ilike.${enc(w0)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&name=ilike.${enc(w0)}&order=posted_at.desc`),
-      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&limit=300&user_id=ilike.${enc(w0)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&body=ilike.${enc(w0)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&name=ilike.${enc(w0)}&order=posted_at.desc`),
+      sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&user_id=ilike.${enc(w0)}&order=posted_at.desc`),
     ]);
     const map = new Map();
     [...bp,...np,...ip].forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
@@ -662,21 +666,40 @@ function mkPost(post, tid, q, showRange) {
   renderBody(body, post.body||"", tid, q);
   div.appendChild(body);
 
-  /* ===== 安価数フッター: anchor_count を直接使用 ===== */
-  const acount2 = Number(post.anchor_count) || 0;
-  if (acount2 > 0) {
+  /* ===== 安価数フッター =====
+     anchor_count カラムに依存せず、count=exact で >>N を含む件数を非同期取得。
+  ===== */
+  {
     const footer2  = document.createElement("div"); footer2.className="post-footer";
     const aresBtn2 = document.createElement("button"); aresBtn2.className="ares-btn";
     aresBtn2.title = "このレスへの安価一覧";
     aresBtn2.appendChild(document.createTextNode("💬 "));
     const countSpan2 = document.createElement("span"); countSpan2.className="ares-count";
-    setText(countSpan2, String(acount2));
+    setText(countSpan2, "…");
     aresBtn2.appendChild(countSpan2);
+    footer2.style.display = "none";
     footer2.appendChild(aresBtn2);
     div.appendChild(footer2);
-
     const aresList2 = document.createElement("div"); aresList2.className="ares-list";
     div.appendChild(aresList2);
+
+    // 件数だけ非同期取得（Prefer: count=exact, Range: 0-0）
+    (async () => {
+      try {
+        const pat2 = encodeURIComponent("%>>" + post.post_num + "%");
+        const r2 = await fetch(
+          SB_URL + "/rest/v1/posts?thread_id=eq." + tid + "&body=ilike." + pat2 + "&select=post_num",
+          { headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY,
+                       "Prefer": "count=exact", "Range": "0-0" } }
+        );
+        const cr = r2.headers.get("content-range") || "";
+        const m  = cr.match(/\/([0-9]+)$/);
+        const cnt = m ? parseInt(m[1], 10) : 0;
+        if (cnt <= 0) return;
+        setText(countSpan2, String(cnt));
+        footer2.style.display = "";
+      } catch(e) { /* 無視 */ }
+    })();
 
     aresBtn2.addEventListener("click", async e => {
       e.stopPropagation();
@@ -685,31 +708,31 @@ function mkPost(post, tid, q, showRange) {
       }
       aresList2.classList.add("open"); aresBtn2.classList.add("open");
       if (aresList2.dataset.loaded) return;
-      const ld2=document.createElement("div"); ld2.className="ares-list-loading";
-      setText(ld2,"読み込み中…"); aresList2.appendChild(ld2);
+      const ld2 = document.createElement("div"); ld2.className = "ares-list-loading";
+      setText(ld2, "読み込み中…"); aresList2.appendChild(ld2);
       try {
-        const pat3 = encodeURIComponent("%>>"+post.post_num+"%");
+        const pat3 = encodeURIComponent("%>>" + post.post_num + "%");
         const rps2 = await sbFetch(
-          "posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count"+
-          "&thread_id=eq."+tid+"&body=ilike."+pat3+"&order=post_num.asc&limit=100"
+          "posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi" +
+          "&thread_id=eq." + tid + "&body=ilike." + pat3 + "&order=post_num.asc&limit=100"
         );
-        aresList2.innerHTML="";
+        aresList2.innerHTML = "";
         if (!rps2.length) {
-          const none2=document.createElement("div"); none2.className="ares-list-loading";
-          setText(none2,"安価レスが見つかりませんでした"); aresList2.appendChild(none2);
+          const none2 = document.createElement("div"); none2.className = "ares-list-loading";
+          setText(none2, "安価レスが見つかりませんでした"); aresList2.appendChild(none2);
         } else {
           rps2.forEach(rp2 => aresList2.appendChild(mkPost(rp2, tid, q, false)));
           bindAnchors(aresList2);
         }
-        aresList2.dataset.loaded="1";
+        aresList2.dataset.loaded = "1";
       } catch(err2) {
-        aresList2.innerHTML="";
-        const er2=document.createElement("div"); er2.className="ares-list-loading"; er2.style.color="#c0392b";
-        setText(er2,"読み込みエラー: "+err2.message); aresList2.appendChild(er2);
+        aresList2.innerHTML = "";
+        const er2 = document.createElement("div"); er2.className = "ares-list-loading";
+        er2.style.color = "#c0392b";
+        setText(er2, "読み込みエラー: " + err2.message); aresList2.appendChild(er2);
       }
     });
   }
-
   return div;
 }
 
@@ -918,7 +941,7 @@ async function rangeLoad(btn, dir, tid, q, postEl) {
 
   try {
     const ps = await sbFetch(
-      `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count` +
+      `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi` +
       `&thread_id=eq.${tid}&post_num=gte.${start}&post_num=lte.${end}&order=post_num.asc`
     );
 
