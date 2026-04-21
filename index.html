@@ -693,12 +693,16 @@ function mkPost(post, tid, q, showRange) {
     // 件数だけ非同期取得（Prefer: count=exact, Range: 0-0）
     (async () => {
       try {
-        const pat2 = encodeURIComponent("%>>" + post.post_num + "%");
-        const r2 = await fetch(
-          SB_URL + "/rest/v1/posts?thread_id=eq." + tid + "&body=ilike." + pat2 + "&select=post_num",
-          { headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY,
-                       "Prefer": "count=exact", "Range": "0-0" } }
-        );
+        const r2 = await fetch(SB_URL + "/rest/v1/rpc/count_ares", {
+  method: "POST",
+  headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+  body: JSON.stringify({ tid: Number(tid), pnum: post.post_num })
+});
+const cnt = await r2.json();
+if (cnt <= 0) return;
+setText(countSpan2, String(cnt));
+footer2.style.display = "";
+
         const cr = r2.headers.get("content-range") || "";
         const m  = cr.match(/\/([0-9]+)$/);
         const cnt = m ? parseInt(m[1], 10) : 0;
@@ -718,11 +722,12 @@ function mkPost(post, tid, q, showRange) {
       const ld2 = document.createElement("div"); ld2.className = "ares-list-loading";
       setText(ld2, "読み込み中…"); aresList2.appendChild(ld2);
       try {
-        const pat3 = encodeURIComponent("%>>" + post.post_num + "%");
-        const rps2 = await sbFetch(
-          "posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi" +
-          "&thread_id=eq." + tid + "&body=ilike." + pat3 + "&order=post_num.asc&limit=100"
-        );
+        const rps2 = await fetch(SB_URL + "/rest/v1/rpc/get_ares_posts", {
+  method: "POST",
+  headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+  body: JSON.stringify({ tid: Number(tid), pnum: post.post_num })
+}).then(r => r.json());
+
         aresList2.innerHTML = "";
         if (!rps2.length) {
           const none2 = document.createElement("div"); none2.className = "ares-list-loading";
