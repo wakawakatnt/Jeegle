@@ -662,64 +662,50 @@ function mkPost(post, tid, q, showRange) {
   renderBody(body, post.body||"", tid, q);
   div.appendChild(body);
 
-  /* 安価数フッター: anchor_count > 0 の場合のみ表示 */
-  const acount = post.anchor_count || 0;
-  if (acount > 0) {
-    const footer = document.createElement("div"); footer.className="post-footer";
-    const aresBtn = document.createElement("button"); aresBtn.className="ares-btn";
-    aresBtn.title = "このレスへの安価一覧";
-    // 💬 + 件数
-    const emoji = document.createTextNode("💬 ");
-    const countSpan = document.createElement("span"); countSpan.className="ares-count";
-    setText(countSpan, String(acount));
-    aresBtn.appendChild(emoji); aresBtn.appendChild(countSpan);
-    footer.appendChild(aresBtn);
-    div.appendChild(footer);
+  /* ===== 安価数フッター: anchor_count を直接使用 ===== */
+  const acount2 = Number(post.anchor_count) || 0;
+  if (acount2 > 0) {
+    const footer2  = document.createElement("div"); footer2.className="post-footer";
+    const aresBtn2 = document.createElement("button"); aresBtn2.className="ares-btn";
+    aresBtn2.title = "このレスへの安価一覧";
+    aresBtn2.appendChild(document.createTextNode("💬 "));
+    const countSpan2 = document.createElement("span"); countSpan2.className="ares-count";
+    setText(countSpan2, String(acount2));
+    aresBtn2.appendChild(countSpan2);
+    footer2.appendChild(aresBtn2);
+    div.appendChild(footer2);
 
-    // 安価先リスト（折りたたみ）
-    const aresList = document.createElement("div"); aresList.className="ares-list";
-    div.appendChild(aresList);
+    const aresList2 = document.createElement("div"); aresList2.className="ares-list";
+    div.appendChild(aresList2);
 
-    aresBtn.addEventListener("click", async e => {
+    aresBtn2.addEventListener("click", async e => {
       e.stopPropagation();
-      const isOpen = aresList.classList.contains("open");
-      if (isOpen) {
-        aresList.classList.remove("open");
-        aresBtn.classList.remove("open");
-        return;
+      if (aresList2.classList.contains("open")) {
+        aresList2.classList.remove("open"); aresBtn2.classList.remove("open"); return;
       }
-      // 初回ロード
-      if (!aresList.dataset.loaded) {
-        aresList.classList.add("open");
-        aresBtn.classList.add("open");
-        const ld = document.createElement("div"); ld.className="ares-list-loading";
-        ld.textContent="読み込み中…"; aresList.appendChild(ld);
-        try {
-          // body に >>post_num を含むレスを検索
-          const pattern = enc(">>"+post.post_num);
-          const rps = await sbFetch(
-            `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count&thread_id=eq.${tid}&body=ilike.${pattern}&order=post_num.asc&limit=100`
-          );
-          aresList.innerHTML="";
-          if (!rps.length) {
-            const none=document.createElement("div"); none.className="ares-list-loading";
-            setText(none,"安価レスが見つかりませんでした"); aresList.appendChild(none);
-          } else {
-            rps.forEach(rp => {
-              const el = mkPost(rp, tid, q, false);
-              aresList.appendChild(el);
-            });
-            bindAnchors(aresList);
-          }
-          aresList.dataset.loaded="1";
-        } catch(err) {
-          aresList.innerHTML="";
-          const er=document.createElement("div"); er.className="ares-list-loading"; er.style.color="#c0392b";
-          setText(er,"読み込みエラー: "+err.message); aresList.appendChild(er);
+      aresList2.classList.add("open"); aresBtn2.classList.add("open");
+      if (aresList2.dataset.loaded) return;
+      const ld2=document.createElement("div"); ld2.className="ares-list-loading";
+      setText(ld2,"読み込み中…"); aresList2.appendChild(ld2);
+      try {
+        const pat3 = encodeURIComponent("%>>"+post.post_num+"%");
+        const rps2 = await sbFetch(
+          "posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi,anchor_count"+
+          "&thread_id=eq."+tid+"&body=ilike."+pat3+"&order=post_num.asc&limit=100"
+        );
+        aresList2.innerHTML="";
+        if (!rps2.length) {
+          const none2=document.createElement("div"); none2.className="ares-list-loading";
+          setText(none2,"安価レスが見つかりませんでした"); aresList2.appendChild(none2);
+        } else {
+          rps2.forEach(rp2 => aresList2.appendChild(mkPost(rp2, tid, q, false)));
+          bindAnchors(aresList2);
         }
-      } else {
-        aresList.classList.add("open");
-        aresBtn.classList.add("open");
+        aresList2.dataset.loaded="1";
+      } catch(err2) {
+        aresList2.innerHTML="";
+        const er2=document.createElement("div"); er2.className="ares-list-loading"; er2.style.color="#c0392b";
+        setText(er2,"読み込みエラー: "+err2.message); aresList2.appendChild(er2);
       }
     });
   }
