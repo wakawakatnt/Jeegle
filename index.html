@@ -703,12 +703,7 @@ if (cnt <= 0) return;
 setText(countSpan2, String(cnt));
 footer2.style.display = "";
 
-        const cr = r2.headers.get("content-range") || "";
-        const m  = cr.match(/\/([0-9]+)$/);
-        const cnt = m ? parseInt(m[1], 10) : 0;
-        if (cnt <= 0) return;
-        setText(countSpan2, String(cnt));
-        footer2.style.display = "";
+        
       } catch(e) { /* 無視 */ }
     })();
 
