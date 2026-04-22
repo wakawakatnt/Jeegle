@@ -126,8 +126,7 @@ function getDateRange() {
  */
 function applyDateParam(dParam) {
   if (!dParam) {
-    // dパラメータなし → デフォルト7日
-    const el = document.querySelector('input[name="dateRange"][value="7days"]');
+    const el = document.querySelector('input[name="dateRange"][value="today"]');
     if (el) el.checked = true;
     document.getElementById("dateCustomGroup").style.display = "none";
     return;
@@ -137,12 +136,11 @@ function applyDateParam(dParam) {
   const fromD = fromYMD(parts[0]);
   const toD   = parts.length >= 2 ? fromYMD(parts[1]) : fromD;
   if (!fromD || !toD) {
-    document.querySelector('input[name="dateRange"][value="7days"]').checked = true;
+    document.querySelector('input[name="dateRange"][value="today"]').checked = true;
     document.getElementById("dateCustomGroup").style.display = "none";
     return;
   }
 
-  // プリセットに一致するか確認
   const matched = matchPreset(fromD, toD);
   if (matched) {
     const el = document.querySelector(`input[name="dateRange"][value="${matched}"]`);
@@ -889,25 +887,23 @@ function loadUrl() {
   const p = new URLSearchParams(window.location.search);
 
   let q, typeVal, modeVal, dateVal;
-  let needsRedirect = false;
 
-  // 旧URLの検出
   if (p.has("search")) {
-    // 旧形式 → 新形式に変換
     q        = p.get("search") || "";
     typeVal  = LEGACY_TYPE[p.get("type")] || "all";
     modeVal  = LEGACY_MODE[p.get("mode")] || "default";
-    dateVal  = null; // 旧URLには日付なし → 7日デフォルト
-    needsRedirect = true;
+
+    const r7 = presetToRange("7days");
+    const fromYmd = toYMD(r7.from);
+    const toYmd   = toYMD(new Date(r7.to.getTime() - 86400000));
+    dateVal = fromYmd + "-" + toYmd;
   } else {
-    // 新形式
     q        = p.get("s") || "";
     typeVal  = URL_TO_TYPE[p.get("t")] || "all";
     modeVal  = URL_TO_MODE[p.get("m")] || "default";
     dateVal  = p.get("d") || null;
   }
 
-  // UIに反映
   const te = document.querySelector(`input[name="searchType"][value="${typeVal}"]`);
   const me = document.querySelector(`input[name="searchMode"][value="${modeVal}"]`);
   if (te) te.checked = true;
@@ -917,15 +913,10 @@ function loadUrl() {
 
   if (q) {
     document.getElementById("topInput").value = q;
-
-    if (needsRedirect) {
-      // URLを新形式に書き換えてから検索
-      // (doSearch内でpushUrlが呼ばれるので自動的に新URL形式になる)
-    }
-
     doSearch(q);
   }
 }
+
 
 /* ================================================================
    ナビゲーション
