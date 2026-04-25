@@ -153,7 +153,8 @@ background: #f8f9fa; border-radius: 4px; border-left: 3px solid #fbbc05;
   </div>
 
   <div class="ranking-body">
-    
+
+```
 <!-- 検索バー -->
 <div class="rk-search-wrap">
   <div class="rk-search-box">
@@ -190,6 +191,7 @@ background: #f8f9fa; border-radius: 4px; border-left: 3px solid #fbbc05;
   ランキングは 2026/04/25 のお昼以降のデータを表示。(検索は21日から収集)<br>
   ※ IDをタップすると該当IDのレスを検索。
 </div>
+```
 
   </div>
 </div>
@@ -493,9 +495,13 @@ function loadFromHash() {
 }
 
 /* ===== 初期化 ===== */
-loadFromHash();
-updateDateDisplay();
-loadRanking(currentDate);
+if (!location.hash || !loadFromHash()) {
+  /* ハッシュなし or 不正 → 今日の日付・レスタブでリダイレクト */
+  location.replace(location.pathname + location.search + "#r=" + toYMD6(currentDate));
+} else {
+  updateDateDisplay();
+  loadRanking(currentDate);
+}
 </script>
 
 </body>
