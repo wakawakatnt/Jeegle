@@ -7,32 +7,15 @@
 <title>ID書き込みランキング - Jeegle!</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-/* ===== ランキングページ専用スタイル ===== */
-.ranking-page {
-  min-height: 100vh;
-  background: #fff;
-}
-
+.ranking-page { min-height: 100vh; background: #fff; }
 .ranking-header {
-display: flex;
-align-items: center;
-padding: 12px 20px;
-border-bottom: 1px solid #ebebeb;
-position: sticky;
-top: 0;
-background: #fff;
-z-index: 100;
-gap: 16px;
+  display: flex; align-items: center; padding: 12px 20px;
+  border-bottom: 1px solid #ebebeb; position: sticky; top: 0;
+  background: #fff; z-index: 100; gap: 16px;
 }
-
 .ranking-logo {
-font-size: 28px;
-font-weight: bold;
-cursor: pointer;
-white-space: nowrap;
-font-family: Arial, sans-serif;
-flex-shrink: 0;
-text-decoration: none;
+  font-size: 28px; font-weight: bold; cursor: pointer;
+  white-space: nowrap; font-family: Arial, sans-serif; flex-shrink: 0; text-decoration: none;
 }
 .ranking-logo span:nth-child(1){color:#4285F4}
 .ranking-logo span:nth-child(2){color:#EA4335}
@@ -41,244 +24,84 @@ text-decoration: none;
 .ranking-logo span:nth-child(5){color:#34A853}
 .ranking-logo span:nth-child(6){color:#EA4335}
 .ranking-logo span:nth-child(7){color:#FBBC05}
-
-.ranking-header-title {
-font-size: 18px;
-font-weight: 700;
-color: #202124;
-flex: 1;
-}
-
-.ranking-body {
-max-width: 760px;
-margin: 0 auto;
-padding: 20px 16px 60px;
-}
-
-/* 日付選択エリア */
-.date-selector {
-display: flex;
-align-items: center;
-gap: 10px;
-margin-bottom: 20px;
-flex-wrap: wrap;
-}
-
-.date-label {
-font-size: 14px;
-color: #5f6368;
-font-weight: 600;
-}
-
+.ranking-header-title { font-size: 18px; font-weight: 700; color: #202124; flex: 1; }
+.ranking-body { max-width: 760px; margin: 0 auto; padding: 20px 16px 60px; }
+.date-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.date-label { font-size: 14px; color: #5f6368; font-weight: 600; }
 .date-nav-btn {
-background: #f1f3f4;
-border: 1px solid #dadce0;
-border-radius: 50%;
-width: 32px;
-height: 32px;
-cursor: pointer;
-font-size: 16px;
-display: flex;
-align-items: center;
-justify-content: center;
-transition: background 0.12s;
-flex-shrink: 0;
+  background: #f1f3f4; border: 1px solid #dadce0; border-radius: 50%;
+  width: 32px; height: 32px; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s; flex-shrink: 0;
 }
 .date-nav-btn:hover { background: #e8eaed; }
 .date-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.date-display {
-font-size: 16px;
-font-weight: 700;
-color: #202124;
-min-width: 130px;
-text-align: center;
-}
-
+.date-display { font-size: 16px; font-weight: 700; color: #202124; min-width: 130px; text-align: center; }
 .date-input-btn {
-background: none;
-border: 1px solid #dadce0;
-border-radius: 16px;
-padding: 4px 12px;
-font-size: 13px;
-color: #5f6368;
-cursor: pointer;
-font-family: inherit;
+  background: none; border: 1px solid #dadce0; border-radius: 16px;
+  padding: 4px 12px; font-size: 13px; color: #5f6368; cursor: pointer; font-family: inherit;
 }
 .date-input-btn:hover { background: #f1f3f4; }
-
-/* カレンダーピッカー */
-.date-picker-wrap {
-display: none;
-align-items: center;
-gap: 6px;
-}
+.date-picker-wrap { display: none; align-items: center; gap: 6px; }
 .date-picker-wrap.visible { display: flex; }
-.date-picker-wrap input[type=“date”] {
-border: 1px solid #dadce0;
-border-radius: 4px;
-padding: 4px 8px;
-font-size: 13px;
-font-family: inherit;
-color: #3c4043;
+.date-picker-wrap input[type="date"] {
+  border: 1px solid #dadce0; border-radius: 4px; padding: 4px 8px;
+  font-size: 13px; font-family: inherit; color: #3c4043;
 }
-.date-picker-wrap input[type=“date”]:focus {
-border-color: #1a73e8;
-outline: none;
-}
-
-/* ランキングタイトル */
+.date-picker-wrap input[type="date"]:focus { border-color: #1a73e8; outline: none; }
 .ranking-title-bar {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 12px;
-flex-wrap: wrap;
-gap: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
 }
-
-.ranking-title {
-font-size: 15px;
-font-weight: 700;
-color: #202124;
-}
-
-.ranking-stats {
-font-size: 13px;
-color: #70757a;
-}
-
-/* テーブル */
+.ranking-title { font-size: 15px; font-weight: 700; color: #202124; }
+.ranking-stats { font-size: 13px; color: #70757a; }
 .ranking-table {
-width: 100%;
-border-collapse: collapse;
-background: #fff;
-border: 1px solid #dadce0;
-border-radius: 8px;
-overflow: hidden;
+  width: 100%; border-collapse: collapse; background: #fff;
+  border: 1px solid #dadce0; border-radius: 8px; overflow: hidden;
 }
-
 .ranking-table th {
-background: #f8f9fa;
-padding: 10px 14px;
-text-align: left;
-font-size: 12px;
-font-weight: 700;
-color: #5f6368;
-border-bottom: 1px solid #ebebeb;
+  background: #f8f9fa; padding: 10px 14px; text-align: left;
+  font-size: 12px; font-weight: 700; color: #5f6368; border-bottom: 1px solid #ebebeb;
 }
-
 .ranking-table th.col-rank { width: 52px; text-align: center; }
 .ranking-table th.col-count { width: 90px; text-align: right; }
-
-.ranking-table td {
-padding: 10px 14px;
-border-bottom: 1px solid #f1f3f4;
-font-size: 14px;
-vertical-align: middle;
-}
-
+.ranking-table td { padding: 10px 14px; border-bottom: 1px solid #f1f3f4; font-size: 14px; vertical-align: middle; }
 .ranking-table tr:last-child td { border-bottom: none; }
-
 .ranking-table tr:hover td { background: #f8f9fa; }
-
-/* 順位 */
-.rank-cell {
-text-align: center;
-font-weight: 700;
-font-size: 14px;
-}
-.rank-medal {
-font-size: 18px;
-}
-
-/* ID列 */
+.rank-cell { text-align: center; font-weight: 700; font-size: 14px; }
+.rank-medal { font-size: 18px; }
 .rank-id {
-font-family: ‘Courier New’, monospace;
-color: #1a73e8;
-cursor: pointer;
-font-weight: 600;
-transition: color 0.1s;
+  font-family: 'Courier New', monospace; color: #1a73e8;
+  cursor: pointer; font-weight: 600; transition: color 0.1s;
 }
 .rank-id:hover { color: #1557b0; text-decoration: underline; }
-
-/* 件数 */
-.count-cell {
-text-align: right;
-font-weight: 700;
-color: #202124;
-}
-
-/* バー */
+.count-cell { text-align: right; font-weight: 700; color: #202124; }
 .bar-cell { min-width: 120px; }
-.bar-bg {
-background: #f1f3f4;
-border-radius: 4px;
-height: 8px;
-overflow: hidden;
-}
+.bar-bg { background: #f1f3f4; border-radius: 4px; height: 8px; overflow: hidden; }
 .bar-fill {
-height: 100%;
-background: linear-gradient(90deg, #1a73e8, #34a853);
-border-radius: 4px;
-transition: width 0.5s ease;
+  height: 100%; background: linear-gradient(90deg, #1a73e8, #34a853);
+  border-radius: 4px; transition: width 0.5s ease;
 }
-
-/* ローディング / エラー */
-.rk-loading {
-text-align: center;
-padding: 48px;
-color: #70757a;
-font-size: 14px;
-}
+.rk-loading { text-align: center; padding: 48px; color: #70757a; font-size: 14px; }
 .rk-spinner {
-display: inline-block;
-width: 20px;
-height: 20px;
-border: 2px solid #e0e0e0;
-border-radius: 50%;
-border-top-color: #1a73e8;
-animation: spin 0.8s linear infinite;
-margin-left: 8px;
-vertical-align: middle;
+  display: inline-block; width: 20px; height: 20px;
+  border: 2px solid #e0e0e0; border-radius: 50%; border-top-color: #1a73e8;
+  animation: spin 0.8s linear infinite; margin-left: 8px; vertical-align: middle;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-.rk-empty {
-text-align: center;
-padding: 48px;
-color: #70757a;
-font-size: 14px;
-}
-
-.rk-error {
-color: #c0392b;
-padding: 24px;
-font-size: 14px;
-text-align: center;
-}
-
-/* 注意書き */
+.rk-empty { text-align: center; padding: 48px; color: #70757a; font-size: 14px; }
+.rk-error { color: #c0392b; padding: 24px; font-size: 14px; text-align: center; }
 .rk-note {
-font-size: 12px;
-color: #70757a;
-margin-top: 12px;
-padding: 8px 12px;
-background: #f8f9fa;
-border-radius: 4px;
-border-left: 3px solid #fbbc05;
+  font-size: 12px; color: #70757a; margin-top: 12px; padding: 8px 12px;
+  background: #f8f9fa; border-radius: 4px; border-left: 3px solid #fbbc05;
 }
-
 @media (max-width: 600px) {
-.ranking-header { padding: 8px 12px; gap: 8px; }
-.ranking-logo { font-size: 22px; }
-.ranking-body { padding: 12px 10px 60px; }
-.bar-cell { display: none; }
-.ranking-table th.col-bar,
-.ranking-table td.bar-cell { display: none; }
+  .ranking-header { padding: 8px 12px; gap: 8px; }
+  .ranking-logo { font-size: 22px; }
+  .ranking-body { padding: 12px 10px 60px; }
+  .ranking-table th.col-bar, .ranking-table td.bar-cell { display: none; }
 }
 </style>
-
 </head>
 <body>
 
@@ -287,24 +110,22 @@ border-left: 3px solid #fbbc05;
     <a class="ranking-logo" href="index.html">
       <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
     </a>
-    <div class="ranking-header-title">🏆 ID書き込み数ランキング</div>
+    <div class="ranking-header-title">&#x1F3C6; ID書き込み数ランキング</div>
   </div>
 
   <div class="ranking-body">
-    <!-- 日付選択 -->
     <div class="date-selector">
       <span class="date-label">日付:</span>
       <button class="date-nav-btn" id="prevDay" title="前日">&#8592;</button>
       <div class="date-display" id="dateDisplay">読み込み中…</div>
       <button class="date-nav-btn" id="nextDay" title="翌日">&#8594;</button>
-      <button class="date-input-btn" id="togglePicker">📅 日付指定</button>
+      <button class="date-input-btn" id="togglePicker">&#x1F4C5; 日付指定</button>
       <div class="date-picker-wrap" id="datePickerWrap">
         <input type="date" id="datePicker">
       </div>
     </div>
 
 ```
-<!-- ランキング本体 -->
 <div id="rankingContent">
   <div class="rk-loading">読み込み中… <span class="rk-spinner"></span></div>
 </div>
@@ -321,136 +142,37 @@ border-left: 3px solid #fbbc05;
 <script>
 "use strict";
 
-const SB_URL2 = "https://magmwtxzsbguzpoosjof.supabase.co";
-const SB_KEY2 = "sb_publishable_OyXecLIdNaCUJo2Mry2WOQ_wXt20zTm";
+var SB_URL2 = "https://magmwtxzsbguzpoosjof.supabase.co";
+var SB_KEY2 = "sb_publishable_OyXecLIdNaCUJo2Mry2WOQ_wXt20zTm";
 
-const EARLIEST = new Date(2026, 3, 25); // 2026-04-25
+var EARLIEST = new Date(2026, 3, 25);
 
-let currentDate = new Date();
-// 今日を初期値に（時刻リセット）
+var currentDate = new Date();
 currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-// EARLIESTより前なら EARLIEST に
 if (currentDate < EARLIEST) currentDate = new Date(EARLIEST);
 
 function toISO(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, "0");
+  var dd = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + dd;
 }
 
 function toJaDisplay(d) {
-  const y = d.getFullYear();
-  const m = d.getMonth() + 1;
-  const dd = d.getDate();
-  const dow = ["日","月","火","水","木","金","土"][d.getDay()];
-  return `${y}年${m}月${dd}日 (${dow})`;
-}
-
-function toInputVal(d) {
-  return toISO(d);
+  var y = d.getFullYear();
+  var m = d.getMonth() + 1;
+  var dd = d.getDate();
+  var dow = ["\u65e5","\u6708","\u706b","\u6c34","\u6728","\u91d1","\u571f"][d.getDay()];
+  return y + "\u5e74" + m + "\u6708" + dd + "\u65e5 (" + dow + ")";
 }
 
 function updateDateDisplay() {
   document.getElementById("dateDisplay").textContent = toJaDisplay(currentDate);
   document.getElementById("prevDay").disabled = currentDate <= EARLIEST;
-  const today = new Date();
-  const todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  var today = new Date();
+  var todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   document.getElementById("nextDay").disabled = currentDate >= todayD;
-  document.getElementById("datePicker").value = toInputVal(currentDate);
-}
-
-async function loadRanking(date) {
-  const content = document.getElementById("rankingContent");
-  content.innerHTML = '<div class="rk-loading">読み込み中… <span class="rk-spinner"></span></div>';
-  document.getElementById("rkNote").style.display = "none";
-
-  const dateStr = toISO(date);
-
-  try {
-    const res = await fetch(
-      `${SB_URL2}/rest/v1/id_rankings?select=rank,user_id,post_count&date=eq.${dateStr}&order=rank.asc&limit=100`,
-      { headers: { "apikey": SB_KEY2, "Authorization": "Bearer " + SB_KEY2 } }
-    );
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error("HTTP " + res.status + ": " + errText);
-    }
-
-    const rows = await res.json();
-
-    if (!rows.length) {
-      content.innerHTML = '<div class="rk-empty">この日のランキングデータはありません。</div>';
-      document.getElementById("rkNote").style.display = "";
-      return;
-    }
-
-    const maxCount = rows[0].post_count || 1;
-
-    let html = `
-      <div class="ranking-title-bar">
-        <div class="ranking-title">${toJaDisplay(date)} のランキング</div>
-        <div class="ranking-stats">全 ${rows.length} 件</div>
-      </div>
-      <table class="ranking-table">
-        <thead>
-          <tr>
-            <th class="col-rank">順位</th>
-            <th>ID</th>
-            <th class="col-count">書込数</th>
-            <th class="col-bar">割合</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    rows.forEach(row => {
-      const medal = row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : "";
-      const pct = Math.round((row.post_count / maxCount) * 100);
-      const safeId = escHtml(row.user_id || "");
-
-      html += `
-        <tr>
-          <td class="rank-cell">${medal ? `<span class="rank-medal">${medal}</span>` : row.rank}</td>
-          <td><span class="rank-id" data-userid="${safeId}" title="クリックで検索">${safeId}</span></td>
-          <td class="count-cell">${row.post_count}</td>
-          <td class="bar-cell">
-            <div class="bar-bg">
-              <div class="bar-fill" style="width:${pct}%"></div>
-            </div>
-          </td>
-        </tr>
-      `;
-    });
-
-    html += `</tbody></table>`;
-    content.innerHTML = html;
-    document.getElementById("rkNote").style.display = "";
-
-    // IDクリック → Jeegle検索
-    content.querySelectorAll(".rank-id").forEach(el => {
-      el.addEventListener("click", () => {
-        const uid = el.dataset.userid;
-        if (!uid) return;
-        // index.html に id: 検索で飛ぶ
-        const url = new URL("index.html", location.href);
-        url.searchParams.set("s", "id:" + uid);
-        url.searchParams.set("t", "h");
-        url.searchParams.set("m", "t");
-        // 当日のYYMMDD
-        const yy = String(date.getFullYear()).slice(2).padStart(2,"0");
-        const mm = String(date.getMonth()+1).padStart(2,"0");
-        const dd2= String(date.getDate()).padStart(2,"0");
-        url.searchParams.set("d", yy+mm+dd2);
-        location.href = url.toString();
-      });
-    });
-
-  } catch (e) {
-    content.innerHTML = `<div class="rk-error">読み込みエラー: ${escHtml(e.message)}</div>`;
-    document.getElementById("rkNote").style.display = "";
-  }
+  document.getElementById("datePicker").value = toISO(currentDate);
 }
 
 function escHtml(s) {
@@ -461,9 +183,80 @@ function escHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
-// 前日
-document.getElementById("prevDay").addEventListener("click", () => {
-  const d = new Date(currentDate);
+function loadRanking(date) {
+  var content = document.getElementById("rankingContent");
+  content.innerHTML = '<div class="rk-loading">\u8aad\u307f\u8fbc\u307f\u4e2d\u2026 <span class="rk-spinner"></span></div>';
+  document.getElementById("rkNote").style.display = "none";
+
+  var dateStr = toISO(date);
+
+  fetch(
+    SB_URL2 + "/rest/v1/id_rankings?select=rank,user_id,post_count&date=eq." + dateStr + "&order=rank.asc&limit=300",
+    { headers: { "apikey": SB_KEY2, "Authorization": "Bearer " + SB_KEY2 } }
+  ).then(function(res) {
+    if (!res.ok) {
+      return res.text().then(function(t) { throw new Error("HTTP " + res.status + ": " + t); });
+    }
+    return res.json();
+  }).then(function(rows) {
+    if (!rows.length) {
+      content.innerHTML = '<div class="rk-empty">\u3053\u306e\u65e5\u306e\u30e9\u30f3\u30ad\u30f3\u30b0\u30c7\u30fc\u30bf\u306f\u3042\u308a\u307e\u305b\u3093\u3002</div>';
+      document.getElementById("rkNote").style.display = "";
+      return;
+    }
+
+    var maxCount = rows[0].post_count || 1;
+
+    var html = '<div class="ranking-title-bar">'
+      + '<div class="ranking-title">' + toJaDisplay(date) + ' \u306e\u30e9\u30f3\u30ad\u30f3\u30b0</div>'
+      + '<div class="ranking-stats">\u5168 ' + rows.length + ' \u4ef6</div>'
+      + '</div>'
+      + '<table class="ranking-table"><thead><tr>'
+      + '<th class="col-rank">\u9806\u4f4d</th><th>ID</th><th class="col-count">\u66f8\u8fbc\u6570</th><th class="col-bar">\u5272\u5408</th>'
+      + '</tr></thead><tbody>';
+
+    rows.forEach(function(row) {
+      var medal = row.rank === 1 ? "\ud83e\udd47" : row.rank === 2 ? "\ud83e\udd48" : row.rank === 3 ? "\ud83e\udd49" : "";
+      var pct = Math.round((row.post_count / maxCount) * 100);
+      var safeId = escHtml(row.user_id || "");
+      var rankCell = medal ? '<span class="rank-medal">' + medal + '</span>' : String(row.rank);
+
+      html += '<tr>'
+        + '<td class="rank-cell">' + rankCell + '</td>'
+        + '<td><span class="rank-id" data-userid="' + safeId + '">' + safeId + '</span></td>'
+        + '<td class="count-cell">' + row.post_count + '</td>'
+        + '<td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%"></div></div></td>'
+        + '</tr>';
+    });
+
+    html += '</tbody></table>';
+    content.innerHTML = html;
+    document.getElementById("rkNote").style.display = "";
+
+    content.querySelectorAll(".rank-id").forEach(function(el) {
+      el.addEventListener("click", function() {
+        var uid = el.dataset.userid;
+        if (!uid) return;
+        var yy = String(date.getFullYear()).slice(2).padStart(2, "0");
+        var mm = String(date.getMonth() + 1).padStart(2, "0");
+        var dd2 = String(date.getDate()).padStart(2, "0");
+        var url = new URL("index.html", location.href);
+        url.searchParams.set("s", "id:" + uid);
+        url.searchParams.set("t", "h");
+        url.searchParams.set("m", "t");
+        url.searchParams.set("d", yy + mm + dd2);
+        location.href = url.toString();
+      });
+    });
+
+  }).catch(function(e) {
+    content.innerHTML = '<div class="rk-error">\u8aad\u307f\u8fbc\u307f\u30a8\u30e9\u30fc: ' + escHtml(e.message) + '</div>';
+    document.getElementById("rkNote").style.display = "";
+  });
+}
+
+document.getElementById("prevDay").addEventListener("click", function() {
+  var d = new Date(currentDate);
   d.setDate(d.getDate() - 1);
   if (d < EARLIEST) return;
   currentDate = d;
@@ -471,11 +264,10 @@ document.getElementById("prevDay").addEventListener("click", () => {
   loadRanking(currentDate);
 });
 
-// 翌日
-document.getElementById("nextDay").addEventListener("click", () => {
-  const today = new Date();
-  const todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const d = new Date(currentDate);
+document.getElementById("nextDay").addEventListener("click", function() {
+  var today = new Date();
+  var todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  var d = new Date(currentDate);
   d.setDate(d.getDate() + 1);
   if (d > todayD) return;
   currentDate = d;
@@ -483,35 +275,25 @@ document.getElementById("nextDay").addEventListener("click", () => {
   loadRanking(currentDate);
 });
 
-// 日付指定トグル
-document.getElementById("togglePicker").addEventListener("click", () => {
-  const wrap = document.getElementById("datePickerWrap");
-  wrap.classList.toggle("visible");
+document.getElementById("togglePicker").addEventListener("click", function() {
+  document.getElementById("datePickerWrap").classList.toggle("visible");
 });
 
-// カレンダー変更
-document.getElementById("datePicker").addEventListener("change", e => {
-  const v = e.target.value; // "YYYY-MM-DD"
+document.getElementById("datePicker").addEventListener("change", function(e) {
+  var v = e.target.value;
   if (!v) return;
-  const parts = v.split("-");
-  const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
-  if (d < EARLIEST) {
-    alert("2026年4月25日以前のデータはありません。");
-    return;
-  }
-  const today = new Date();
-  const todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  if (d > todayD) {
-    alert("未来の日付は選択できません。");
-    return;
-  }
+  var parts = v.split("-");
+  var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  if (d < EARLIEST) { alert("2026\u5e744\u670825\u65e5\u4ee5\u524d\u306e\u30c7\u30fc\u30bf\u306f\u3042\u308a\u307e\u305b\u3093\u3002"); return; }
+  var today = new Date();
+  var todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (d > todayD) { alert("\u672a\u6765\u306e\u65e5\u4ed8\u306f\u9078\u629e\u3067\u304d\u307e\u305b\u3093\u3002"); return; }
   currentDate = d;
   document.getElementById("datePickerWrap").classList.remove("visible");
   updateDateDisplay();
   loadRanking(currentDate);
 });
 
-// 初期化
 updateDateDisplay();
 loadRanking(currentDate);
 </script>
