@@ -24,7 +24,14 @@
 .ranking-logo span:nth-child(5){color:#34A853}
 .ranking-logo span:nth-child(6){color:#EA4335}
 .ranking-logo span:nth-child(7){color:#FBBC05}
-.ranking-header-title { font-size: 18px; font-weight: 700; color: #202124; flex: 1; }
+.ranking-header-title { font-size: 18px; font-weight: 700; color: #202124; white-space: nowrap; }
+.rk-search-box {
+  display: flex; align-items: center; flex: 1; max-width: 400px;
+  border: 1px solid #dfe1e5; border-radius: 24px; padding: 6px 14px; background: #fff;
+}
+.rk-search-box:focus-within { box-shadow: 0 1px 6px rgba(32,33,36,.28); border-color: transparent; }
+.rk-search-box svg { flex-shrink: 0; margin-right: 8px; color: #9aa0a6; }
+.rk-search-box input { flex: 1; border: none; outline: none; font-size: 15px; font-family: inherit; background: transparent; }
 .ranking-body { max-width: 760px; margin: 0 auto; padding: 20px 16px 60px; }
 .date-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 .date-label { font-size: 14px; color: #5f6368; font-weight: 600; }
@@ -125,13 +132,12 @@
       </div>
     </div>
 
-```
 <div id="rankingContent">
   <div class="rk-loading">読み込み中… <span class="rk-spinner"></span></div>
 </div>
 
 <div class="rk-note" id="rkNote" style="display:none;">
-  ※ ランキングは 2026/04/25 のお昼以降のデータを表示します。(検索は21日から収集)<br>
+  ※ ランキングは 2026/04/25 以降のデータを表示します。<br>
   ※ IDをタップすると該当IDのレスを検索します。
 </div>
 
