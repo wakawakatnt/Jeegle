@@ -120,6 +120,13 @@ animation: spin 0.8s linear infinite; margin-left: 8px; vertical-align: middle;
 @keyframes spin { to { transform: rotate(360deg); } }
 .rk-empty { text-align: center; padding: 48px; color: #70757a; font-size: 14px; }
 .rk-error { color: #c0392b; padding: 24px; font-size: 14px; text-align: center; }
+.rk-share-btn {
+background: none; border: 1px solid #dadce0; border-radius: 16px;
+padding: 4px 12px; font-size: 12px; color: #5f6368; cursor: pointer;
+font-family: inherit; white-space: nowrap;
+}
+.rk-share-btn:hover { background: #f1f3f4; }
+
 .rk-note {
 font-size: 12px; color: #70757a; margin-top: 12px; padding: 8px 12px;
 background: #f8f9fa; border-radius: 4px; border-left: 3px solid #fbbc05;
@@ -146,7 +153,7 @@ background: #f8f9fa; border-radius: 4px; border-left: 3px solid #fbbc05;
   </div>
 
   <div class="ranking-body">
-
+    
 <!-- 検索バー -->
 <div class="rk-search-wrap">
   <div class="rk-search-box">
@@ -180,8 +187,8 @@ background: #f8f9fa; border-radius: 4px; border-left: 3px solid #fbbc05;
 </div>
 
 <div class="rk-note" id="rkNote" style="display:none;">
-  &#x203B; &#x30E9;&#x30F3;&#x30AD;&#x30F3;&#x30B0;&#x306F; 2026/04/25 &#x4EE5;&#x964D;&#x306E;&#x30C7;&#x30FC;&#x30BF;&#x3092;&#x8868;&#x793A;&#x3002;<br>
-  &#x203B; ID&#x3092;&#x30BF;&#x30C3;&#x30D7;&#x3059;&#x308B;&#x3068;&#x5F53;&#x8A72;ID&#x306E;&#x30EC;&#x30B9;&#x3092;&#x691C;&#x7D22;&#x3002;
+  ランキングは 2026/04/25 のお昼以降のデータを表示。(検索は21日から収集)<br>
+  ※ IDをタップすると該当IDのレスを検索。
 </div>
 
   </div>
@@ -263,7 +270,10 @@ function buildTable(rows, date, countKey, countLabel) {
   txt(title, toJaDisplay(date) + " \u306e\u30e9\u30f3\u30ad\u30f3\u30b0");
   var stats = document.createElement("div"); stats.className = "ranking-stats";
   txt(stats, "\u5168 " + rows.length + " \u4ef6");
-  bar.appendChild(title); bar.appendChild(stats);
+  var shareBtn = document.createElement("button"); shareBtn.className = "rk-share-btn";
+  txt(shareBtn, "\ud83d\udd17 URL\u5171\u6709");
+  shareBtn.addEventListener("click", function() { shareRanking(date); });
+  bar.appendChild(title); bar.appendChild(stats); bar.appendChild(shareBtn);
 
   var table = document.createElement("table"); table.className = "ranking-table";
 
@@ -426,7 +436,64 @@ document.getElementById("rkSearchInput").addEventListener("keydown", function(e)
   goSearch(uid, currentDate);
 });
 
+/* ===== URL共有 (#r=YYMMDD / #s=YYMMDD) ===== */
+function toYMD6(d) {
+  var yy = String(d.getFullYear()).slice(2).padStart(2,"0");
+  var mm = String(d.getMonth()+1).padStart(2,"0");
+  var dd2= String(d.getDate()).padStart(2,"0");
+  return yy + mm + dd2;
+}
+
+function pushHash(date, tab) {
+  var prefix = (tab === "thread") ? "s" : "r";
+  location.hash = prefix + "=" + toYMD6(date);
+}
+
+function shareRanking(date) {
+  pushHash(date, currentTab);
+  var url = location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      var b = document.querySelector(".rk-share-btn");
+      if (!b) return;
+      var orig = b.textContent;
+      txt(b, "✅ コピー完了");
+      setTimeout(function() { txt(b, orig); }, 2000);
+    }).catch(function() { prompt("URLをコピーしてください:", url); });
+  } else {
+    prompt("URLをコピーしてください:", url);
+  }
+}
+
+function fromYMD6(s) {
+  if (!s || s.length !== 6) return null;
+  var yy = parseInt(s.slice(0,2), 10);
+  var mm = parseInt(s.slice(2,4), 10) - 1;
+  var dd2= parseInt(s.slice(4,6), 10);
+  return new Date(2000 + yy, mm, dd2);
+}
+
+function loadFromHash() {
+  var hash = location.hash.replace(/^#/, "");
+  if (!hash) return false;
+  var m = hash.match(/^([rs])=(\d{6})$/);
+  if (!m) return false;
+  var tab = (m[1] === "s") ? "thread" : "post";
+  var d = fromYMD6(m[2]);
+  if (!d || isNaN(d.getTime())) return false;
+  var today = new Date();
+  var todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (d < EARLIEST) d = new Date(EARLIEST);
+  if (d > todayD) d = todayD;
+  currentDate = d;
+  currentTab = tab;
+  document.getElementById("tabPost").classList.toggle("active", tab === "post");
+  document.getElementById("tabThread").classList.toggle("active", tab === "thread");
+  return true;
+}
+
 /* ===== 初期化 ===== */
+loadFromHash();
 updateDateDisplay();
 loadRanking(currentDate);
 </script>
