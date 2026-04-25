@@ -153,7 +153,7 @@ background: #f8f9fa; border-radius: 4px; border-left: 3px solid #fbbc05;
   </div>
 
   <div class="ranking-body">
-    
+
 <!-- 検索バー -->
 <div class="rk-search-wrap">
   <div class="rk-search-box">
@@ -384,6 +384,7 @@ document.getElementById("tabPost").addEventListener("click", function() {
   currentTab = "post";
   document.getElementById("tabPost").classList.add("active");
   document.getElementById("tabThread").classList.remove("active");
+  pushHash(currentDate, currentTab);
   loadRanking(currentDate);
 });
 document.getElementById("tabThread").addEventListener("click", function() {
@@ -391,6 +392,7 @@ document.getElementById("tabThread").addEventListener("click", function() {
   currentTab = "thread";
   document.getElementById("tabThread").classList.add("active");
   document.getElementById("tabPost").classList.remove("active");
+  pushHash(currentDate, currentTab);
   loadRanking(currentDate);
 });
 
@@ -398,14 +400,14 @@ document.getElementById("tabThread").addEventListener("click", function() {
 document.getElementById("prevDay").addEventListener("click", function() {
   var d = new Date(currentDate); d.setDate(d.getDate() - 1);
   if (d < EARLIEST) return;
-  currentDate = d; updateDateDisplay(); loadRanking(currentDate);
+  currentDate = d; updateDateDisplay(); pushHash(currentDate, currentTab); loadRanking(currentDate);
 });
 document.getElementById("nextDay").addEventListener("click", function() {
   var today = new Date();
   var todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   var d = new Date(currentDate); d.setDate(d.getDate() + 1);
   if (d > todayD) return;
-  currentDate = d; updateDateDisplay(); loadRanking(currentDate);
+  currentDate = d; updateDateDisplay(); pushHash(currentDate, currentTab); loadRanking(currentDate);
 });
 document.getElementById("togglePicker").addEventListener("click", function() {
   document.getElementById("datePickerWrap").classList.toggle("visible");
@@ -420,7 +422,7 @@ document.getElementById("datePicker").addEventListener("change", function(e) {
   if (d > todayD) { alert("\u672a\u6765\u306e\u65e5\u4ed8\u306f\u9078\u629e\u3067\u304d\u307e\u305b\u3093\u3002"); return; }
   currentDate = d;
   document.getElementById("datePickerWrap").classList.remove("visible");
-  updateDateDisplay(); loadRanking(currentDate);
+  updateDateDisplay(); pushHash(currentDate, currentTab); loadRanking(currentDate);
 });
 
 /* ===== 検索ボックス ===== */
@@ -446,7 +448,7 @@ function toYMD6(d) {
 
 function pushHash(date, tab) {
   var prefix = (tab === "thread") ? "s" : "r";
-  location.hash = prefix + "=" + toYMD6(date);
+  history.replaceState(null, "", location.pathname + location.search + "#" + prefix + "=" + toYMD6(date));
 }
 
 function shareRanking(date) {
