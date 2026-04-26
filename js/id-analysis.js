@@ -201,9 +201,9 @@ async function runAnalysis() {
     var dateBadge=idaCE("div","ida-date-badge"); idaSetText(dateBadge,dateDisp); topBar.appendChild(dateBadge);
     var cpId=idaCE("button","ida-copy-id-btn"); idaSetText(cpId,"📋 IDコピー");
     cpId.addEventListener("click",function(){
-      navigator.clipboard.writeText(params.userId).then(function(){
+      navigator.clipboard.writeText("ID:" + params.userId).then(function(){
         idaSetText(cpId,"✅ コピー完了"); setTimeout(function(){idaSetText(cpId,"📋 IDコピー");},1500);
-      }).catch(function(){prompt("IDをコピー:",params.userId);});
+      }).catch(function(){prompt("IDをコピー:","ID:" + params.userId);});
     });
     topBar.appendChild(cpId);
     body.appendChild(topBar);
@@ -228,12 +228,12 @@ async function runAnalysis() {
 
     /* 最初/最後/最長レス */
     var flSection=idaCE("div","ida-fl-section");
-    flSection.appendChild(idaMkHighlightPost("📍 最初のレス ("+idaFmtTime(firstPost.posted_at)+")", firstPost, threadInfoMap));
-    flSection.appendChild(idaMkHighlightPost("🏁 最後のレス ("+idaFmtTime(lastPost.posted_at)+")", lastPost, threadInfoMap));
+    flSection.appendChild(idaMkHighlightPost("📍 最初のレス ("+idaFmtTime(firstPost.posted_at)+")", firstPost, threadInfoMap, params.userId));
+    flSection.appendChild(idaMkHighlightPost("🏁 最後のレス ("+idaFmtTime(lastPost.posted_at)+")", lastPost, threadInfoMap, params.userId));
     var longestPost=posts[0];
     posts.forEach(function(p){if(idaCharCount(p.body)>idaCharCount(longestPost.body))longestPost=p;});
     if(longestPost!==firstPost&&longestPost!==lastPost){
-      flSection.appendChild(idaMkHighlightPost("📏 最長レス ("+idaCharCount(longestPost.body)+"字)", longestPost, threadInfoMap));
+      flSection.appendChild(idaMkHighlightPost("📏 最長レス ("+idaCharCount(longestPost.body)+"字)", longestPost, threadInfoMap, params.userId));
     }
     body.appendChild(flSection);
 
@@ -291,17 +291,17 @@ async function runAnalysis() {
     var threadInner=idaCE("div","ida-thread-list");
     var showCount=Math.min(threadList.length,10);
     for(var ti=0;ti<showCount;ti++){
-      threadInner.appendChild(idaMkThreadRow(threadList[ti],ti+1));
+      threadInner.appendChild(idaMkThreadRow(threadList[ti],ti+1,params.userId));
     }
     if(threadList.length>showCount){
       var moreBtn=idaCE("button","ida-thread-more-btn");
       idaSetText(moreBtn,"▼ 残り "+(threadList.length-showCount)+"スレを表示");
-      (function(sb,sl,sc){
+      (function(sb,sl,sc,uid){
         moreBtn.addEventListener("click",function(){
           moreBtn.style.display="none";
-          for(var mi=sc;mi<sl.length;mi++) threadInner.appendChild(idaMkThreadRow(sl[mi],mi+1));
+          for(var mi=sc;mi<sl.length;mi++) threadInner.appendChild(idaMkThreadRow(sl[mi],mi+1,uid));
         });
-      })(moreBtn,threadList,showCount);
+      })(moreBtn,threadList,showCount,params.userId);
       threadInner.appendChild(moreBtn);
     }
     threadCard.appendChild(threadInner);
@@ -331,7 +331,7 @@ async function runAnalysis() {
         var info=threadInfoMap.get(tm.thread_id)||{};
         var r=idaCE("div","ida-nusi-row");
         var a=idaCE("a","ida-thread-link");
-        a.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+tm.thread_id+"/";
+        a.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+tm.thread_id+"/?id="+encodeURIComponent(params.userId);
         a.target="_blank"; a.rel="noopener noreferrer";
         idaSetText(a,info.title||"スレッド "+tm.thread_id); r.appendChild(a);
         nusiList.appendChild(r);
@@ -362,7 +362,7 @@ async function runAnalysis() {
           tlBody.dataset.built="1";
           posts.forEach(function(p){
             var info=threadInfoMap.get(p.thread_id)||{};
-            tlBody.appendChild(idaMkPost(p,info.title||"スレッド "+p.thread_id));
+            tlBody.appendChild(idaMkPost(p,info.title||"スレッド "+p.thread_id,params.userId));
           });
         }
       }
@@ -401,11 +401,11 @@ function idaMkMetric(icon, value, label, color) {
 /* ================================================================
    スレッド行
    ================================================================ */
-function idaMkThreadRow(t, rank) {
+function idaMkThreadRow(t, rank, userId) {
   var row=idaCE("div","ida-thread-row");
   var rankNum=idaCE("span","ida-thread-rank"); idaSetText(rankNum,String(rank)); row.appendChild(rankNum);
   var titleLink=idaCE("a","ida-thread-link");
-  titleLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+t.thread_id+"/";
+  titleLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+t.thread_id+"/?id="+encodeURIComponent(userId);
   titleLink.target="_blank"; titleLink.rel="noopener noreferrer";
   idaSetText(titleLink,t.title); row.appendChild(titleLink);
   if(t.isNusi){var nTag=idaCE("span","ida-nusi-tag");idaSetText(nTag,"主");row.appendChild(nTag);}
@@ -416,13 +416,13 @@ function idaMkThreadRow(t, rank) {
 /* ================================================================
    ハイライトレス
    ================================================================ */
-function idaMkHighlightPost(titleText, post, threadInfoMap) {
+function idaMkHighlightPost(titleText, post, threadInfoMap, userId) {
   var card=idaCE("div","ida-hl-card");
   var header=idaCE("div","ida-hl-header"); idaSetText(header,titleText); card.appendChild(header);
   var info=threadInfoMap.get(post.thread_id)||{};
   var threadLine=idaCE("div","ida-hl-thread");
   var threadLink=idaCE("a","ida-thread-link");
-  threadLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/";
+  threadLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/?id="+encodeURIComponent(userId);
   threadLink.target="_blank"; threadLink.rel="noopener noreferrer";
   idaSetText(threadLink,"📌 "+(info.title||"スレッド "+post.thread_id));
   threadLine.appendChild(threadLink); card.appendChild(threadLine);
@@ -444,11 +444,11 @@ function idaMkHighlightPost(titleText, post, threadInfoMap) {
 /* ================================================================
    タイムラインレス
    ================================================================ */
-function idaMkPost(post, threadTitle) {
+function idaMkPost(post, threadTitle, userId) {
   var div=idaCE("div","ida-post");
   var threadLine=idaCE("div","ida-post-thread");
   var threadLink=idaCE("a","");
-  threadLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/";
+  threadLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/?id="+encodeURIComponent(userId);
   threadLink.target="_blank"; threadLink.rel="noopener noreferrer";
   idaSetText(threadLink,"📌 "+threadTitle); threadLine.appendChild(threadLink); div.appendChild(threadLine);
   var meta=idaCE("div","ida-post-meta");
