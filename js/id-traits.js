@@ -495,10 +495,14 @@ function idaCalcTraits(posts, threadList, threadsMade, hourCounts, totalPosts) {
   for (var h = 0; h <= 5; h++) nightCount += hourCounts[h];
   if (nightCount >= 8) scores.neet = nightCount;
 
-  /* 早起き: 5-8時のレスが 5個以上（絶対数） */
-  var morningCount = 0;
-  for (var h2 = 5; h2 <= 8; h2++) morningCount += hourCounts[h2];
-  if (morningCount >= 5) scores.earlybird = morningCount;
+/* 早起き: 初レスが5時台or6時台 */
+if (posts.length > 0) {
+  var firstPostHour = new Date(posts[0].posted_at).getHours();
+  if (firstPostHour >= 5 && firstPostHour <= 6) {
+    scores.earlybird = firstPostHour === 5 ? 60 : 50;
+  }
+}
+
 
   /* 24時間戦士: 20時間帯以上に書き込みかつ20レス以上 */
   var activeHours = hourCounts.filter(function(c) { return c > 0; }).length;
