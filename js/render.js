@@ -209,8 +209,23 @@ function mkPost(post, tid, q, showRange) {
   const ti = document.createElement("span"); ti.style.cssText = "color:#5f6368;"; ti.textContent = fmtDate(post.posted_at); meta.appendChild(ti);
 
   const s2 = document.createElement("span"); s2.className = "post-sep"; setText(s2, " | ID:"); meta.appendChild(s2);
-  const uid = document.createElement("span");
-  hlSet(uid, post.user_id || "?", q); meta.appendChild(uid);
+const uid = document.createElement("span");
+hlSet(uid, post.user_id || "?", q); meta.appendChild(uid);
+
+/* ID検索アイコン */
+if (post.user_id) {
+  const idSearch = document.createElement("span");
+  idSearch.className = "id-search-icon";
+  idSearch.textContent = "🔍";
+  idSearch.title = "ID:" + post.user_id + " を検索";
+  idSearch.addEventListener("click", function(e) {
+    e.stopPropagation();
+    doSearch("id:" + post.user_id);
+    window.scrollTo(0, 0);
+  });
+  meta.appendChild(idSearch);
+}
+
 
   if (post.is_nusi) {
     const nusi = document.createElement("span"); nusi.className = "post-nusi"; nusi.textContent = "主"; meta.appendChild(nusi);
