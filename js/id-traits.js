@@ -492,7 +492,7 @@ function idaCalcTraits(posts, threadList, threadsMade, hourCounts, totalPosts) {
 
   /* ニート: 0-5時のレスが 8個以上（絶対数） */
   var nightCount = 0;
-  for (var h = 0; h <= 5; h++) nightCount += hourCounts[h];
+  for (var h = 1; h <= 5; h++) nightCount += hourCounts[h];
   if (nightCount >= 8) scores.neet = nightCount;
 
 /* 早起き: 初レスが5時台or6時台（ただしニート判定時は除外） */
@@ -552,7 +552,7 @@ if (posts.length > 0 && !scores.neet) {
   if (grassCount >= 10) scores.grass = grassCount;
 
   /* レスバトラー: レスバ系ワード検出 5回以上（割合条件なし） */
-  if (replyBattleHits >= 5) scores.replymagnet = replyBattleHits;
+  if (replyBattleHits >= 10) scores.replymagnet = replyBattleHits;
 
   /* ------ 結果配列を作成 ------ */
   var result = [];
