@@ -152,6 +152,7 @@ async function runAnalysis() {
     var hourRanked=hourCounts.map(function(c,h){return{h:h,c:c};}).sort(function(a,b){return b.c-a.c;});
     var activeHoursText=hourRanked.slice(0,3).filter(function(x){return x.c>0;}).map(function(x){return x.h+"時("+x.c+")";}).join(", ");
 
+    /* 平均間隔 */
     var avgInterval="—";
     if(posts.length>=2){
       var first=new Date(posts[0].posted_at).getTime();
@@ -161,16 +162,15 @@ async function runAnalysis() {
       else avgInterval=Math.floor(avgMin/60)+"時間"+(avgMin%60)+"分";
     }
 
-    var activeDuration="—";
-    if(posts.length>=2){
-      var durMin=Math.round((new Date(lastPost.posted_at).getTime()-new Date(firstPost.posted_at).getTime())/60000);
-      if(durMin<60) activeDuration=durMin+"分";
-      else activeDuration=Math.floor(durMin/60)+"時間"+(durMin%60)+"分";
-    }
+    /* 活動時間 = 書き込みがあった時間帯の数 × 1時間（累計） */
+    var activeHourCount = hourCounts.filter(function(c){ return c > 0; }).length;
+    var activeDuration = activeHourCount + "時間";
 
+    /* 安価 */
     var totalAnchors=0;
     posts.forEach(function(p){var m=(p.body||"").match(/>>\d+/g);if(m)totalAnchors+=m.length;});
 
+    /* スレッド別レス数 */
     var threadPostCounts=new Map();
     posts.forEach(function(p){threadPostCounts.set(p.thread_id,(threadPostCounts.get(p.thread_id)||0)+1);});
     var threadList=Array.from(threadPostCounts.entries()).map(function(e){
@@ -214,7 +214,7 @@ async function runAnalysis() {
     metrics.appendChild(idaMkMetric("📝",String(threadsMade.length),"スレ立て","green"));
     metrics.appendChild(idaMkMetric("📂",String(threadList.length),"参加スレ","purple"));
     metrics.appendChild(idaMkMetric("⏱",avgInterval,"平均間隔","orange"));
-    metrics.appendChild(idaMkMetric("⏳",activeDuration,"活動時間","teal"));
+    metrics.appendChild(idaMkMetric("⏳",activeDuration,"活動時間(累計)","teal"));
     metrics.appendChild(idaMkMetric("🔗",String(totalAnchors),"安価数","cyan"));
     if(bestPostRank){
       var rkL=bestPostRank.rank<=3?["","🥇","🥈","🥉"][bestPostRank.rank]:"#"+bestPostRank.rank;
@@ -271,7 +271,7 @@ async function runAnalysis() {
     if(traits.length>0){
       var traitSection=idaCE("div","ida-trait-section");
       var traitTitle=idaCE("div","ida-card-title"); traitTitle.style.marginTop="10px";
-      idaSetText(traitTitle,"🏷️ 属性"); traitSection.appendChild(traitTitle);
+      idaSetText(traitTitle,"🏷️ ユーザー属性"); traitSection.appendChild(traitTitle);
       var traitWrap=idaCE("div","ida-trait-wrap");
       traits.forEach(function(tr){
         var badge=idaCE("div","ida-trait-badge");
