@@ -512,11 +512,11 @@ if (posts.length > 0 && !scores.neet) {
     scores.peta = mediaCount;
   }
 
-  /* スレ立て魔: スレ立て5件以上 */
-  if (threadsMade.length >= 5) scores.threadking = threadsMade.length * 10;
+  /* スレ立て魔: スレ立て10件以上 */
+  if (threadsMade.length >= 10) scores.threadking = threadsMade.length * 10;
 
-  /* 長文民: 平均文字数120以上 or 長文率40%以上（最低5レス） */
-  if (totalPosts >= 5 && (avgChars >= 120 || (longCount / totalPosts) >= 0.40)) {
+  /* 長文民: 平均文字数45以上 or 長文率25%以上（最低5レス） */
+  if (totalPosts >= 5 && (avgChars >= 45 || (longCount / totalPosts) >= 0.25)) {
     scores.chatty = avgChars;
   }
 
@@ -533,20 +533,20 @@ if (posts.length > 0 && !scores.neet) {
     if (avgMin <= 2) scores.machinegun = Math.round(100 - avgMin * 20);
   }
 
-  /* 安価職人: 安価率50%以上（安価数/レス数）かつ安価10個以上 */
+  /* 安価職人: 安価率75%以上（安価数/レス数）かつ安価10個以上 */
   var anchorRate = totalAnchors / totalPosts;
-  if (anchorRate >= 0.50 && totalAnchors >= 10) scores.anchor = Math.round(anchorRate * 100);
+  if (anchorRate >= 0.75 && totalAnchors >= 10) scores.anchor = Math.round(anchorRate * 100);
 
   /* 単発: 参加スレが1つだけ */
   if (threadList.length === 1) {
     scores.tanpatsu = 1;
   }
 
-  /* 渡り鳥: 参加スレ15以上 */
-  if (threadList.length >= 15) scores.nomad = threadList.length;
+  /* 渡り鳥: 参加スレ25以上 */
+  if (threadList.length >= 25) scores.nomad = threadList.length;
 
-  /* コピペ職人: 同一内容3回以上のレスが合計5個以上 */
-  if (duplicateCount >= 5) scores.copipe = duplicateCount;
+  /* コピペ職人: 同一内容3回以上のレスが合計3個以上 */
+  if (duplicateCount >= 3) scores.copipe = duplicateCount;
 
   /* 草生やし民: 草パターン検出が 10回以上 */
   if (grassCount >= 10) scores.grass = grassCount;
