@@ -42,15 +42,12 @@
 
 .ida-body { max-width:1200px; margin:0 auto; padding:16px 16px 40px; }
 
-/* トップバー */
 .ida-topbar { display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
 .ida-id-badge {
   font-family:'Courier New',monospace; font-size:20px; font-weight:700;
   color:#1a73e8; background:#e8f0fe; border-radius:8px; padding:6px 16px;
 }
-.ida-date-badge {
-  font-size:13px; color:#5f6368; background:#fff; border:1px solid #dadce0; border-radius:8px; padding:6px 14px;
-}
+.ida-date-badge { font-size:13px; color:#5f6368; background:#fff; border:1px solid #dadce0; border-radius:8px; padding:6px 14px; }
 .ida-copy-id-btn {
   background:none; border:1px solid #dadce0; border-radius:8px;
   padding:5px 12px; font-size:12px; color:#1a73e8; cursor:pointer; font-family:inherit; font-weight:600;
@@ -61,15 +58,12 @@
 .ida-metrics { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
 .ida-metric {
   flex:1; min-width:80px; max-width:130px; background:#fff; border-radius:10px;
-  padding:10px 8px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06);
-  border-top:3px solid #1a73e8;
+  padding:10px 8px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06); border-top:3px solid #1a73e8;
 }
 .ida-metric[data-color="green"]{border-top-color:#34a853}
 .ida-metric[data-color="purple"]{border-top-color:#9c27b0}
 .ida-metric[data-color="orange"]{border-top-color:#f9ab00}
 .ida-metric[data-color="teal"]{border-top-color:#00897b}
-.ida-metric[data-color="indigo"]{border-top-color:#5c6bc0}
-.ida-metric[data-color="pink"]{border-top-color:#e91e63}
 .ida-metric[data-color="cyan"]{border-top-color:#00acc1}
 .ida-metric[data-color="gold"]{border-top-color:#e8a000}
 .ida-metric[data-color="red"]{border-top-color:#d32f2f}
@@ -77,16 +71,17 @@
 .ida-metric-val { font-size:20px; font-weight:700; color:#202124; line-height:1.2; }
 .ida-metric-label { font-size:9px; color:#70757a; margin-top:1px; }
 
-/* ハイライトレス (最初/最後/最長) */
+/* ハイライトレス */
 .ida-fl-section { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
 .ida-hl-card {
-  flex:1; min-width:260px; background:#fff; border-radius:10px; padding:12px 14px;
+  flex:1; min-width:240px; background:#fff; border-radius:10px; padding:12px 14px;
   box-shadow:0 1px 3px rgba(0,0,0,0.06); border-left:4px solid #1a73e8;
+  overflow:hidden;
 }
 .ida-hl-card:nth-child(2) { border-left-color:#34a853; }
 .ida-hl-card:nth-child(3) { border-left-color:#f9ab00; }
 .ida-hl-header { font-size:12px; font-weight:700; color:#202124; margin-bottom:6px; }
-.ida-hl-thread { font-size:11px; margin-bottom:4px; }
+.ida-hl-thread { font-size:11px; margin-bottom:4px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .ida-hl-thread a { color:#1a73e8; text-decoration:none; }
 .ida-hl-thread a:hover { text-decoration:underline; }
 .ida-hl-meta { font-size:11px; color:#5f6368; margin-bottom:6px; }
@@ -97,48 +92,46 @@
 }
 
 /* グリッド */
-.ida-grid {
-  display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto;
-  gap:12px; margin-bottom:12px;
-}
-.ida-card {
-  background:#fff; border-radius:10px; padding:14px 16px;
-  box-shadow:0 1px 3px rgba(0,0,0,0.06); overflow:hidden;
-}
-.ida-card-chart   { grid-column:1; grid-row:1/3; }
+.ida-grid { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto; gap:12px; margin-bottom:12px; }
+.ida-card { background:#fff; border-radius:10px; padding:14px 16px; box-shadow:0 1px 3px rgba(0,0,0,0.06); overflow:hidden; }
+.ida-card-chart   { grid-column:1; grid-row:1/3; display:flex; flex-direction:column; }
 .ida-card-threads { grid-column:2; grid-row:1; }
 .ida-card-sub     { grid-column:2; grid-row:2; }
 .ida-card-title { font-size:13px; font-weight:700; color:#202124; margin-bottom:10px; }
 .ida-card-title-sm { font-size:12px; margin-bottom:6px; }
 
-/* 棒グラフ */
-.ida-barchart { display:flex; align-items:flex-end; gap:2px; height:160px; }
-.ida-bar-col { flex:1; display:flex; flex-direction:column; align-items:center; min-width:0; }
-.ida-bar-val { font-size:8px; color:#1a73e8; font-weight:700; min-height:12px; text-align:center; }
-.ida-bar-outer { width:100%; flex:1; display:flex; align-items:flex-end; }
+/* 棒グラフ修正版 */
+.ida-barchart-wrap { flex-shrink:0; }
+.ida-barchart { display:flex; align-items:flex-end; gap:2px; height:140px; }
+.ida-bar-col { flex:1; display:flex; flex-direction:column; align-items:center; min-width:0; height:100%; }
+.ida-bar-val { font-size:8px; color:#1a73e8; font-weight:700; min-height:12px; text-align:center; flex-shrink:0; }
+.ida-bar-outer { width:100%; flex:1; display:flex; flex-direction:column; justify-content:flex-end; }
 .ida-bar-inner {
   width:100%; border-radius:2px 2px 0 0;
   background:linear-gradient(180deg,#4285F4,#34a853);
-  transition:height 0.6s ease; min-height:1px;
+  transition:height 0.6s ease;
 }
-.ida-bar-lbl { font-size:8px; color:#70757a; margin-top:2px; text-align:center; }
+.ida-bar-lbl { font-size:8px; color:#70757a; margin-top:2px; text-align:center; flex-shrink:0; }
 .ida-chart-note { font-size:11px; color:#5f6368; margin-top:6px; text-align:center; }
 
-/* 曜日ミニチャート */
-.ida-dow-chart { display:flex; align-items:flex-end; gap:6px; height:60px; }
-.ida-dow-col { flex:1; display:flex; flex-direction:column; align-items:center; }
-.ida-dow-val { font-size:9px; color:#1a73e8; font-weight:600; min-height:12px; }
-.ida-dow-bar {
-  width:100%; border-radius:2px 2px 0 0; background:linear-gradient(180deg,#4285F4,#34a853);
-  transition:height 0.4s; min-height:1px;
+/* 属性バッジ */
+.ida-trait-section { flex:1; display:flex; flex-direction:column; }
+.ida-trait-wrap { display:flex; flex-wrap:wrap; gap:6px; }
+.ida-trait-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  background:linear-gradient(135deg,#f8f9fa,#e8f0fe); border:1px solid #c5cae9;
+  border-radius:20px; padding:5px 14px; cursor:default;
+  transition:transform 0.1s, box-shadow 0.1s;
 }
-.ida-dow-lbl { font-size:9px; color:#70757a; margin-top:2px; }
+.ida-trait-badge:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+.ida-trait-icon { font-size:16px; }
+.ida-trait-name { font-size:12px; font-weight:700; color:#3c4043; }
 
 /* スレッド一覧 */
-.ida-thread-list { display:flex; flex-direction:column; }
+.ida-thread-list { display:flex; flex-direction:column; overflow:hidden; }
 .ida-thread-row {
   display:flex; align-items:center; gap:6px; padding:4px 0;
-  border-bottom:1px solid #f1f3f4; font-size:12px;
+  border-bottom:1px solid #f1f3f4; font-size:12px; min-width:0;
 }
 .ida-thread-row:last-child { border-bottom:none; }
 .ida-thread-rank { width:18px; text-align:center; font-weight:700; color:#70757a; flex-shrink:0; font-size:11px; }
@@ -152,25 +145,18 @@
 .ida-thread-more { font-size:11px; color:#70757a; padding:4px 0; text-align:center; }
 .ida-thread-more-btn {
   width:100%; background:none; border:1px solid #dadce0; border-radius:6px;
-  padding:6px; font-size:12px; color:#1a73e8; cursor:pointer; font-family:inherit;
-  margin-top:4px;
+  padding:6px; font-size:12px; color:#1a73e8; cursor:pointer; font-family:inherit; margin-top:4px;
 }
 .ida-thread-more-btn:hover { background:#f8f9fa; }
 
 /* チップ */
 .ida-chips { display:flex; flex-wrap:wrap; gap:5px; }
-.ida-chip {
-  background:#e8f0fe; color:#1a73e8; border-radius:12px;
-  padding:2px 10px; font-size:11px; font-weight:600;
-}
-.ida-chip-name { background:#f3e8fd; color:#7b1fa2; }
+.ida-chip { background:#e8f0fe; color:#1a73e8; border-radius:12px; padding:2px 10px; font-size:11px; font-weight:600; }
 .ida-chip-x { color:#5f6368; font-weight:400; margin-left:2px; font-size:9px; }
 
-/* スレ立て */
 .ida-nusi-list { display:flex; flex-direction:column; gap:2px; }
-.ida-nusi-row { font-size:12px; }
+.ida-nusi-row { font-size:12px; overflow:hidden; }
 .ida-nusi-row a { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
-
 .ida-sub-block { margin-bottom:10px; }
 .ida-sub-block:last-child { margin-bottom:0; }
 
@@ -186,12 +172,11 @@
 .ida-tl-body { display:none; margin-top:8px; }
 .ida-tl-body.open { display:block; }
 
-/* レス */
 .ida-post {
   background:#fff; border-radius:8px; padding:8px 12px; margin-bottom:5px;
   box-shadow:0 1px 2px rgba(0,0,0,0.04);
 }
-.ida-post-thread { font-size:10px; margin-bottom:3px; }
+.ida-post-thread { font-size:10px; margin-bottom:3px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .ida-post-thread a { color:#1a73e8; text-decoration:none; font-weight:600; }
 .ida-post-thread a:hover { text-decoration:underline; }
 .ida-post-meta { font-size:10px; color:#5f6368; margin-bottom:3px; }
@@ -206,9 +191,7 @@
 .ida-loading { text-align:center; padding:48px; color:#70757a; font-size:14px; }
 .ida-error { color:#c0392b; padding:24px; font-size:14px; text-align:center; background:#fff; border-radius:10px; }
 
-/* ============================================================
-   スマホ
-   ============================================================ */
+/* ============================================================ スマホ ============================================================ */
 @media (max-width:768px) {
   .ida-header { padding:8px 10px; gap:6px; }
   .ida-logo { font-size:20px; }
@@ -217,22 +200,21 @@
   .ida-topbar { gap:6px; }
   .ida-id-badge { font-size:15px; padding:4px 10px; }
   .ida-date-badge { font-size:11px; padding:3px 8px; }
-
   .ida-metrics { gap:5px; }
   .ida-metric { min-width:60px; max-width:none; padding:7px 4px; border-radius:8px; }
   .ida-metric-icon { font-size:14px; }
   .ida-metric-val { font-size:16px; }
   .ida-metric-label { font-size:8px; }
-
   .ida-fl-section { flex-direction:column; gap:8px; }
   .ida-hl-card { min-width:0; }
   .ida-hl-body { max-height:80px; font-size:11px; }
-
   .ida-grid { grid-template-columns:1fr; }
   .ida-card-chart,.ida-card-threads,.ida-card-sub { grid-column:1; grid-row:auto; }
   .ida-card { padding:10px 12px; }
   .ida-barchart { height:100px; }
-  .ida-dow-chart { height:45px; }
+  .ida-trait-badge { padding:4px 10px; }
+  .ida-trait-icon { font-size:14px; }
+  .ida-trait-name { font-size:11px; }
 }
 </style>
 </head>
@@ -251,6 +233,7 @@
   </div>
 </div>
 <script src="js/config.js"></script>
+<script src="js/id-traits.js"></script>
 <script src="js/id-analysis.js"></script>
 </body>
 </html>
