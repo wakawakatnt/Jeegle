@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ID分析 - Jeegle!</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DDHGB57HTW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-DDHGB57HTW');
+</script>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ===== ID分析ページ固有 ===== */
+.ida-page { min-height: 100vh; background: #fff; }
+.ida-header {
+  display: flex; align-items: center; padding: 12px 20px;
+  border-bottom: 1px solid #ebebeb; position: sticky; top: 0;
+  background: #fff; z-index: 100; gap: 16px;
+}
+.ida-logo {
+  font-size: 28px; font-weight: bold; white-space: nowrap;
+  font-family: Arial, sans-serif; flex-shrink: 0; text-decoration: none;
+}
+.ida-logo span:nth-child(1){color:#4285F4}
+.ida-logo span:nth-child(2){color:#EA4335}
+.ida-logo span:nth-child(3){color:#FBBC05}
+.ida-logo span:nth-child(4){color:#4285F4}
+.ida-logo span:nth-child(5){color:#34A853}
+.ida-logo span:nth-child(6){color:#EA4335}
+.ida-logo span:nth-child(7){color:#FBBC05}
+.ida-header-title { font-size: 17px; font-weight: 700; color: #202124; }
+.ida-back {
+  margin-left: auto; font-size: 13px; color: #1a73e8;
+  text-decoration: none; white-space: nowrap;
+}
+.ida-back:hover { text-decoration: underline; }
+
+.ida-body { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
+
+/* ===== IDヒーロー ===== */
+.ida-hero {
+  background: linear-gradient(135deg, #e8f0fe 0%, #f3e8fd 100%);
+  border-radius: 16px; padding: 24px 28px; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+.ida-hero-icon { font-size: 48px; }
+.ida-hero-info { flex: 1; min-width: 200px; }
+.ida-hero-id {
+  font-size: 22px; font-weight: 700; color: #202124;
+  font-family: 'Courier New', monospace; word-break: break-all;
+}
+.ida-hero-date { font-size: 13px; color: #5f6368; margin-top: 4px; }
+.ida-hero-stats {
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+.ida-stat-card {
+  background: #fff; border-radius: 12px; padding: 14px 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center; min-width: 100px;
+}
+.ida-stat-num { font-size: 28px; font-weight: 700; color: #1a73e8; }
+.ida-stat-label { font-size: 11px; color: #5f6368; margin-top: 2px; }
+
+/* ===== セクション共通 ===== */
+.ida-section {
+  background: #fff; border: 1px solid #dadce0; border-radius: 12px;
+  padding: 20px 24px; margin-bottom: 20px;
+}
+.ida-section-title {
+  font-size: 16px; font-weight: 700; color: #202124;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.ida-section-icon { font-size: 20px; }
+
+/* ===== ランキングカード ===== */
+.ida-rank-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid #f1f3f4;
+}
+.ida-rank-row:last-child { border-bottom: none; }
+.ida-rank-pos {
+  font-size: 20px; font-weight: 700; color: #1a73e8;
+  min-width: 48px; text-align: center;
+}
+.ida-rank-label { font-size: 14px; color: #3c4043; }
+.ida-rank-val { margin-left: auto; font-weight: 600; color: #202124; }
+
+/* ===== 時間帯チャート ===== */
+.ida-hour-chart { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: 8px; }
+.ida-hour-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.ida-hour-bar {
+  width: 100%; min-width: 8px; background: linear-gradient(180deg, #1a73e8, #34a853);
+  border-radius: 3px 3px 0 0; transition: height 0.5s ease;
+}
+.ida-hour-label { font-size: 9px; color: #70757a; margin-top: 4px; }
+.ida-hour-count { font-size: 9px; color: #1a73e8; font-weight: 600; margin-bottom: 2px; }
+
+/* ===== スレッド一覧テーブル ===== */
+.ida-thread-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.ida-thread-table th {
+  background: #f8f9fa; padding: 8px 10px; text-align: left;
+  font-size: 11px; font-weight: 700; color: #5f6368; border-bottom: 1px solid #ebebeb;
+}
+.ida-thread-table td {
+  padding: 8px 10px; border-bottom: 1px solid #f1f3f4; vertical-align: middle;
+}
+.ida-thread-table tr:hover td { background: #f8f9fa; }
+.ida-thread-title-link {
+  color: #1a0dab; text-decoration: none; font-weight: 500;
+}
+.ida-thread-title-link:hover { text-decoration: underline; }
+.ida-thread-nusi { background: #ea4335; color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
+
+/* ===== 共通ワード ===== */
+.ida-words { display: flex; flex-wrap: wrap; gap: 8px; }
+.ida-word-chip {
+  background: #e8f0fe; color: #1a73e8; border-radius: 16px;
+  padding: 5px 14px; font-size: 13px; font-weight: 600;
+}
+.ida-word-chip-count { color: #5f6368; font-weight: 400; margin-left: 4px; font-size: 11px; }
+
+/* ===== レス一覧(折りたたみ) ===== */
+.ida-posts-toggle {
+  background: none; border: 1px solid #dadce0; border-radius: 8px;
+  padding: 10px 16px; font-size: 14px; color: #1a73e8; cursor: pointer;
+  font-family: inherit; font-weight: 600; width: 100%; text-align: left;
+  transition: background 0.12s;
+}
+.ida-posts-toggle:hover { background: #f8f9fa; }
+.ida-posts-list { display: none; margin-top: 12px; }
+.ida-posts-list.open { display: block; }
+
+/* ===== ローディング ===== */
+.ida-loading { text-align: center; padding: 48px; color: #70757a; font-size: 14px; }
+.ida-error { color: #c0392b; padding: 24px; font-size: 14px; text-align: center; }
+
+/* ===== 共有ボタン ===== */
+.ida-share-btn {
+  background: none; border: 1px solid #dadce0; border-radius: 16px;
+  padding: 4px 12px; font-size: 12px; color: #5f6368; cursor: pointer;
+  font-family: inherit; white-space: nowrap; margin-left: 8px;
+}
+.ida-share-btn:hover { background: #f1f3f4; }
+
+@media (max-width: 640px) {
+  .ida-header { padding: 8px 12px; gap: 8px; }
+  .ida-logo { font-size: 22px; }
+  .ida-body { padding: 12px 10px 60px; }
+  .ida-hero { padding: 16px; gap: 12px; }
+  .ida-hero-id { font-size: 17px; }
+  .ida-hero-stats { gap: 8px; }
+  .ida-stat-card { padding: 10px 14px; min-width: 80px; }
+  .ida-stat-num { font-size: 22px; }
+  .ida-section { padding: 14px 16px; }
+  .ida-hour-chart { height: 80px; }
+}
+</style>
+</head>
+<body>
+<div class="ida-page">
+
+  <div class="ida-header">
+    <a class="ida-logo" href="index.html">
+      <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
+    </a>
+    <div class="ida-header-title">🔬 ID分析</div>
+    <a class="ida-back" id="idaBack" href="index.html">← 検索に戻る</a>
+    <button class="ida-share-btn" id="idaShareBtn">🔗 URL共有</button>
+  </div>
+
+  <div class="ida-body" id="idaBody">
+    <div class="ida-loading">分析データを読み込み中… <span class="rk-spinner"></span></div>
+  </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/id-analysis.js"></script>
+</body>
+</html>
