@@ -210,3 +210,62 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   .logo { font-size:48px; }
   .post-buttons { margin-left:0; margin-top:4px; width:100%; }
 }
+/* ===== ID分析バナー ===== */
+.id-analysis-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, #e8f0fe 0%, #f3e8fd 100%);
+  border: 1px solid #c5cae9;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+.id-analysis-banner:hover {
+  box-shadow: 0 4px 16px rgba(26,115,232,0.18);
+  transform: translateY(-1px);
+}
+.id-analysis-banner-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.id-analysis-banner-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.id-analysis-banner-main {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a73e8;
+}
+.id-analysis-banner-sub {
+  font-size: 12px;
+  color: #5f6368;
+}
+.id-analysis-banner-btn {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #1a73e8, #6c47d6);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(26,115,232,0.25);
+  transition: box-shadow 0.15s;
+}
+.id-analysis-banner-btn:hover {
+  box-shadow: 0 4px 14px rgba(26,115,232,0.35);
+}
+
+@media (max-width: 640px) {
+  .id-analysis-banner { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 14px; }
+  .id-analysis-banner-btn { align-self: stretch; text-align: center; }
+}
