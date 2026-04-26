@@ -48,15 +48,7 @@ function idaFmtTime(posted_at) {
   return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0");
 }
 function idaEscHtml(s) { var d=document.createElement("div"); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
-
-/* 文字数カウント（改行除く） */
 function idaCharCount(body) { return (body||"").replace(/\n/g,"").length; }
-
-/* 安価カウント */
-function idaCountAnchors(body) {
-  var m = (body||"").match(/>>\d+/g);
-  return m ? m.length : 0;
-}
 
 /* ================================================================
    Supabase通信
@@ -70,7 +62,7 @@ async function idaSbFetch(url, key, path) {
 }
 
 /* ================================================================
-   パラメータ解析
+   パラメータ
    ================================================================ */
 function idaParseParams() {
   var p = new URLSearchParams(location.search);
@@ -107,14 +99,12 @@ async function runAnalysis() {
     var fromISO=params.from.toISOString();
     var toISO=params.to.toISOString();
 
-    /* 1) 全レス */
     var postsPromise = idaSbFetch(SB_URL,SB_KEY,
       "posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi"
       +"&user_id=eq."+encodeURIComponent(params.userId)
       +"&posted_at=gte."+fromISO+"&posted_at=lt."+toISO
       +"&order=posted_at.asc&limit=2000");
 
-    /* 2) ランキング */
     var rankDates=[];
     var tmpD=new Date(params.from);
     while(tmpD<params.to){rankDates.push(new Date(tmpD));tmpD.setDate(tmpD.getDate()+1);}
@@ -138,7 +128,7 @@ async function runAnalysis() {
       return;
     }
 
-    /* 3) スレッド情報 */
+    /* スレッド情報 */
     var threadIds=[]; var seenTid={};
     posts.forEach(function(p){if(!seenTid[p.thread_id]){seenTid[p.thread_id]=true;threadIds.push(p.thread_id);}});
     var threadInfoMap=new Map();
@@ -148,43 +138,29 @@ async function runAnalysis() {
       ts.forEach(function(t){threadInfoMap.set(t.thread_id,t);});
     }
 
-    /* =============================================================
-       4) 集計
-       ============================================================= */
+    /* ===== 集計 ===== */
     var totalPosts=posts.length;
     var threadsMade=posts.filter(function(p){return p.post_num===1&&p.is_nusi;});
-
-    /* 最初/最後のレス */
     var firstPost=posts[0];
     var lastPost=posts[posts.length-1];
 
-    /* 時間帯 */
     var hourCounts=new Array(24).fill(0);
     posts.forEach(function(p){hourCounts[new Date(p.posted_at).getHours()]++;});
     var peakHour=0,peakVal=0;
     hourCounts.forEach(function(c,h){if(c>peakVal){peakVal=c;peakHour=h;}});
 
-    /* 深夜率 (0-5時) */
-    var nightCount=0;
-    for(var nh=0;nh<=5;nh++) nightCount+=hourCounts[nh];
-    var nightPct=totalPosts>0?Math.round(nightCount/totalPosts*100):0;
-
-    /* 活動時間帯テキスト (上位3時間帯) */
     var hourRanked=hourCounts.map(function(c,h){return{h:h,c:c};}).sort(function(a,b){return b.c-a.c;});
     var activeHoursText=hourRanked.slice(0,3).filter(function(x){return x.c>0;}).map(function(x){return x.h+"時("+x.c+")";}).join(", ");
 
-    /* 平均レス間隔 */
     var avgInterval="—";
-    var avgIntervalMin=0;
     if(posts.length>=2){
       var first=new Date(posts[0].posted_at).getTime();
       var last=new Date(posts[posts.length-1].posted_at).getTime();
-      avgIntervalMin=Math.round((last-first)/60000/(posts.length-1));
-      if(avgIntervalMin<60) avgInterval=avgIntervalMin+"分";
-      else avgInterval=Math.floor(avgIntervalMin/60)+"時間"+(avgIntervalMin%60)+"分";
+      var avgMin=Math.round((last-first)/60000/(posts.length-1));
+      if(avgMin<60) avgInterval=avgMin+"分";
+      else avgInterval=Math.floor(avgMin/60)+"時間"+(avgMin%60)+"分";
     }
 
-    /* 活動時間（最初→最後） */
     var activeDuration="—";
     if(posts.length>=2){
       var durMin=Math.round((new Date(lastPost.posted_at).getTime()-new Date(firstPost.posted_at).getTime())/60000);
@@ -192,32 +168,9 @@ async function runAnalysis() {
       else activeDuration=Math.floor(durMin/60)+"時間"+(durMin%60)+"分";
     }
 
-    /* 総文字数 / 平均文字数 */
-    var totalChars=0;
-    posts.forEach(function(p){totalChars+=idaCharCount(p.body);});
-    var avgChars=Math.round(totalChars/totalPosts);
-
-    /* 安価数 */
     var totalAnchors=0;
-    posts.forEach(function(p){totalAnchors+=idaCountAnchors(p.body);});
+    posts.forEach(function(p){var m=(p.body||"").match(/>>\d+/g);if(m)totalAnchors+=m.length;});
 
-    /* 最長レス */
-    var longestPost=posts[0];
-    posts.forEach(function(p){if(idaCharCount(p.body)>idaCharCount(longestPost.body)) longestPost=p;});
-
-    /* 使用名前一覧 */
-    var nameFreq=new Map();
-    posts.forEach(function(p){
-      var n=p.name||"名無し";
-      nameFreq.set(n,(nameFreq.get(n)||0)+1);
-    });
-    var nameList=Array.from(nameFreq.entries()).sort(function(a,b){return b[1]-a[1];});
-
-    /* 曜日別集計 */
-    var dowCounts=new Array(7).fill(0);
-    posts.forEach(function(p){dowCounts[new Date(p.posted_at).getDay()]++;});
-
-    /* スレッド別レス数 */
     var threadPostCounts=new Map();
     posts.forEach(function(p){threadPostCounts.set(p.thread_id,(threadPostCounts.get(p.thread_id)||0)+1);});
     var threadList=Array.from(threadPostCounts.entries()).map(function(e){
@@ -226,43 +179,26 @@ async function runAnalysis() {
       return{thread_id:e[0],title:info.title,count:e[1],isNusi:isNusi};
     }).sort(function(a,b){return b.count-a.count;});
 
-    /* 共通ワード */
-    var wordFreq=new Map();
-    threadList.forEach(function(t){
-      var ws=(t.title||"").match(/[\u30A0-\u30FF]{2,}|[\u4E00-\u9FFF]{2,}|[a-zA-Z]{3,}/g)||[];
-      var wordSeen=new Set();
-      ws.forEach(function(w){var low=w.toLowerCase();if(!wordSeen.has(low)){wordSeen.add(low);wordFreq.set(low,(wordFreq.get(low)||0)+1);}});
-    });
-    var commonWords=Array.from(wordFreq.entries()).filter(function(e){return e[1]>=2;}).sort(function(a,b){return b[1]-a[1];}).slice(0,12);
+    var commonWords=idaExtractWords(threadList);
 
-    /* ランキング */
     var bestPostRank=null, bestThreadRank=null;
     postRanks.forEach(function(pr){if(pr.row&&(!bestPostRank||pr.row.rank<bestPostRank.rank))bestPostRank={rank:pr.row.rank,count:pr.row.post_count,date:pr.date};});
     threadRanks.forEach(function(tr){if(tr.row&&(!bestThreadRank||tr.row.rank<bestThreadRank.rank))bestThreadRank={rank:tr.row.rank,count:tr.row.thread_count,date:tr.date};});
 
-    /* 連投検出（60秒以内に3レス以上） */
-    var burstCount=0;
-    for(var bi=0;bi<posts.length-2;bi++){
-      var t1=new Date(posts[bi].posted_at).getTime();
-      var t3=new Date(posts[bi+2].posted_at).getTime();
-      if(t3-t1<=60000) burstCount++;
-    }
+    /* ===== 属性判定 (id-traits.js) ===== */
+    var traits = idaCalcTraits(posts, threadList, threadsMade, hourCounts, totalPosts);
 
-    /* =============================================================
-       5) 描画
-       ============================================================= */
+    /* ===== 描画 ===== */
     body.innerHTML="";
 
     var fromDisp=idaToJaDate(params.from);
     var toDisp=idaToJaDate(new Date(params.to.getTime()-86400000));
     var dateDisp=(fromDisp===toDisp)?fromDisp:fromDisp+" 〜 "+toDisp;
 
-    /* ===== トップバー ===== */
+    /* トップバー */
     var topBar=idaCE("div","ida-topbar");
     var idBadge=idaCE("div","ida-id-badge"); idaSetText(idBadge,"ID:"+params.userId); topBar.appendChild(idBadge);
     var dateBadge=idaCE("div","ida-date-badge"); idaSetText(dateBadge,dateDisp); topBar.appendChild(dateBadge);
-
-    /* IDコピーボタン */
     var cpId=idaCE("button","ida-copy-id-btn"); idaSetText(cpId,"📋 IDコピー");
     cpId.addEventListener("click",function(){
       navigator.clipboard.writeText(params.userId).then(function(){
@@ -272,15 +208,13 @@ async function runAnalysis() {
     topBar.appendChild(cpId);
     body.appendChild(topBar);
 
-    /* ===== メトリクスカード群 ===== */
+    /* メトリクス */
     var metrics=idaCE("div","ida-metrics");
     metrics.appendChild(idaMkMetric("💬",String(totalPosts),"レス数","blue"));
     metrics.appendChild(idaMkMetric("📝",String(threadsMade.length),"スレ立て","green"));
     metrics.appendChild(idaMkMetric("📂",String(threadList.length),"参加スレ","purple"));
     metrics.appendChild(idaMkMetric("⏱",avgInterval,"平均間隔","orange"));
     metrics.appendChild(idaMkMetric("⏳",activeDuration,"活動時間","teal"));
-    metrics.appendChild(idaMkMetric("🌙",nightPct+"%","深夜率","indigo"));
-    metrics.appendChild(idaMkMetric("📊",String(avgChars)+"字","平均文字数","pink"));
     metrics.appendChild(idaMkMetric("🔗",String(totalAnchors),"安価数","cyan"));
     if(bestPostRank){
       var rkL=bestPostRank.rank<=3?["","🥇","🥈","🥉"][bestPostRank.rank]:"#"+bestPostRank.rank;
@@ -290,29 +224,27 @@ async function runAnalysis() {
       var tkL=bestThreadRank.rank<=3?["","🥇","🥈","🥉"][bestThreadRank.rank]:"#"+bestThreadRank.rank;
       metrics.appendChild(idaMkMetric("🏅",tkL,"スレ立て順位","gold"));
     }
-    if(burstCount>0){
-      metrics.appendChild(idaMkMetric("⚡",String(burstCount)+"回","連投検出","red"));
-    }
     body.appendChild(metrics);
 
-    /* ===== 最初/最後のレス + 最長レス ===== */
+    /* 最初/最後/最長レス */
     var flSection=idaCE("div","ida-fl-section");
-
     flSection.appendChild(idaMkHighlightPost("📍 最初のレス ("+idaFmtTime(firstPost.posted_at)+")", firstPost, threadInfoMap));
     flSection.appendChild(idaMkHighlightPost("🏁 最後のレス ("+idaFmtTime(lastPost.posted_at)+")", lastPost, threadInfoMap));
-    if(longestPost!==firstPost && longestPost!==lastPost){
-      flSection.appendChild(idaMkHighlightPost("📏 最長レス ("+idaCharCount(longestPost.body)+"文字)", longestPost, threadInfoMap));
+    var longestPost=posts[0];
+    posts.forEach(function(p){if(idaCharCount(p.body)>idaCharCount(longestPost.body))longestPost=p;});
+    if(longestPost!==firstPost&&longestPost!==lastPost){
+      flSection.appendChild(idaMkHighlightPost("📏 最長レス ("+idaCharCount(longestPost.body)+"字)", longestPost, threadInfoMap));
     }
-
     body.appendChild(flSection);
 
     /* ===== グリッド ===== */
     var grid=idaCE("div","ida-grid");
 
-    /* --- 左: 時間帯チャート --- */
+    /* 左: 時間帯チャート + 属性 */
     var chartCard=idaCE("div","ida-card ida-card-chart");
     var chartTitle=idaCE("div","ida-card-title"); idaSetText(chartTitle,"🕐 書き込み時間帯"); chartCard.appendChild(chartTitle);
 
+    var chartWrap=idaCE("div","ida-barchart-wrap");
     var chartBody=idaCE("div","ida-barchart");
     var maxH=Math.max.apply(null,hourCounts)||1;
     for(var h=0;h<24;h++){
@@ -320,82 +252,62 @@ async function runAnalysis() {
       var val=idaCE("div","ida-bar-val"); idaSetText(val,hourCounts[h]>0?String(hourCounts[h]):""); col.appendChild(val);
       var barOuter=idaCE("div","ida-bar-outer");
       var barInner=idaCE("div","ida-bar-inner");
-      barInner.style.height=Math.round((hourCounts[h]/maxH)*100)+"%";
-      if(hourCounts[h]===0) barInner.style.background="#e8eaed";
+      barInner.style.height=Math.max(Math.round((hourCounts[h]/maxH)*100),0)+"%";
+      if(hourCounts[h]===0){ barInner.style.height="2%"; barInner.style.background="#e8eaed"; }
       else if(h===peakHour) barInner.style.background="#ea4335";
       else if(h>=0&&h<=5) barInner.style.background="#5c6bc0";
       barOuter.appendChild(barInner); col.appendChild(barOuter);
       var lbl=idaCE("div","ida-bar-lbl"); idaSetText(lbl,String(h)); col.appendChild(lbl);
       chartBody.appendChild(col);
     }
-    chartCard.appendChild(chartBody);
+    chartWrap.appendChild(chartBody);
+    chartCard.appendChild(chartWrap);
 
     var peakNote=idaCE("div","ida-chart-note");
-    idaSetText(peakNote,"🔥 ピーク: "+peakHour+"時台 ("+peakVal+"レス) | 活動Top: "+activeHoursText);
+    idaSetText(peakNote,"🔥 ピーク: "+peakHour+"時台 ("+peakVal+"レス) | Top: "+activeHoursText);
     chartCard.appendChild(peakNote);
 
-    /* 曜日ミニチャート（チャートカード下部に） */
-    if(rankDates.length>1){
-      var dowTitle=idaCE("div","ida-card-title"); dowTitle.style.marginTop="12px";
-      idaSetText(dowTitle,"📅 曜日別"); chartCard.appendChild(dowTitle);
-      var dowBar=idaCE("div","ida-dow-chart");
-      var maxDow=Math.max.apply(null,dowCounts)||1;
-      for(var di=0;di<7;di++){
-        var dw=idaCE("div","ida-dow-col");
-        var dv=idaCE("div","ida-dow-val"); idaSetText(dv,dowCounts[di]>0?String(dowCounts[di]):""); dw.appendChild(dv);
-        var db=idaCE("div","ida-dow-bar");
-        db.style.height=Math.round((dowCounts[di]/maxDow)*100)+"%";
-        if(dowCounts[di]===0) db.style.background="#e8eaed";
-        else if(di===0||di===6) db.style.background="#ea4335";
-        dw.appendChild(db);
-        var dl=idaCE("div","ida-dow-lbl"); idaSetText(dl,DAYS_IDA[di]); dw.appendChild(dl);
-        dowBar.appendChild(dw);
-      }
-      chartCard.appendChild(dowBar);
+    /* 属性バッジ (チャートの下) */
+    if(traits.length>0){
+      var traitSection=idaCE("div","ida-trait-section");
+      var traitTitle=idaCE("div","ida-card-title"); traitTitle.style.marginTop="10px";
+      idaSetText(traitTitle,"🏷️ 属性"); traitSection.appendChild(traitTitle);
+      var traitWrap=idaCE("div","ida-trait-wrap");
+      traits.forEach(function(tr){
+        var badge=idaCE("div","ida-trait-badge");
+        var bIcon=idaCE("span","ida-trait-icon"); bIcon.textContent=tr.icon; badge.appendChild(bIcon);
+        var bName=idaCE("span","ida-trait-name"); idaSetText(bName,tr.name); badge.appendChild(bName);
+        badge.title=tr.desc;
+        traitWrap.appendChild(badge);
+      });
+      traitSection.appendChild(traitWrap);
+      chartCard.appendChild(traitSection);
     }
     grid.appendChild(chartCard);
 
-    /* --- 右上: スレッドTOP --- */
+    /* 右上: スレッド一覧 */
     var threadCard=idaCE("div","ida-card ida-card-threads");
-    var threadTitle=idaCE("div","ida-card-title"); idaSetText(threadTitle,"💬 書き込みスレッド ("+threadList.length+"スレ)"); threadCard.appendChild(threadTitle);
+    var threadCardTitle=idaCE("div","ida-card-title"); idaSetText(threadCardTitle,"💬 書き込みスレッド ("+threadList.length+"スレ)"); threadCard.appendChild(threadCardTitle);
     var threadInner=idaCE("div","ida-thread-list");
     var showCount=Math.min(threadList.length,10);
     for(var ti=0;ti<showCount;ti++){
-      var t=threadList[ti];
-      var row=idaCE("div","ida-thread-row");
-      var rankNum=idaCE("span","ida-thread-rank"); idaSetText(rankNum,String(ti+1)); row.appendChild(rankNum);
-      var titleLink=idaCE("a","ida-thread-link");
-      titleLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+t.thread_id+"/";
-      titleLink.target="_blank"; titleLink.rel="noopener noreferrer";
-      idaSetText(titleLink,t.title); row.appendChild(titleLink);
-      if(t.isNusi){ var nTag=idaCE("span","ida-nusi-tag"); idaSetText(nTag,"主"); row.appendChild(nTag); }
-      var cntBadge=idaCE("span","ida-thread-cnt"); idaSetText(cntBadge,t.count+"レス"); row.appendChild(cntBadge);
-      threadInner.appendChild(row);
+      threadInner.appendChild(idaMkThreadRow(threadList[ti],ti+1));
     }
     if(threadList.length>showCount){
       var moreBtn=idaCE("button","ida-thread-more-btn");
       idaSetText(moreBtn,"▼ 残り "+(threadList.length-showCount)+"スレを表示");
-      moreBtn.addEventListener("click",function(){
-        moreBtn.style.display="none";
-        for(var mi=showCount;mi<threadList.length;mi++){
-          var mt=threadList[mi];
-          var mr=idaCE("div","ida-thread-row");
-          var mrn=idaCE("span","ida-thread-rank"); idaSetText(mrn,String(mi+1)); mr.appendChild(mrn);
-          var mtl=idaCE("a","ida-thread-link");
-          mtl.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+mt.thread_id+"/";
-          mtl.target="_blank"; mtl.rel="noopener noreferrer";
-          idaSetText(mtl,mt.title); mr.appendChild(mtl);
-          if(mt.isNusi){var mnt=idaCE("span","ida-nusi-tag");idaSetText(mnt,"主");mr.appendChild(mnt);}
-          var mcb=idaCE("span","ida-thread-cnt"); idaSetText(mcb,mt.count+"レス"); mr.appendChild(mcb);
-          threadInner.appendChild(mr);
-        }
-      });
+      (function(sb,sl,sc){
+        moreBtn.addEventListener("click",function(){
+          moreBtn.style.display="none";
+          for(var mi=sc;mi<sl.length;mi++) threadInner.appendChild(idaMkThreadRow(sl[mi],mi+1));
+        });
+      })(moreBtn,threadList,showCount);
       threadInner.appendChild(moreBtn);
     }
     threadCard.appendChild(threadInner);
     grid.appendChild(threadCard);
 
-    /* --- 右下: ワード + 名前 + スレ立て --- */
+    /* 右下: ワード + スレ立て */
     var subCard=idaCE("div","ida-card ida-card-sub");
 
     if(commonWords.length>0){
@@ -411,21 +323,6 @@ async function runAnalysis() {
       subCard.appendChild(wordBlock);
     }
 
-    /* 使用名前 */
-    if(nameList.length>0){
-      var nameBlock=idaCE("div","ida-sub-block");
-      var nameT=idaCE("div","ida-card-title ida-card-title-sm"); idaSetText(nameT,"🏷️ 使用名前"); nameBlock.appendChild(nameT);
-      var nameChips=idaCE("div","ida-chips");
-      nameList.slice(0,8).forEach(function(n){
-        var chip=idaCE("span","ida-chip ida-chip-name"); chip.textContent=n[0];
-        if(n[1]>1){var cx=idaCE("span","ida-chip-x"); idaSetText(cx,"×"+n[1]); chip.appendChild(cx);}
-        nameChips.appendChild(chip);
-      });
-      nameBlock.appendChild(nameChips);
-      subCard.appendChild(nameBlock);
-    }
-
-    /* スレ立て一覧 */
     if(threadsMade.length>0){
       var nusiBlock=idaCE("div","ida-sub-block");
       var nusiT=idaCE("div","ida-card-title ida-card-title-sm"); idaSetText(nusiT,"📝 スレ立て ("+threadsMade.length+"件)"); nusiBlock.appendChild(nusiT);
@@ -449,26 +346,18 @@ async function runAnalysis() {
     if(subCard.children.length>0) grid.appendChild(subCard);
     body.appendChild(grid);
 
-    /* ===== タイムライン（全レス） ===== */
+    /* タイムライン */
     var tlSection=idaCE("div","ida-tl-section");
-    var tlTitle=idaCE("div","ida-tl-title");
-    idaSetText(tlTitle,"📋 レスタイムライン ("+totalPosts+"件)");
+    var tlTitle=idaCE("div","ida-tl-title"); idaSetText(tlTitle,"📋 レスタイムライン ("+totalPosts+"件)");
     tlSection.appendChild(tlTitle);
-
-    var tlToggle=idaCE("button","ida-tl-toggle");
-    idaSetText(tlToggle,"▶ 全レスを展開");
+    var tlToggle=idaCE("button","ida-tl-toggle"); idaSetText(tlToggle,"▶ 全レスを展開");
     tlSection.appendChild(tlToggle);
-
-    var tlBody=idaCE("div","ida-tl-body");
-    tlSection.appendChild(tlBody);
-
+    var tlBody=idaCE("div","ida-tl-body"); tlSection.appendChild(tlBody);
     tlToggle.addEventListener("click",function(){
       if(tlBody.classList.contains("open")){
-        tlBody.classList.remove("open");
-        idaSetText(tlToggle,"▶ 全レスを展開");
+        tlBody.classList.remove("open"); idaSetText(tlToggle,"▶ 全レスを展開");
       } else {
-        tlBody.classList.add("open");
-        idaSetText(tlToggle,"▼ 折りたたむ");
+        tlBody.classList.add("open"); idaSetText(tlToggle,"▼ 折りたたむ");
         if(!tlBody.dataset.built){
           tlBody.dataset.built="1";
           posts.forEach(function(p){
@@ -486,6 +375,19 @@ async function runAnalysis() {
 }
 
 /* ================================================================
+   共通ワード抽出
+   ================================================================ */
+function idaExtractWords(threadList) {
+  var wordFreq=new Map();
+  threadList.forEach(function(t){
+    var ws=(t.title||"").match(/[\u30A0-\u30FF]{2,}|[\u4E00-\u9FFF]{2,}|[a-zA-Z]{3,}/g)||[];
+    var wordSeen=new Set();
+    ws.forEach(function(w){var low=w.toLowerCase();if(!wordSeen.has(low)){wordSeen.add(low);wordFreq.set(low,(wordFreq.get(low)||0)+1);}});
+  });
+  return Array.from(wordFreq.entries()).filter(function(e){return e[1]>=2;}).sort(function(a,b){return b[1]-a[1];}).slice(0,12);
+}
+
+/* ================================================================
    メトリクスカード
    ================================================================ */
 function idaMkMetric(icon, value, label, color) {
@@ -497,40 +399,45 @@ function idaMkMetric(icon, value, label, color) {
 }
 
 /* ================================================================
-   ハイライトレス（最初/最後/最長）— 常に展開表示
+   スレッド行
+   ================================================================ */
+function idaMkThreadRow(t, rank) {
+  var row=idaCE("div","ida-thread-row");
+  var rankNum=idaCE("span","ida-thread-rank"); idaSetText(rankNum,String(rank)); row.appendChild(rankNum);
+  var titleLink=idaCE("a","ida-thread-link");
+  titleLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+t.thread_id+"/";
+  titleLink.target="_blank"; titleLink.rel="noopener noreferrer";
+  idaSetText(titleLink,t.title); row.appendChild(titleLink);
+  if(t.isNusi){var nTag=idaCE("span","ida-nusi-tag");idaSetText(nTag,"主");row.appendChild(nTag);}
+  var cntBadge=idaCE("span","ida-thread-cnt"); idaSetText(cntBadge,t.count+"レス"); row.appendChild(cntBadge);
+  return row;
+}
+
+/* ================================================================
+   ハイライトレス
    ================================================================ */
 function idaMkHighlightPost(titleText, post, threadInfoMap) {
   var card=idaCE("div","ida-hl-card");
-
   var header=idaCE("div","ida-hl-header"); idaSetText(header,titleText); card.appendChild(header);
-
   var info=threadInfoMap.get(post.thread_id)||{};
   var threadLine=idaCE("div","ida-hl-thread");
   var threadLink=idaCE("a","ida-thread-link");
   threadLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/";
   threadLink.target="_blank"; threadLink.rel="noopener noreferrer";
   idaSetText(threadLink,"📌 "+(info.title||"スレッド "+post.thread_id));
-  threadLine.appendChild(threadLink);
-  card.appendChild(threadLine);
-
+  threadLine.appendChild(threadLink); card.appendChild(threadLine);
   var meta=idaCE("div","ida-hl-meta");
   var num=idaCE("span","ida-post-num"); idaSetText(num,post.post_num+":");
-  num.addEventListener("click",function(){
-    window.open("https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/"+post.post_num+"-","_blank");
-  });
-  meta.appendChild(num);
-  meta.appendChild(document.createTextNode(" "));
-  var nm=idaCE("span",""); nm.style.color="#008000"; idaSetText(nm,post.name||"名無し"); meta.appendChild(nm);
+  num.addEventListener("click",function(){window.open("https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/"+post.post_num+"-","_blank");});
+  meta.appendChild(num); meta.appendChild(document.createTextNode(" "));
+  var nmEl=idaCE("span",""); nmEl.style.color="#008000"; idaSetText(nmEl,post.name||"名無し"); meta.appendChild(nmEl);
   meta.appendChild(document.createTextNode(" | "+idaFmtDate(post.posted_at)));
   if(post.is_nusi){var nusi=idaCE("span","ida-nusi-tag");nusi.style.marginLeft="4px";idaSetText(nusi,"主");meta.appendChild(nusi);}
   card.appendChild(meta);
-
   var bodyEl=idaCE("div","ida-hl-body");
   var bodyText=(post.body||"").trim();
   if(bodyText.length>300) bodyText=bodyText.slice(0,300)+"…";
-  idaSetText(bodyEl,bodyText);
-  card.appendChild(bodyEl);
-
+  idaSetText(bodyEl,bodyText); card.appendChild(bodyEl);
   return card;
 }
 
@@ -544,19 +451,14 @@ function idaMkPost(post, threadTitle) {
   threadLink.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/";
   threadLink.target="_blank"; threadLink.rel="noopener noreferrer";
   idaSetText(threadLink,"📌 "+threadTitle); threadLine.appendChild(threadLink); div.appendChild(threadLine);
-
   var meta=idaCE("div","ida-post-meta");
   var num=idaCE("span","ida-post-num"); idaSetText(num,post.post_num+":");
-  num.addEventListener("click",function(){
-    window.open("https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/"+post.post_num+"-","_blank");
-  });
-  meta.appendChild(num);
-  meta.appendChild(document.createTextNode(" "));
-  var nm=idaCE("span",""); nm.style.color="#008000"; idaSetText(nm,post.name||"名無し"); meta.appendChild(nm);
+  num.addEventListener("click",function(){window.open("https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+post.thread_id+"/"+post.post_num+"-","_blank");});
+  meta.appendChild(num); meta.appendChild(document.createTextNode(" "));
+  var nmEl=idaCE("span",""); nmEl.style.color="#008000"; idaSetText(nmEl,post.name||"名無し"); meta.appendChild(nmEl);
   meta.appendChild(document.createTextNode(" | "+idaFmtDate(post.posted_at)));
   if(post.is_nusi){var nusi=idaCE("span","ida-nusi-tag");nusi.style.marginLeft="4px";idaSetText(nusi,"主");meta.appendChild(nusi);}
   div.appendChild(meta);
-
   var bodyEl=idaCE("div","ida-post-body"); idaSetText(bodyEl,(post.body||"").trim()); div.appendChild(bodyEl);
   return div;
 }
