@@ -281,3 +281,23 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .id-search-icon:hover {
   opacity: 1.0;
 }
+/* 分析ボタン */
+.rk-analyze-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  font-size: 11px;
+  text-decoration: none;
+  color: #1a73e8;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  background: #f8f9fa;
+  vertical-align: middle;
+  transition: background 0.12s, border-color 0.12s;
+}
+.rk-analyze-btn:hover {
+  background: #e8f0fe;
+  border-color: #1a73e8;
+}
