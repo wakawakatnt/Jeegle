@@ -352,11 +352,13 @@ function tokenize(line) {
   const toks = [];
   const ancRe = />>([\d]+)/g;
   const igRe  = /https?:\/\/(?:i\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\.[a-zA-Z]+)?/g;
+  const igjpRe = /https?:\/\/imgu?\.jp\/([a-zA-Z0-9]+)(?:\.[a-zA-Z]+)?/g;
   const ytRe  = /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/g;
   let m;
   const hits = [];
   ancRe.lastIndex = 0; while ((m = ancRe.exec(line)) !== null) hits.push({ s: m.index, e: m.index + m[0].length, type: "anchor", raw: m[0], num: m[1] });
   igRe.lastIndex = 0;  while ((m = igRe.exec(line)) !== null)  hits.push({ s: m.index, e: m.index + m[0].length, type: "imgur", raw: m[0], id: m[1] });
+  igjpRe.lastIndex = 0; while ((m = igjpRe.exec(line)) !== null) hits.push({ s: m.index, e: m.index + m[0].length, type: "imgujp", raw: m[0], id: m[1] });
   ytRe.lastIndex = 0;  while ((m = ytRe.exec(line)) !== null)  hits.push({ s: m.index, e: m.index + m[0].length, type: "youtube", raw: m[0], vid: m[1] });
   hits.sort((a, b) => a.s - b.s);
   const kept = []; let last = 0;
@@ -369,6 +371,7 @@ function tokenize(line) {
   if (pos < line.length) toks.push({ type: "text", raw: line.slice(pos) });
   return toks;
 }
+
 
 /* ===== ハイライト ===== */
 function hlAppend(container, text, q) {
