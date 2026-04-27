@@ -335,6 +335,12 @@ function renderBody(container, bodyText, tid, q) {
         img.src = "https://i.imgur.com/" + tok.id + ".jpg"; img.loading = "lazy";
         img.onerror = () => { w.style.display = "none"; }; w.appendChild(img); container.appendChild(w);
         hlAppend(container, tok.raw, q);
+      } else if (tok.type === "imgujp") {
+        const w = document.createElement("div"); w.className = "media-embed";
+        const img = document.createElement("img");
+        img.src = tok.raw; img.loading = "lazy";
+        img.onerror = () => { w.style.display = "none"; }; w.appendChild(img); container.appendChild(w);
+        hlAppend(container, tok.raw, q);
       } else if (tok.type === "youtube") {
         const w = document.createElement("div"); w.className = "media-embed";
         const fr = document.createElement("iframe");
