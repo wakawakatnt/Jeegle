@@ -313,14 +313,25 @@ function buildTable(rows, date, countKey, countLabel) {
     } else { txt(tdRank, String(row.rank)); }
     tr.appendChild(tdRank);
 
-    /* ID */
+        /* ID + 分析ボタン */
     var tdId = document.createElement("td");
     var span = document.createElement("span"); span.className = "rank-id";
     txt(span, row.user_id || "");
     span.addEventListener("click", (function(uid) {
       return function() { goSearch(uid, currentDate); };
     })(row.user_id || ""));
-    tdId.appendChild(span); tr.appendChild(tdId);
+    tdId.appendChild(span);
+
+    var analyzeBtn = document.createElement("a");
+    analyzeBtn.className = "rk-analyze-btn";
+    analyzeBtn.href = "id-analysis.html?id=" + encodeURIComponent(row.user_id || "") + "&d=" + toYMD6(date);
+    analyzeBtn.title = "ID:" + (row.user_id || "") + " を分析";
+    analyzeBtn.textContent = "分析";
+    analyzeBtn.addEventListener("click", function(e) { e.stopPropagation(); });
+    tdId.appendChild(analyzeBtn);
+
+    tr.appendChild(tdId);
+
 
     /* 件数 */
     var tdCnt = document.createElement("td"); tdCnt.className = "count-cell";
