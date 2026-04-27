@@ -358,7 +358,7 @@ function tokenize(line) {
   const toks = [];
   const ancRe = />>([\d]+)/g;
   const igRe  = /https?:\/\/(?:i\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\.[a-zA-Z]+)?/g;
-  const igjpRe = /https?:\/\/imgu?\.jp\/([a-zA-Z0-9]+)(?:\.[a-zA-Z]+)?/g;
+  const igjpRe = /https?:\/\/imgu?\.jp\/(?:i\/)?([a-zA-Z0-9_-]+(?:\.[a-zA-Z]{3,4}))/g;
   const ytRe  = /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/g;
   let m;
   const hits = [];
