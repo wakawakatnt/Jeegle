@@ -64,7 +64,63 @@ function dateFilter(dr, col) {
   return `&${col}=gte.${dr.from}&${col}=lt.${dr.to}`;
 }
 
+/* ================================================================
+   公開API: 日ごとに分割して並列実行 → マージ
+   ================================================================ */
+
 async function searchTitle(q, mode, dr) {
+  const segs = splitDateRangeByDay(dr);
+  const parts = await Promise.all(segs.map(seg => searchTitleOneDay(q, mode, seg)));
+  // thread_id でマージ（タイトル一致は matchedPosts が空なので thread_id だけで重複除去すればOK）
+  const map = new Map();
+  parts.flat().forEach(r => {
+    if (!map.has(r.thread_id)) {
+      map.set(r.thread_id, r);
+    } else {
+      // 念のため updated_at は新しい方を採用
+      const ex = map.get(r.thread_id);
+      if (r.updated_at && (!ex.updated_at || r.updated_at > ex.updated_at)) {
+        ex.updated_at = r.updated_at;
+      }
+    }
+  });
+  return Array.from(map.values());
+}
+
+async function searchBody(q, mode, dr) {
+  // id:xxx 構文は元の単発処理を維持しつつ、これも日ごと分割で取りこぼし対策
+  const segs = splitDateRangeByDay(dr);
+  const parts = await Promise.all(segs.map(seg => searchBodyOneDay(q, mode, seg)));
+
+  // thread_id × post_num で重複除去しつつマージ
+  const tmap = new Map();
+  parts.flat().forEach(r => {
+    if (!tmap.has(r.thread_id)) {
+      tmap.set(r.thread_id, {
+        thread_id: r.thread_id,
+        title: r.title,
+        updated_at: r.updated_at,
+        matchedPosts: [...r.matchedPosts],
+        titleMatch: r.titleMatch
+      });
+    } else {
+      const ex = tmap.get(r.thread_id);
+      const seen = new Set(ex.matchedPosts.map(p => p.post_num));
+      r.matchedPosts.forEach(p => { if (!seen.has(p.post_num)) ex.matchedPosts.push(p); });
+      if (r.updated_at && (!ex.updated_at || r.updated_at > ex.updated_at)) {
+        ex.updated_at = r.updated_at;
+      }
+    }
+  });
+  tmap.forEach(r => r.matchedPosts.sort((a, b) => a.post_num - b.post_num));
+  return Array.from(tmap.values());
+}
+
+/* ================================================================
+   内部実装: 1日分のみを処理（旧 searchTitle / searchBody 相当）
+   ================================================================ */
+
+async function searchTitleOneDay(q, mode, dr) {
   const ws = words(q);
   let threads;
   if (mode === "or" && ws.length > 1) {
@@ -82,10 +138,16 @@ async function searchTitle(q, mode, dr) {
     if (mode === "and" && ws.length > 1)
       threads = threads.filter(t => ws.every(w => (t.title || "").toLowerCase().includes(w.toLowerCase())));
   }
-  return threads.map(t => ({ thread_id: t.thread_id, title: t.title, updated_at: t.updated_at, matchedPosts: [], titleMatch: true }));
+  return threads.map(t => ({
+    thread_id: t.thread_id,
+    title: t.title,
+    updated_at: t.updated_at,
+    matchedPosts: [],
+    titleMatch: true
+  }));
 }
 
-async function searchBody(q, mode, dr) {
+async function searchBodyOneDay(q, mode, dr) {
   const ws = words(q);
   const idm = q.match(/^id:\s*(.+)/i);
   if (idm) {
@@ -116,7 +178,7 @@ async function searchBody(q, mode, dr) {
     if (mode === "and" && ws.length > 1)
       all = all.filter(p => {
         const t = ((p.body || "") + " " + (p.name || "") + " " + (p.user_id || "")).toLowerCase();
-        return ws.every(w => t.includes(w.toLowerCase()));
+        return ws.every(w => ws.every(w => t.includes(w.toLowerCase())));
       });
   }
   return groupPosts(all);
