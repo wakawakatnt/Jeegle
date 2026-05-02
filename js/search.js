@@ -2,6 +2,7 @@
 
 let currentResults = [];
 let currentKeyword = "";
+let lastSegmentTimings = []; // 日付ごとの応答時間・エラー情報
 
 /* ===== メイン検索 ===== */
 async function doSearch(q) {
@@ -27,6 +28,9 @@ async function doSearch(q) {
   const smode = document.querySelector('input[name="searchMode"]:checked').value;
   const dr    = getDateRange();
   const t0    = performance.now();
+
+  // 計測バッファをリセット
+  lastSegmentTimings = [];
 
   try {
     let results;
@@ -54,7 +58,13 @@ async function doSearch(q) {
     res.innerHTML = "";
     const d = document.createElement("div");
     d.className = "no-results";
-    setText(d, "エラー: " + e.message);
+    let msg = "エラー: " + e.message;
+    const failed = lastSegmentTimings.filter(t => !t.ok);
+    if (failed.length) {
+      msg += "\n失敗した日付: " + failed.map(f => `${f.label}(${f.kind}) ${f.ms}ms ${f.error}`).join(" / ");
+    }
+    setText(d, msg);
+    d.style.whiteSpace = "pre-wrap";
     res.appendChild(d);
   }
 }
@@ -65,12 +75,61 @@ function dateFilter(dr, col) {
 }
 
 /* ================================================================
+   セグメント計測ヘルパー
+   ================================================================ */
+
+/** セグメントを「YYYY-MM-DD」形式のラベルにする */
+function segLabel(seg) {
+  const f = new Date(seg.from);
+  const t = new Date(new Date(seg.to).getTime() - 1);
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const fl = fmt(f), tl = fmt(t);
+  return (fl === tl) ? fl : `${fl}〜${tl}`;
+}
+
+/** 1セグメントを計測しつつ実行。失敗時は日付付きエラーをthrow */
+async function runSegment(label, kind, fn) {
+  const t0 = performance.now();
+  try {
+    const r = await fn();
+    const ms = +(performance.now() - t0).toFixed(1);
+    lastSegmentTimings.push({ label, kind, ms, ok: true, count: Array.isArray(r) ? r.length : null });
+    return r;
+  } catch (e) {
+    const ms = +(performance.now() - t0).toFixed(1);
+    lastSegmentTimings.push({ label, kind, ms, ok: false, error: e.message });
+    const wrapped = new Error(`[${kind} ${label}] ${e.message}`);
+    wrapped.segLabel = label;
+    wrapped.kind = kind;
+    wrapped.original = e;
+    throw wrapped;
+  }
+}
+
+/** 全セグメントを並列実行。部分失敗は許容、全滅時はthrow */
+async function runAllSegments(segs, kind, runner) {
+  const settled = await Promise.allSettled(
+    segs.map(seg => runSegment(segLabel(seg), kind, () => runner(seg)))
+  );
+  const oks   = settled.filter(s => s.status === "fulfilled").map(s => s.value);
+  const fails = settled.filter(s => s.status === "rejected").map(s => s.reason);
+
+  if (fails.length === segs.length) {
+    throw new Error("全セグメント失敗: " + fails.map(f => f.message).join(" / "));
+  }
+  if (fails.length > 0) {
+    console.warn(`[Jeegle] ${fails.length}/${segs.length} セグメント失敗:`, fails);
+  }
+  return oks;
+}
+
+/* ================================================================
    公開API: 日ごとに分割して並列実行 → マージ
    ================================================================ */
 
 async function searchTitle(q, mode, dr) {
   const segs = splitDateRangeByDay(dr);
-  const parts = await Promise.all(segs.map(seg => searchTitleOneDay(q, mode, seg)));
+  const parts = await runAllSegments(segs, "title", seg => searchTitleOneDay(q, mode, seg));
   const map = new Map();
   parts.flat().forEach(r => {
     if (!map.has(r.thread_id)) {
@@ -87,7 +146,7 @@ async function searchTitle(q, mode, dr) {
 
 async function searchBody(q, mode, dr) {
   const segs = splitDateRangeByDay(dr);
-  const parts = await Promise.all(segs.map(seg => searchBodyOneDay(q, mode, seg)));
+  const parts = await runAllSegments(segs, "body", seg => searchBodyOneDay(q, mode, seg));
 
   const tmap = new Map();
   parts.flat().forEach(r => {
