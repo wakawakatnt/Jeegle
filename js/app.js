@@ -30,13 +30,27 @@ document.querySelectorAll('input[name="dateRange"]').forEach(r => r.addEventList
 
 // カスタム日付入力変更
 document.getElementById("dateFrom").addEventListener("change", () => {
+  const fromEl = document.getElementById("dateFrom");
+  const toEl   = document.getElementById("dateTo");
+  if (!fromEl.value || !toEl.value) return;
+  // 前後逆ならスワップ（UIに即反映）
+  if (fromEl.value > toEl.value) {
+    [fromEl.value, toEl.value] = [toEl.value, fromEl.value];
+  }
   const q = document.getElementById("resultInput").value.trim();
-  if (q && document.getElementById("dateTo").value) doSearch(q);
+  if (q) doSearch(q);
 });
 document.getElementById("dateTo").addEventListener("change", () => {
+  const fromEl = document.getElementById("dateFrom");
+  const toEl   = document.getElementById("dateTo");
+  if (!fromEl.value || !toEl.value) return;
+  if (fromEl.value > toEl.value) {
+    [fromEl.value, toEl.value] = [toEl.value, fromEl.value];
+  }
   const q = document.getElementById("resultInput").value.trim();
-  if (q && document.getElementById("dateFrom").value) doSearch(q);
+  if (q) doSearch(q);
 });
+
 
 window.addEventListener("popstate", loadUrl);
 
