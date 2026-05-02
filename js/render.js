@@ -27,7 +27,61 @@ function renderAll(q, elapsed) {
   }
   document.getElementById("sortBar").classList.add("visible");
   const sum = document.getElementById("searchSummary");
-  setText(sum, `検索: 「${q}」 | ヒット: ${sorted.length}スレッド, ${total}レス`);
+
+  // 期間ラベルを組み立て
+  const dr = getDateRange();
+  const fromD = new Date(dr.from);
+  const toD   = new Date(new Date(dr.to).getTime() - 1);
+  const fmt = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;
+  const fromStr = fmt(fromD);
+  const toStr   = fmt(toD);
+  const dateLabel = (fromStr === toStr) ? fromStr : `${fromStr} 〜 ${toStr}`;
+
+  // 1行目: 検索情報
+  sum.innerHTML = "";
+  const line1 = document.createElement("div");
+  setText(line1, `検索: 「${q}」 | 期間: ${dateLabel} | ヒット: ${sorted.length}スレッド, ${total}レス`);
+  sum.appendChild(line1);
+
+  // 2行目以降: 日付ごとの応答時間 / エラー
+  if (typeof lastSegmentTimings !== "undefined" && lastSegmentTimings.length) {
+    const byLabel = new Map();
+    lastSegmentTimings.forEach(t => {
+      if (!byLabel.has(t.label)) byLabel.set(t.label, []);
+      byLabel.get(t.label).push(t);
+    });
+
+    const tbl = document.createElement("div");
+    tbl.style.cssText = "margin-top:6px;font-size:12px;color:#5f6368;display:flex;flex-wrap:wrap;gap:6px 12px;";
+
+    const labels = Array.from(byLabel.keys()).sort().reverse();
+    labels.forEach(label => {
+      const rows = byLabel.get(label);
+      rows.forEach(r => {
+        const item = document.createElement("span");
+        if (r.ok) {
+          item.textContent = `${label}[${r.kind}]: ${r.ms}ms (${r.count}件)`;
+          item.style.color = "#5f6368";
+        } else {
+          item.textContent = `❌ ${label}[${r.kind}]: ${r.ms}ms ${r.error}`;
+          item.style.color = "#c0392b";
+          item.style.fontWeight = "600";
+        }
+        tbl.appendChild(item);
+      });
+    });
+
+    sum.appendChild(tbl);
+
+    const failed = lastSegmentTimings.filter(t => !t.ok);
+    if (failed.length) {
+      const warn = document.createElement("div");
+      warn.style.cssText = "margin-top:6px;padding:6px 10px;background:#fff3cd;border:1px solid #ffe69c;border-radius:4px;color:#664d03;font-size:12px;";
+      warn.textContent = `⚠️ ${failed.length}件の日付でエラー: ${failed.map(f => `${f.label}(${f.kind})`).join(", ")}`;
+      sum.appendChild(warn);
+    }
+  }
+
   sum.style.display = "block";
   sorted.forEach(r => res.appendChild(mkCard(r, q)));
 }
@@ -67,13 +121,12 @@ function mkIdAnalysisBanner(userId) {
   const btn = document.createElement("a");
   btn.className = "id-analysis-banner-btn";
   btn.textContent = "分析ページへ →";
-  // 現在の日付パラメータを引き継ぐ
   const dr = getDateRange();
   btn.href = `id-analysis.html?id=${encodeURIComponent(userId)}&d=${dr.urlParam}`;
   banner.appendChild(btn);
 
   banner.addEventListener("click", (e) => {
-    if (e.target === btn) return; // ボタン自体のクリックはデフォルトで遷移
+    if (e.target === btn) return;
     btn.click();
   });
 
@@ -209,23 +262,22 @@ function mkPost(post, tid, q, showRange) {
   const ti = document.createElement("span"); ti.style.cssText = "color:#5f6368;"; ti.textContent = fmtDate(post.posted_at); meta.appendChild(ti);
 
   const s2 = document.createElement("span"); s2.className = "post-sep"; setText(s2, " | ID:"); meta.appendChild(s2);
-const uid = document.createElement("span");
-hlSet(uid, post.user_id || "?", q); meta.appendChild(uid);
+  const uid = document.createElement("span");
+  hlSet(uid, post.user_id || "?", q); meta.appendChild(uid);
 
-/* ID検索アイコン */
-if (post.user_id) {
-  const idSearch = document.createElement("span");
-  idSearch.className = "id-search-icon";
-  idSearch.textContent = "🔍";
-  idSearch.title = "ID:" + post.user_id + " を検索";
-  idSearch.addEventListener("click", function(e) {
-    e.stopPropagation();
-    doSearch("id:" + post.user_id);
-    window.scrollTo(0, 0);
-  });
-  meta.appendChild(idSearch);
-}
-
+  /* ID検索アイコン */
+  if (post.user_id) {
+    const idSearch = document.createElement("span");
+    idSearch.className = "id-search-icon";
+    idSearch.textContent = "🔍";
+    idSearch.title = "ID:" + post.user_id + " を検索";
+    idSearch.addEventListener("click", function(e) {
+      e.stopPropagation();
+      doSearch("id:" + post.user_id);
+      window.scrollTo(0, 0);
+    });
+    meta.appendChild(idSearch);
+  }
 
   if (post.is_nusi) {
     const nusi = document.createElement("span"); nusi.className = "post-nusi"; nusi.textContent = "主"; meta.appendChild(nusi);
@@ -377,7 +429,6 @@ function tokenize(line) {
   if (pos < line.length) toks.push({ type: "text", raw: line.slice(pos) });
   return toks;
 }
-
 
 /* ===== ハイライト ===== */
 function hlAppend(container, text, q) {
