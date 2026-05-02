@@ -7,7 +7,88 @@ function renderAll(q, elapsed) {
   const order  = document.querySelector('input[name="sortOrder"]:checked').value;
   const sorted = sortRes([...currentResults], order);
   const total  = sorted.reduce((s, r) => s + r.matchedPosts.length, 0);
-  document.getElementById("resultStats").textContent = `約 ${sorted.length} スレッド / ${total} レス (${elapsed || "0.00"} 秒)`;
+
+  // ===== resultStats: 件数・時間（展開で日付ごとの応答時間/エラー） =====
+  const stats = document.getElementById("resultStats");
+  stats.innerHTML = "";
+
+  const hasTimings = (typeof lastSegmentTimings !== "undefined" && lastSegmentTimings.length > 0);
+  const failed = hasTimings ? lastSegmentTimings.filter(t => !t.ok) : [];
+
+  const summaryRow = document.createElement("div");
+  summaryRow.style.cssText = hasTimings ? "cursor:pointer;user-select:none;" : "";
+
+  const triangle = document.createElement("span");
+  if (hasTimings) {
+    triangle.textContent = "▶ ";
+    triangle.style.cssText = "display:inline-block;transition:transform 0.15s;font-size:11px;color:#5f6368;";
+    summaryRow.appendChild(triangle);
+  }
+
+  const summaryText = document.createElement("span");
+  summaryText.textContent = `約 ${sorted.length} スレッド / ${total} レス (${elapsed || "0.00"} 秒)`;
+  summaryRow.appendChild(summaryText);
+
+  // 失敗があれば件数だけ閉じた状態でも表示
+  if (failed.length) {
+    const errBadge = document.createElement("span");
+    errBadge.textContent = ` ⚠️ ${failed.length}件エラー`;
+    errBadge.style.cssText = "color:#c0392b;font-weight:600;font-size:12px;margin-left:6px;";
+    summaryRow.appendChild(errBadge);
+  }
+
+  stats.appendChild(summaryRow);
+
+  // 展開エリア
+  if (hasTimings) {
+    const detailWrap = document.createElement("div");
+    detailWrap.style.cssText = "display:none;margin-top:6px;";
+
+    // 日付ごとの応答時間
+    const detail = document.createElement("div");
+    detail.style.cssText = "font-size:12px;color:#5f6368;display:flex;flex-wrap:wrap;gap:4px 10px;";
+
+    const byLabel = new Map();
+    lastSegmentTimings.forEach(t => {
+      if (!byLabel.has(t.label)) byLabel.set(t.label, []);
+      byLabel.get(t.label).push(t);
+    });
+
+    const labels = Array.from(byLabel.keys()).sort().reverse();
+    labels.forEach(label => {
+      byLabel.get(label).forEach(r => {
+        const item = document.createElement("span");
+        if (r.ok) {
+          item.textContent = `${label}[${r.kind}]: ${r.ms}ms (${r.count}件)`;
+          item.style.color = "#5f6368";
+        } else {
+          item.textContent = `❌ ${label}[${r.kind}]: ${r.ms}ms ${r.error}`;
+          item.style.color = "#c0392b";
+          item.style.fontWeight = "600";
+        }
+        detail.appendChild(item);
+      });
+    });
+    detailWrap.appendChild(detail);
+
+    // エラー警告
+    if (failed.length) {
+      const warn = document.createElement("div");
+      warn.style.cssText = "margin-top:6px;padding:6px 10px;background:#fff3cd;border:1px solid #ffe69c;border-radius:4px;color:#664d03;font-size:12px;";
+      warn.textContent = `⚠️ ${failed.length}件の日付でエラー: ${failed.map(f => `${f.label}(${f.kind}) ${f.error}`).join(" / ")}`;
+      detailWrap.appendChild(warn);
+    }
+
+    stats.appendChild(detailWrap);
+
+    // クリックで展開トグル
+    summaryRow.addEventListener("click", () => {
+      const isOpen = detailWrap.style.display !== "none";
+      detailWrap.style.display = isOpen ? "none" : "block";
+      triangle.textContent = isOpen ? "▶ " : "▼ ";
+    });
+  }
+
   const res = document.getElementById("results");
   res.innerHTML = "";
 
@@ -27,61 +108,7 @@ function renderAll(q, elapsed) {
   }
   document.getElementById("sortBar").classList.add("visible");
   const sum = document.getElementById("searchSummary");
-
-  // 期間ラベルを組み立て
-  const dr = getDateRange();
-  const fromD = new Date(dr.from);
-  const toD   = new Date(new Date(dr.to).getTime() - 1);
-  const fmt = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;
-  const fromStr = fmt(fromD);
-  const toStr   = fmt(toD);
-  const dateLabel = (fromStr === toStr) ? fromStr : `${fromStr} 〜 ${toStr}`;
-
-  // 1行目: 検索情報
-  sum.innerHTML = "";
-  const line1 = document.createElement("div");
-  setText(line1, `検索: 「${q}」 | 期間: ${dateLabel} | ヒット: ${sorted.length}スレッド, ${total}レス`);
-  sum.appendChild(line1);
-
-  // 2行目以降: 日付ごとの応答時間 / エラー
-  if (typeof lastSegmentTimings !== "undefined" && lastSegmentTimings.length) {
-    const byLabel = new Map();
-    lastSegmentTimings.forEach(t => {
-      if (!byLabel.has(t.label)) byLabel.set(t.label, []);
-      byLabel.get(t.label).push(t);
-    });
-
-    const tbl = document.createElement("div");
-    tbl.style.cssText = "margin-top:6px;font-size:12px;color:#5f6368;display:flex;flex-wrap:wrap;gap:6px 12px;";
-
-    const labels = Array.from(byLabel.keys()).sort().reverse();
-    labels.forEach(label => {
-      const rows = byLabel.get(label);
-      rows.forEach(r => {
-        const item = document.createElement("span");
-        if (r.ok) {
-          item.textContent = `${label}[${r.kind}]: ${r.ms}ms (${r.count}件)`;
-          item.style.color = "#5f6368";
-        } else {
-          item.textContent = `❌ ${label}[${r.kind}]: ${r.ms}ms ${r.error}`;
-          item.style.color = "#c0392b";
-          item.style.fontWeight = "600";
-        }
-        tbl.appendChild(item);
-      });
-    });
-
-    sum.appendChild(tbl);
-
-    const failed = lastSegmentTimings.filter(t => !t.ok);
-    if (failed.length) {
-      const warn = document.createElement("div");
-      warn.style.cssText = "margin-top:6px;padding:6px 10px;background:#fff3cd;border:1px solid #ffe69c;border-radius:4px;color:#664d03;font-size:12px;";
-      warn.textContent = `⚠️ ${failed.length}件の日付でエラー: ${failed.map(f => `${f.label}(${f.kind})`).join(", ")}`;
-      sum.appendChild(warn);
-    }
-  }
-
+  setText(sum, `検索: 「${q}」 | ヒット: ${sorted.length}スレッド, ${total}レス`);
   sum.style.display = "block";
   sorted.forEach(r => res.appendChild(mkCard(r, q)));
 }
