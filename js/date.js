@@ -143,3 +143,33 @@ function matchPreset(fromD, toD) {
   }
   return null;
 }
+
+/** 日付範囲を1日刻みに分割（並列リクエスト用）
+ *  @param {{from:string,to:string,urlParam?:string}} dr getDateRange()の戻り値
+ *  @returns {{from:string,to:string}[]} 1日ごとの範囲配列（新しい日から順）
+ */
+function splitDateRangeByDay(dr) {
+  const start = new Date(dr.from);
+  const end   = new Date(dr.to);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) return [dr];
+
+  const out = [];
+  // ローカル日の0時に正規化
+  let cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+
+  while (cur < end) {
+    const next = new Date(cur);
+    next.setDate(next.getDate() + 1);
+
+    // 端を実際のfrom/toにクリップ
+    const segFrom = (cur  < start) ? start : cur;
+    const segTo   = (next > end)   ? end   : next;
+
+    out.push({ from: segFrom.toISOString(), to: segTo.toISOString() });
+    cur = next;
+  }
+
+  if (out.length <= 1) return [dr];
+  // 新しい日から投げる
+  return out.reverse();
+}
