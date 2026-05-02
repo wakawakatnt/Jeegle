@@ -28,6 +28,10 @@ async function doSearch(q) {
   const dr    = getDateRange();
   const t0    = performance.now();
 
+    // 計測バッファをリセット
+  lastSegmentTimings = [];
+  lastSegmentTimings.__locked = true; // searchTitle/searchBodyが両方走っても消されないように
+
   try {
     let results;
     if (stype === "title") {
@@ -50,11 +54,27 @@ async function doSearch(q) {
     }
     currentResults = results;
     renderAll(q, ((performance.now() - t0) / 1000).toFixed(2));
+
+    // 部分失敗があればサマリに警告表示
+    const failed = lastSegmentTimings.filter(t => !t.ok);
+    if (failed.length) {
+      const note = document.createElement("div");
+      note.style.cssText = "margin:8px 0;padding:8px 12px;background:#fff3cd;border:1px solid #ffe69c;border-radius:6px;color:#664d03;font-size:13px;";
+      note.textContent = `⚠️ 一部の日付でエラー: ${failed.map(f => `${f.label}(${f.kind}) ${f.error}`).join(" / ")}`;
+      res.insertBefore(note, res.firstChild);
+    }
   } catch (e) {
     res.innerHTML = "";
     const d = document.createElement("div");
     d.className = "no-results";
-    setText(d, "エラー: " + e.message);
+    let msg = "エラー: " + e.message;
+    // 失敗したセグメントの一覧を補足
+    const failed = lastSegmentTimings.filter(t => !t.ok);
+    if (failed.length) {
+      msg += "\n失敗した日付: " + failed.map(f => `${f.label}(${f.kind}) ${f.ms}ms ${f.error}`).join(" / ");
+    }
+    setText(d, msg);
+    d.style.whiteSpace = "pre-wrap";
     res.appendChild(d);
   }
 }
