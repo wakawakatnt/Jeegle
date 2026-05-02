@@ -175,11 +175,12 @@ async function searchBodyOneDay(q, mode, dr) {
     const map = new Map();
     [...bp, ...np, ...ip].forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
     all = Array.from(map.values());
-    if (mode === "and" && ws.length > 1)
+        if (mode === "and" && ws.length > 1)
       all = all.filter(p => {
         const t = ((p.body || "") + " " + (p.name || "") + " " + (p.user_id || "")).toLowerCase();
-        return ws.every(w => ws.every(w => t.includes(w.toLowerCase())));
+        return ws.every(w => t.includes(w.toLowerCase()));
       });
+
   }
   return groupPosts(all);
 }
