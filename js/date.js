@@ -68,12 +68,23 @@ function getDateRange() {
   const preset = document.querySelector('input[name="dateRange"]:checked').value;
 
   if (preset === "custom") {
-    const fv = document.getElementById("dateFrom").value;
-    const tv = document.getElementById("dateTo").value;
+    const fromEl = document.getElementById("dateFrom");
+    const toEl   = document.getElementById("dateTo");
+    let fv = fromEl.value;
+    let tv = toEl.value;
+
     if (!fv || !tv) {
       const r = presetToRange("7days");
       return { from: r.from.toISOString(), to: r.to.toISOString(), urlParam: toYMD(r.from) + "-" + toYMD(daysAgo(-1)) };
     }
+
+    // from > to なら自動スワップ（UIの値も入れ替える）
+    if (fv > tv) {
+      [fv, tv] = [tv, fv];
+      fromEl.value = fv;
+      toEl.value   = tv;
+    }
+
     const fd = new Date(fv + "T00:00:00");
     const td = new Date(tv + "T00:00:00");
     const tdNext = new Date(td); tdNext.setDate(tdNext.getDate() + 1);
