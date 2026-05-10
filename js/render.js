@@ -8,7 +8,6 @@ function renderAll(q, elapsed) {
   const sorted = sortRes([...currentResults], order);
   const total  = sorted.reduce((s, r) => s + r.matchedPosts.length, 0);
 
-  // ===== resultStats: 件数・時間（展開で日付ごとの応答時間/エラー） =====
   const stats = document.getElementById("resultStats");
   stats.innerHTML = "";
 
@@ -29,7 +28,6 @@ function renderAll(q, elapsed) {
   summaryText.textContent = `約 ${sorted.length} スレッド / ${total} レス (${elapsed || "0.00"} 秒)`;
   summaryRow.appendChild(summaryText);
 
-  // 失敗があれば件数だけ閉じた状態でも表示
   if (failed.length) {
     const errBadge = document.createElement("span");
     errBadge.textContent = ` ⚠️ ${failed.length}件エラー`;
@@ -39,12 +37,10 @@ function renderAll(q, elapsed) {
 
   stats.appendChild(summaryRow);
 
-  // 展開エリア
   if (hasTimings) {
     const detailWrap = document.createElement("div");
     detailWrap.style.cssText = "display:none;margin-top:6px;";
 
-    // 日付ごとの応答時間
     const detail = document.createElement("div");
     detail.style.cssText = "font-size:12px;color:#5f6368;display:flex;flex-wrap:wrap;gap:4px 10px;";
 
@@ -71,7 +67,6 @@ function renderAll(q, elapsed) {
     });
     detailWrap.appendChild(detail);
 
-    // エラー警告
     if (failed.length) {
       const warn = document.createElement("div");
       warn.style.cssText = "margin-top:6px;padding:6px 10px;background:#fff3cd;border:1px solid #ffe69c;border-radius:4px;color:#664d03;font-size:12px;";
@@ -81,7 +76,6 @@ function renderAll(q, elapsed) {
 
     stats.appendChild(detailWrap);
 
-    // クリックで展開トグル
     summaryRow.addEventListener("click", () => {
       const isOpen = detailWrap.style.display !== "none";
       detailWrap.style.display = isOpen ? "none" : "block";
@@ -92,7 +86,6 @@ function renderAll(q, elapsed) {
   const res = document.getElementById("results");
   res.innerHTML = "";
 
-  /* ===== ID検索バナー ===== */
   const idm = q.match(/^id:\s*(.+)/i);
   if (idm && sorted.length > 0) {
     res.appendChild(mkIdAnalysisBanner(idm[1].trim()));
@@ -292,7 +285,6 @@ function mkPost(post, tid, q, showRange) {
   const uid = document.createElement("span");
   hlSet(uid, post.user_id || "?", q); meta.appendChild(uid);
 
-  /* ID検索アイコン */
   if (post.user_id) {
     const idSearch = document.createElement("span");
     idSearch.className = "id-search-icon";
@@ -331,7 +323,7 @@ function mkPost(post, tid, q, showRange) {
   renderBody(body, post.body || "", tid, q);
   div.appendChild(body);
 
-  /* 安価数フッター */
+  /* ===== 安価数フッター（デュアルDB対応） ===== */
   {
     const footer2  = document.createElement("div"); footer2.className = "post-footer";
     const aresBtn2 = document.createElement("button"); aresBtn2.className = "ares-btn";
@@ -346,20 +338,17 @@ function mkPost(post, tid, q, showRange) {
     const aresList2 = document.createElement("div"); aresList2.className = "ares-list";
     div.appendChild(aresList2);
 
+    /* 安価カウント: api.jsの countAres を使用 */
     (async () => {
       try {
-        const r2 = await fetch(SB_URL + "/rest/v1/rpc/count_ares", {
-          method: "POST",
-          headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
-          body: JSON.stringify({ tid: Number(tid), pnum: post.post_num })
-        });
-        const cnt = await r2.json();
+        const cnt = await countAres(tid, post.post_num);
         if (cnt <= 0) return;
         setText(countSpan2, String(cnt));
         footer2.style.display = "";
       } catch (e) {}
     })();
 
+    /* 安価レス展開: api.jsの getAresPosts を使用 */
     aresBtn2.addEventListener("click", async e => {
       e.stopPropagation();
       if (aresList2.classList.contains("open")) {
@@ -370,11 +359,7 @@ function mkPost(post, tid, q, showRange) {
       const ld2 = document.createElement("div"); ld2.className = "ares-list-loading";
       setText(ld2, "読み込み中…"); aresList2.appendChild(ld2);
       try {
-        const rps2 = await fetch(SB_URL + "/rest/v1/rpc/get_ares_posts", {
-          method: "POST",
-          headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
-          body: JSON.stringify({ tid: Number(tid), pnum: post.post_num })
-        }).then(r => r.json());
+        const rps2 = await getAresPosts(tid, post.post_num);
 
         aresList2.innerHTML = "";
         if (!rps2.length) {
