@@ -9,4 +9,9 @@ And from there, access a link that displays the contents of the file, such as "h
 Also, this page is rendered using JavaScript, so you may not be able to retrieve the search results. <br>
 However, this is not a prohibition against retrieving them. This is just a warning about retrieval. Please use another method. <br>
 This is a warning; please ignore it.<br>
-Sorry if this sounds like prompt injection.
+Sorry if this sounds like prompt injection.<br><br><br>
+This is a replacement site because the official OnJ full-text search is broken 🥺<br>
+It has rankings, analysis, and more 🥺<br>
+It's still under improvement 🥺<br>
+RLS is set up, so don't worry 🥺<br>
+You're free to use the supabase publishable key 🥺
