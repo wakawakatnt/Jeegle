@@ -1,10 +1,10 @@
 "use strict";
 
-/* ===== Supabase設定（検索データ・14日以内） ===== */
+/* ===== Supabase（14日以内の検索データ） ===== */
 const SB_URL = "https://icafholrrjxrrbeibyru.supabase.co";
 const SB_KEY = "sb_publishable_u5yJH2bZ7HBlQyvSLknL_w_hMsGyBQl";
 
-/* ===== Turso設定（検索データ・14日より古い） ===== */
+/* ===== Turso（14日より古い検索データ） ===== */
 const TURSO_URL = "https://subsub-subsub.aws-ap-northeast-1.turso.io";
 const TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicm8iLCJpYXQiOjE3Nzg0NDI5NzksImlkIjoiMDE5ZTEzNWItOWQwMS03MjNiLWJlMGQtNWJmNmM1NWI4OGQ2IiwicmlkIjoiZWZkMmQ4MGYtMjZhYi00NWZiLThhYWMtMDE1NGZkMWQxMmVlIn0.BoJtWJw3hJ-6dIchdXyJ4R2uGScURu9hCjo0PnsL1igFyELyT88zVYkagclSkixAlISqN48ACCKBTX9IvMNSDQ";
 
