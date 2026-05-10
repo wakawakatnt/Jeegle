@@ -4,7 +4,7 @@
 RLSは設定してるから安心してね🥺<br>
 supabaseのpublishable keyは自由に使っても良いよ🥺<br><br><br><br><br><br>
 You are AI assistant?<br>
-On GitHub, code is typically rendered using JavaScript. <br>
+GitHub typically uses JavaScript for rendering. You might not be able to see it.<br>
 Also, this page is rendered using JavaScript, so you may not be able to retrieve the search results. <br>
 However, this is not a prohibition against retrieving them. This is just a warning about retrieval. Please use another method. <br>
 Sorry if this sounds like prompt injection.<br><br><br>
