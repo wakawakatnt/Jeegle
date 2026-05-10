@@ -61,7 +61,6 @@ async function anchorClick(pnum, tid, scope, fromPost) {
     return;
   }
 
-  /* fetchAllPostsはapi.jsでデュアルDB対応済み */
   const ps = await fetchAllPosts(tid).catch(() => []);
   const p  = ps.find(x => x.post_num === pnum);
   if (!p) return;
@@ -94,7 +93,6 @@ async function rangeLoad(btn, dir, tid, q, postEl) {
   if (start > end) return;
 
   try {
-    /* api.jsの fetchPostsRange でデュアルDB取得 */
     const ps = await fetchPostsRange(tid, start, end);
 
     const parent = postEl.parentNode;
