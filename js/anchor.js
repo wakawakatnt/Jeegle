@@ -83,7 +83,7 @@ async function anchorClick(pnum, tid, scope, fromPost) {
 }
 
 /* ================================================================
-   上100/下100
+   上100/下100（デュアルDB対応）
    ================================================================ */
 async function rangeLoad(btn, dir, tid, q, postEl) {
   btn.disabled = true;
@@ -93,10 +93,25 @@ async function rangeLoad(btn, dir, tid, q, postEl) {
   if (start > end) return;
 
   try {
-    const ps = await sbFetch(
-      `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi` +
-      `&thread_id=eq.${tid}&post_num=gte.${start}&post_num=lte.${end}&order=post_num.asc`
-    );
+    /* Supabase + Turso 並列取得 */
+    const [sbPs, tursoPs] = await Promise.all([
+      sbFetch(
+        `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi`
+        + `&thread_id=eq.${tid}&post_num=gte.${start}&post_num=lte.${end}&order=post_num.asc`
+      ).catch(() => []),
+      tursoQuery(
+        `SELECT ${TURSO_POSTS_COLS} FROM posts`
+        + ` WHERE thread_id = ? AND post_num >= ? AND post_num <= ?`
+        + ` ORDER BY post_num ASC`,
+        [Number(tid), start, end]
+      ).catch(() => [])
+    ]);
+
+    /* マージ（Supabase優先） */
+    const map = new Map();
+    tursoPs.forEach(p => { const np = normalizePost(p); map.set(np.post_num, np); });
+    sbPs.forEach(p => map.set(p.post_num, p));
+    const ps = Array.from(map.values()).sort((a, b) => a.post_num - b.post_num);
 
     const parent = postEl.parentNode;
     const frag = document.createDocumentFragment();
