@@ -1,8 +1,8 @@
 "use strict";
 
 /* ===== Supabase設定 ===== */
-const SB_URL = "https://jvhcgllunsfncjintjba.supabase.co";
-const SB_KEY = "sb_publishable_nWh8Ixmel4JrlaK4D2hK0w_iZ4k_nxl";
+const SB_URL = "";
+const SB_KEY = "";
 
 /* ===== 定数 ===== */
 const DAYS = ["日","月","火","水","木","金","土"];
