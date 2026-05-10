@@ -260,7 +260,7 @@ async function showDetail(tid, q) {
 }
 
 /* ================================================================
-   レス要素
+   レス要素（安価はares_countカラム + bodyパース。RPC不使用）
    ================================================================ */
 function mkPost(post, tid, q, showRange) {
   const div = document.createElement("div"); div.className = "post"; div.dataset.postNum = post.post_num;
@@ -323,7 +323,7 @@ function mkPost(post, tid, q, showRange) {
   renderBody(body, post.body || "", tid, q);
   div.appendChild(body);
 
-  /* ===== 安価数フッター（デュアルDB対応） ===== */
+  /* ===== 安価数フッター ===== */
   {
     const footer2  = document.createElement("div"); footer2.className = "post-footer";
     const aresBtn2 = document.createElement("button"); aresBtn2.className = "ares-btn";
@@ -338,7 +338,7 @@ function mkPost(post, tid, q, showRange) {
     const aresList2 = document.createElement("div"); aresList2.className = "ares-list";
     div.appendChild(aresList2);
 
-    /* 安価カウント: api.jsの countAres を使用 */
+    /* 安価カウント: ares_countカラムを読む */
     (async () => {
       try {
         const cnt = await countAres(tid, post.post_num);
@@ -348,7 +348,7 @@ function mkPost(post, tid, q, showRange) {
       } catch (e) {}
     })();
 
-    /* 安価レス展開: api.jsの getAresPosts を使用 */
+    /* 安価レス展開: 全レスからbodyパースで取得 */
     aresBtn2.addEventListener("click", async e => {
       e.stopPropagation();
       if (aresList2.classList.contains("open")) {
