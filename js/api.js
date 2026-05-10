@@ -14,18 +14,10 @@ function getBoundaryISO() {
   return d.toISOString();
 }
 
-/** thread_id（Unixtime秒）から、そのスレが境界より古いかを判定 */
+/** thread_id(Unixtime秒)が14日より前か → Tursoも叩く必要あり */
 function threadNeedsTurso(threadId) {
   const boundaryUnix = (Date.now() - BOUNDARY_DAYS * 86400000) / 1000;
   return Number(threadId) < boundaryUnix;
-}
-
-/** thread_id（Unixtime秒）から、そのスレが境界内かを判定 */
-function threadNeedsSupabase(threadId) {
-  const boundaryUnix = (Date.now() - BOUNDARY_DAYS * 86400000) / 1000;
-  // スレ立ては古くても最新レスがSupabase側にある可能性があるので
-  // 境界から2日分のマージンを持たせる
-  return Number(threadId) >= boundaryUnix - 2 * 86400;
 }
 
 /* ================================================================
@@ -40,21 +32,6 @@ async function sbFetch(path) {
     try { const j = await r.json(); detail = j.message || j.hint || JSON.stringify(j); } catch (e) {}
     throw new Error("HTTP " + r.status + (detail ? ": " + detail : ""));
   }
-  return r.json();
-}
-
-/** Supabase RPC呼び出し（安全版: エラー時null返却） */
-async function sbRpc(funcName, params) {
-  const r = await fetch(SB_URL + "/rest/v1/rpc/" + funcName, {
-    method: "POST",
-    headers: {
-      "apikey": SB_KEY,
-      "Authorization": "Bearer " + SB_KEY,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(params)
-  });
-  if (!r.ok) return null;
   return r.json();
 }
 
@@ -115,13 +92,14 @@ async function tursoQuery(sql, args) {
    ================================================================ */
 function normalizePost(p) {
   return {
-    thread_id: Number(p.thread_id),
-    post_num:  Number(p.post_num),
-    user_id:   p.user_id || null,
-    name:      p.name || null,
-    posted_at: p.posted_at || null,
-    body:      p.body || null,
-    is_nusi:   Number(p.is_nusi) || 0
+    thread_id:  Number(p.thread_id),
+    post_num:   Number(p.post_num),
+    user_id:    p.user_id || null,
+    name:       p.name || null,
+    posted_at:  p.posted_at || null,
+    body:       p.body || null,
+    is_nusi:    Number(p.is_nusi) || 0,
+    ares_count: Number(p.ares_count) || 0
   };
 }
 
@@ -148,7 +126,7 @@ function classifyDateRange(fromISO, toISO) {
 /* ================================================================
    Turso用ヘルパー
    ================================================================ */
-const TURSO_POSTS_COLS = "thread_id,post_num,user_id,name,posted_at,body,is_nusi";
+const TURSO_POSTS_COLS = "thread_id,post_num,user_id,name,posted_at,body,is_nusi,ares_count";
 
 async function tursoSearchPosts(col, word, fromISO, toISO, limit) {
   const sql = `SELECT ${TURSO_POSTS_COLS} FROM posts`
@@ -166,69 +144,48 @@ async function tursoFetchThreadsByIds(ids) {
 }
 
 /* ================================================================
-   安価カウント（デュアルDB対応）
+   安価カウント（ares_countカラムを読む。RPCは使わない）
    ================================================================ */
 async function countAres(tid, pnum) {
   const id = Number(tid);
-  const promises = [];
 
-  /* Supabase RPC */
-  promises.push(
-    sbRpc("count_ares", { tid: id, pnum: pnum })
-      .then(v => (typeof v === "number") ? v : 0)
+  /* キャッシュ済み全レスがあればそこから読む */
+  if (postsCache.has(id)) {
+    const p = postsCache.get(id).find(x => x.post_num === pnum);
+    if (p) return Number(p.ares_count) || 0;
+  }
+
+  /* キャッシュになければ個別取得 */
+  const promises = [
+    sbFetch(`posts?select=ares_count&thread_id=eq.${id}&post_num=eq.${pnum}&limit=1`)
+      .then(rows => (rows[0] && Number(rows[0].ares_count)) || 0)
       .catch(() => 0)
-  );
+  ];
 
-  /* Turso: スレが古い場合 */
   if (threadNeedsTurso(id)) {
     promises.push(
       tursoQuery(
-        `SELECT COUNT(*) as cnt FROM posts WHERE thread_id = ? AND body LIKE ?`,
-        [id, "%>>" + pnum + "%"]
-      ).then(rows => (rows[0] && Number(rows[0].cnt)) || 0)
+        `SELECT ares_count FROM posts WHERE thread_id = ? AND post_num = ? LIMIT 1`,
+        [id, pnum]
+      ).then(rows => (rows[0] && Number(rows[0].ares_count)) || 0)
        .catch(() => 0)
     );
   }
 
   const counts = await Promise.all(promises);
-  return counts.reduce((a, b) => a + b, 0);
+  return Math.max(...counts);
 }
 
 /* ================================================================
-   安価レス取得（デュアルDB対応）
+   安価レス取得（全レスからbodyで >>N をパース。RPCは使わない）
    ================================================================ */
 async function getAresPosts(tid, pnum) {
-  const id = Number(tid);
-  const promises = [];
-
-  /* Supabase RPC */
-  promises.push(
-    sbRpc("get_ares_posts", { tid: id, pnum: pnum })
-      .then(v => Array.isArray(v) ? v : [])
-      .catch(() => [])
-  );
-
-  /* Turso: スレが古い場合 */
-  if (threadNeedsTurso(id)) {
-    promises.push(
-      tursoQuery(
-        `SELECT ${TURSO_POSTS_COLS} FROM posts WHERE thread_id = ? AND body LIKE ? ORDER BY post_num ASC`,
-        [id, "%>>" + pnum + "%"]
-      ).then(rows => rows.map(normalizePost))
-       .catch(() => [])
-    );
-  }
-
-  const arrays = await Promise.all(promises);
-  const all = arrays.flat();
-
-  /* 重複排除（Supabase優先） */
-  const map = new Map();
-  all.forEach(p => {
-    const k = p.thread_id + "_" + p.post_num;
-    if (!map.has(k)) map.set(k, p);
+  const allPosts = await fetchAllPosts(tid);
+  const target = ">>" + pnum;
+  return allPosts.filter(p => {
+    const body = p.body || "";
+    return body.includes(target);
   });
-  return Array.from(map.values()).sort((a, b) => a.post_num - b.post_num);
 }
 
 /* ================================================================
@@ -238,16 +195,12 @@ async function fetchAllPosts(threadId) {
   const id = Number(threadId);
   if (postsCache.has(id)) return postsCache.get(id);
 
-  const promises = [];
-
-  /* Supabase: 常に試行（最新レスがある可能性） */
-  promises.push(
+  const promises = [
     sbFetch(
-      `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&thread_id=eq.${id}&order=post_num.asc&limit=2000`
+      `posts?select=${encodeURIComponent(TURSO_POSTS_COLS)}&thread_id=eq.${id}&order=post_num.asc&limit=2000`
     ).catch(() => [])
-  );
+  ];
 
-  /* Turso: スレのthread_id(unixtime)が14日より前なら取得 */
   if (threadNeedsTurso(id)) {
     promises.push(
       tursoQuery(
@@ -262,7 +215,6 @@ async function fetchAllPosts(threadId) {
   const sbPs    = arrays[0] || [];
   const tursoPs = arrays[1] || [];
 
-  /* マージ（Supabase優先） */
   const map = new Map();
   tursoPs.forEach(p => map.set(p.post_num, p));
   sbPs.forEach(p => map.set(p.post_num, p));
@@ -292,11 +244,8 @@ async function fetchThreadInfo(threadId) {
   }
 
   const arrays = await Promise.all(promises);
-  const sbArr    = arrays[0] || [];
-  const tursoArr = arrays[1] || [];
-
-  const info = sbArr[0]
-    || tursoArr[0]
+  const info = (arrays[0] && arrays[0][0])
+    || (arrays[1] && arrays[1][0])
     || { thread_id: id, title: "スレッド " + id, updated_at: null };
 
   threadCache.set(id, info);
@@ -308,14 +257,12 @@ async function fetchThreadInfo(threadId) {
    ================================================================ */
 async function fetchPostsRange(tid, start, end) {
   const id = Number(tid);
-  const promises = [];
-
-  promises.push(
+  const promises = [
     sbFetch(
-      `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi`
+      `posts?select=${encodeURIComponent(TURSO_POSTS_COLS)}`
       + `&thread_id=eq.${id}&post_num=gte.${start}&post_num=lte.${end}&order=post_num.asc`
     ).catch(() => [])
-  );
+  ];
 
   if (threadNeedsTurso(id)) {
     promises.push(
