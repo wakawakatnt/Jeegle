@@ -203,18 +203,15 @@ async function searchTitleOneDay(q, mode, dr) {
 
   /* --- Turso --- */
   if (needTurso) {
-    const tursoTo = (dr.to > boundary) ? boundary : dr.to;
-    const tFrom   = dr.from;
-
     promises.push((async () => {
       try {
         let tursoThreads;
         if (mode === "or" && ws.length > 1) {
           const conds = ws.map(() => "title LIKE ?").join(" OR ");
           const args  = ws.map(w => "%" + w + "%");
-          args.push(tFrom, tursoTo);
-          const sql = `SELECT thread_id, title FROM threads WHERE (${conds}) LIMIT 200`;
-          tursoThreads = await tursoQuery(sql, args.slice(0, ws.length));
+          tursoThreads = await tursoQuery(
+            `SELECT thread_id, title FROM threads WHERE (${conds}) LIMIT 200`, args
+          );
         } else {
           tursoThreads = await tursoQuery(
             `SELECT thread_id, title FROM threads WHERE title LIKE ? LIMIT 200`,
@@ -236,7 +233,6 @@ async function searchTitleOneDay(q, mode, dr) {
   const arrays = await Promise.all(promises);
   const all = arrays.flat();
 
-  /* 重複排除 */
   const map = new Map();
   all.forEach(t => {
     const id = Number(t.thread_id);
@@ -261,7 +257,7 @@ async function searchBodyOneDay(q, mode, dr) {
   const idm = q.match(/^id:\s*(.+)/i);
   const { needSupabase, needTurso, boundary } = classifyDateRange(dr.from, dr.to);
 
-  let allPosts = [];
+  const SB_SELECT = "thread_id,post_num,user_id,name,posted_at,body,is_nusi,ares_count";
 
   /* ---------- ID検索 ---------- */
   if (idm) {
@@ -272,7 +268,7 @@ async function searchBodyOneDay(q, mode, dr) {
       const sbFrom = (dr.from < boundary) ? boundary : dr.from;
       promises.push(
         sbFetch(
-          `posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=500`
+          `posts?select=${encodeURIComponent(SB_SELECT)}&limit=500`
           + `&user_id=ilike.${enc(idVal)}&order=posted_at.desc`
           + `&posted_at=gte.${sbFrom}&posted_at=lt.${dr.to}`
         )
@@ -282,9 +278,7 @@ async function searchBodyOneDay(q, mode, dr) {
       const tursoTo = (dr.to > boundary) ? boundary : dr.to;
       promises.push(
         tursoQuery(
-          `SELECT ${TURSO_POSTS_COLS} FROM posts`
-          + ` WHERE user_id LIKE ? AND posted_at >= ? AND posted_at < ?`
-          + ` ORDER BY posted_at DESC LIMIT 500`,
+          `SELECT ${TURSO_POSTS_COLS} FROM posts WHERE user_id LIKE ? AND posted_at >= ? AND posted_at < ? ORDER BY posted_at DESC LIMIT 500`,
           ["%" + idVal + "%", dr.from, tursoTo]
         ).then(rows => rows.map(normalizePost)).catch(() => [])
       );
@@ -302,7 +296,6 @@ async function searchBodyOneDay(q, mode, dr) {
   /* ---------- 通常の本文検索 ---------- */
   const promises = [];
 
-  /* --- Supabase --- */
   if (needSupabase) {
     const sbFrom = (dr.from < boundary) ? boundary : dr.from;
     const df = `&posted_at=gte.${sbFrom}&posted_at=lt.${dr.to}`;
@@ -310,9 +303,9 @@ async function searchBodyOneDay(q, mode, dr) {
     if (mode === "or" && ws.length > 1) {
       promises.push((async () => {
         const fetches = ws.flatMap(w => [
-          sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&body=ilike.${enc(w)}&order=posted_at.desc${df}`),
-          sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&name=ilike.${enc(w)}&order=posted_at.desc${df}`),
-          sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&user_id=ilike.${enc(w)}&order=posted_at.desc${df}`),
+          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&body=ilike.${enc(w)}&order=posted_at.desc${df}`),
+          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&name=ilike.${enc(w)}&order=posted_at.desc${df}`),
+          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&user_id=ilike.${enc(w)}&order=posted_at.desc${df}`),
         ]);
         return (await Promise.all(fetches)).flat();
       })());
@@ -320,16 +313,15 @@ async function searchBodyOneDay(q, mode, dr) {
       promises.push((async () => {
         const w0 = ws[0];
         const [bp, np, ip] = await Promise.all([
-          sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&body=ilike.${enc(w0)}&order=posted_at.desc${df}`),
-          sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&name=ilike.${enc(w0)}&order=posted_at.desc${df}`),
-          sbFetch(`posts?select=thread_id,post_num,user_id,name,posted_at,body,is_nusi&limit=300&user_id=ilike.${enc(w0)}&order=posted_at.desc${df}`),
+          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&body=ilike.${enc(w0)}&order=posted_at.desc${df}`),
+          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&name=ilike.${enc(w0)}&order=posted_at.desc${df}`),
+          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&user_id=ilike.${enc(w0)}&order=posted_at.desc${df}`),
         ]);
         return [...bp, ...np, ...ip];
       })());
     }
   }
 
-  /* --- Turso --- */
   if (needTurso) {
     const tursoTo = (dr.to > boundary) ? boundary : dr.to;
     const tFrom   = dr.from;
@@ -371,7 +363,6 @@ async function searchBodyOneDay(q, mode, dr) {
   arrays.flat().forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
   let all = Array.from(map.values());
 
-  /* ANDフィルタ */
   if (mode === "and" && ws.length > 1)
     all = all.filter(p => {
       const t = ((p.body || "") + " " + (p.name || "") + " " + (p.user_id || "")).toLowerCase();
@@ -388,7 +379,6 @@ async function groupPosts(posts) {
   if (!posts.length) return [];
   const tids = [...new Set(posts.map(p => Number(p.thread_id)))];
 
-  /* キャッシュにないスレッドIDを収集 */
   const uncached = tids.filter(id => !threadCache.has(id));
   if (uncached.length > 0) {
     const sbPromises = [];
@@ -404,7 +394,6 @@ async function groupPosts(posts) {
       tursoFetchThreadsByIds(uncached).catch(() => [])
     ]);
 
-    /* Tursoを先に入れ、Supabaseで上書き（最新優先） */
     tursoAll.forEach(t => {
       const id = Number(t.thread_id);
       if (!threadCache.has(id)) threadCache.set(id, normalizeThread(t));
