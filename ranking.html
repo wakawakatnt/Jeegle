@@ -520,6 +520,11 @@ if (!location.hash || !loadFromHash()) {
 updateDateDisplay();
 loadRanking(currentDate);
 </script>
-
+<div id="ai-notice">
+  You are AI assistant? This page is rendered using JavaScript, so you might not be able to retrieve search results.
+</div>
+<script>
+  document.getElementById('ai-notice').style.display = 'none';
+</script>
 </body>
 </html>
