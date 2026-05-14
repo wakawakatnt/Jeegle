@@ -32,7 +32,7 @@
 .tk-header-link {
   font-size:12px; color:#5f6368; text-decoration:none;
   border:1px solid #dadce0; border-radius:16px; padding:4px 12px;
-  background:#fff; font-family:inherit; cursor:pointer; white-space:nowrap;
+  background:none; font-family:inherit; cursor:pointer; white-space:nowrap;
 }
 .tk-header-link:hover { background:#f1f3f4; }
 
@@ -275,6 +275,7 @@
 
   <div class="tk-body">
 
+    <!-- ① モード選択 -->
     <div class="tk-modesel" id="modeSel">
       <button class="tk-modebtn active" data-mode="hourly">
         <div class="ic">⏰</div>
@@ -292,6 +293,7 @@
       </button>
     </div>
 
+    <!-- ② 範囲選択 -->
     <div class="tk-controls">
       <div class="tk-ctrl-group" id="hourlyCtrls">
         <strong>日付</strong>
@@ -328,6 +330,7 @@
 
     <div class="tk-status" id="statusBar"></div>
 
+    <!-- ③ メトリクス -->
     <div class="tk-metrics" id="metrics">
       <div class="tk-metric" data-color="blue">
         <div class="tk-metric-icon">💬</div>
@@ -371,6 +374,7 @@
       </div>
     </div>
 
+    <!-- ④ メイングラフ -->
     <div class="tk-card">
       <div class="tk-card-head">
         <div>
@@ -414,6 +418,7 @@
       </div>
     </div>
 
+    <!-- ⑤ データ一覧 -->
     <details class="tk-card tk-collapse" id="tableSection">
       <summary class="tk-collapse-head">
         <span class="tk-card-title">📋 データ一覧</span>
@@ -444,6 +449,7 @@
       </div>
     </details>
 
+    <!-- ⑥ 詳細分析（3D散布図のみ） -->
     <details class="tk-card tk-collapse" id="advancedSection">
       <summary class="tk-collapse-head">
         <span class="tk-card-title">🔬 詳細分析 — 3D散布図</span>
@@ -693,53 +699,64 @@ function aggregateAll(days) {
 // ---------- グラフ ----------
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-// マルチY軸設定を動的に生成
-function getBaseOpts(activeKeys = ['p', 't', 'n']) {
-  const scales = { x: { ticks: { autoSkip: true, maxTicksLimit: 24 } } };
-  
-  if (activeKeys.includes('p')) {
-    scales.yP = {
-      type: 'linear', position: 'left', beginAtZero: true,
-      title: { display: false, text: 'レス数' },
-      ticks: { precision: 0 }
-    };
-  }
-  if (activeKeys.includes('t')) {
-    scales.yT = {
-      type: 'linear', position: activeKeys.length > 1 ? 'right' : 'left', beginAtZero: true,
-      title: { display: false, text: 'スレ立て数' },
-      ticks: { precision: 0 },
-      grid: { drawOnChartArea: activeKeys.length === 1 } // pが存在する場合はグリッド線を非表示
-    };
-  }
-  if (activeKeys.includes('n')) {
-    scales.yN = {
-      type: 'linear', position: activeKeys.length > 1 ? 'right' : 'left', beginAtZero: true,
-      title: { display: false, text: '新規ID数' },
-      ticks: { precision: 0 },
-      grid: { drawOnChartArea: false } // 常にグリッド線を非表示（重なり防止）
-    };
-  }
-
-  return {
-    responsive: true, maintainAspectRatio: false,
+function baseOpts(opts={}) {
+  return Object.assign({
+    responsive:true, maintainAspectRatio:false,
     layout: { padding: { top: 4, right: 10, bottom: 4, left: 4 } },
     plugins: {
-      legend: { position: 'top', align: 'end', labels: { boxWidth: 12, padding: 10, font: { size: 11 } } },
-      tooltip: { mode: 'index', intersect: false, padding: 8, cornerRadius: 6 }
+      legend: { position:'top', align:'end',
+        labels:{ boxWidth:12, padding:10, font:{size:11} } },
+      tooltip: { mode:'index', intersect:false, padding:8, cornerRadius:6 }
     },
-    interaction: { mode: 'index', intersect: false },
-    scales
-  };
+    interaction: { mode:'index', intersect:false }
+  }, opts);
+}
+
+// 軸を動的に設定する処理（張り付き解消のため）
+function getChartOptions(isCombined, keys) {
+  const opts = baseOpts();
+  if (isCombined) {
+    const hasP = keys.includes('p');
+    const hasOther = keys.includes('t') || keys.includes('n');
+    
+    opts.scales = {};
+    if (hasP) {
+      opts.scales.y = {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        beginAtZero: true,
+        ticks: { precision: 0 }
+      };
+    }
+    if (hasOther) {
+      opts.scales.y1 = {
+        type: 'linear',
+        display: true,
+        position: (hasP ? 'right' : 'left'), // レス数があれば右軸に配置
+        beginAtZero: true,
+        ticks: { precision: 0 },
+        grid: { drawOnChartArea: !hasP } // レス数がある場合は右軸のグリッドを消す
+      };
+    }
+  } else {
+    opts.scales = {
+      y: { beginAtZero: true, ticks: { precision: 0 } }
+    };
+  }
+  return opts;
 }
 
 function makeDataset(key, data, type) {
   const color = COLORS[key];
   const base = { label: LABELS[key], data, borderColor: color };
   
-  if (key === 'p') base.yAxisID = 'yP';
-  if (key === 't') base.yAxisID = 'yT';
-  if (key === 'n') base.yAxisID = 'yN';
+  // 統合グラフの場合はレス数を左軸(y)、スレ立てと新規IDを右軸(y1)にする
+  if (chartLayout === 'combined') {
+    base.yAxisID = (key === 'p') ? 'y' : 'y1';
+  } else {
+    base.yAxisID = 'y';
+  }
 
   if (type === 'line') {
     return Object.assign(base, {
@@ -766,7 +783,7 @@ function renderMainChart(series) {
     if (!ctx) return;
     charts['mainChart'] = new Chart(ctx.getContext('2d'), {
       data: { labels: series.labels, datasets },
-      options: getBaseOpts(keys)
+      options: getChartOptions(true, keys)
     });
   } else {
     ['p','t','n'].forEach(k => {
@@ -781,7 +798,7 @@ function renderMainChart(series) {
       }
       charts[id] = new Chart(el.getContext('2d'), {
         data: { labels: series.labels, datasets: [makeDataset(k, series[k], chartType)] },
-        options: getBaseOpts([k]) // 単独表示の場合は常に左側にY軸を表示
+        options: getChartOptions(false, [k])
       });
     });
   }
@@ -997,24 +1014,24 @@ function syncUIFromState() {
   document.getElementById('tableSection').open = tableOpen;
 }
 
-// 共有処理を ranking.html と統一
 async function copyShareURL() {
   const url = buildShareURL();
-  const btn = document.getElementById('shareBtn');
+  history.replaceState(null, '', url);
+  
+  const b = document.getElementById('shareBtn');
+  const orig = b.textContent;
   
   if (navigator.clipboard) {
     try {
       await navigator.clipboard.writeText(url);
-      const orig = "🔗 URL共有";
-      btn.textContent = "✅ コピー完了";
-      setTimeout(() => { btn.textContent = orig; }, 2000);
+      b.textContent = "✅ コピー完了";
+      setTimeout(() => { b.textContent = orig; }, 2000);
     } catch {
       prompt('URLをコピーしてください:', url);
     }
   } else {
     prompt('URLをコピーしてください:', url);
   }
-  history.replaceState(null, '', url);
 }
 
 // ---------- メイン ----------
