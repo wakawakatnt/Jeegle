@@ -1,531 +1,1194 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ID書き込みランキング - Jeegle!</title>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DDHGB57HTW"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-DDHGB57HTW');
-</script>
+<title>統計 - Jeegle!</title>
 <link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <style>
-.ranking-page { min-height: 100vh; background: #fff; }
+/* ============== レイアウト ============== */
+.tk-page { min-height:100vh; background:#f0f2f5; }
 
-.ranking-header {
-display: flex; align-items: center; padding: 12px 20px;
-border-bottom: 1px solid #ebebeb; position: sticky; top: 0;
-background: #fff; z-index: 100; gap: 16px;
+.tk-header {
+  display:flex; align-items:center; padding:10px 20px;
+  border-bottom:1px solid #dadce0; background:#fff;
+  position:sticky; top:0; z-index:100; gap:12px;
 }
-.ranking-logo {
-font-size: 28px; font-weight: bold; white-space: nowrap;
-font-family: Arial, sans-serif; flex-shrink: 0; text-decoration: none;
+.tk-logo {
+  font-size:26px; font-weight:bold; white-space:nowrap;
+  font-family:Arial,sans-serif; flex-shrink:0; text-decoration:none; cursor:pointer;
 }
-.ranking-logo span:nth-child(1){color:#4285F4}
-.ranking-logo span:nth-child(2){color:#EA4335}
-.ranking-logo span:nth-child(3){color:#FBBC05}
-.ranking-logo span:nth-child(4){color:#4285F4}
-.ranking-logo span:nth-child(5){color:#34A853}
-.ranking-logo span:nth-child(6){color:#EA4335}
-.ranking-logo span:nth-child(7){color:#FBBC05}
-.ranking-header-title { font-size: 17px; font-weight: 700; color: #202124; }
+.tk-logo span:nth-child(1){color:#4285F4}
+.tk-logo span:nth-child(2){color:#EA4335}
+.tk-logo span:nth-child(3){color:#FBBC05}
+.tk-logo span:nth-child(4){color:#4285F4}
+.tk-logo span:nth-child(5){color:#34A853}
+.tk-logo span:nth-child(6){color:#EA4335}
+.tk-logo span:nth-child(7){color:#FBBC05}
+.tk-header-title { font-size:15px; font-weight:700; color:#202124; }
+.tk-header-actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
+.tk-header-link {
+  font-size:12px; color:#5f6368; text-decoration:none;
+  border:1px solid #dadce0; border-radius:16px; padding:4px 12px;
+  background:#fff; font-family:inherit; cursor:pointer; white-space:nowrap;
+}
+.tk-header-link:hover { background:#f1f3f4; }
 
-.ranking-body { max-width: 800px; margin: 0 auto; padding: 16px 16px 60px; }
+.tk-body { max-width:1200px; margin:0 auto; padding:16px 16px 40px; }
 
-/* 検索バー（ボディ内） */
-.rk-search-wrap { margin-bottom: 14px; }
-.rk-search-box {
-display: flex; align-items: center; max-width: 420px;
-border: 1px solid #dfe1e5; border-radius: 24px; padding: 8px 16px; background: #fff;
+/* ============== モード選択 ============== */
+.tk-modesel { display:flex; gap:8px; margin-bottom:12px; }
+.tk-modebtn {
+  flex:1; background:#fff; border:2px solid #dadce0; border-radius:12px;
+  padding:14px 16px; cursor:pointer; font-family:inherit;
+  display:flex; align-items:center; gap:10px;
+  transition:all .15s; box-shadow:0 1px 3px rgba(0,0,0,0.06);
 }
-.rk-search-box:focus-within { box-shadow: 0 1px 6px rgba(32,33,36,.28); border-color: transparent; }
-.rk-search-box svg { flex-shrink: 0; margin-right: 8px; color: #9aa0a6; }
-.rk-search-box input {
-flex: 1; border: none; outline: none; font-size: 15px;
-font-family: inherit; background: transparent; min-width: 0;
+.tk-modebtn:hover { border-color:#1a73e8; }
+.tk-modebtn.active {
+  border-color:transparent;
+  background:linear-gradient(135deg,#1a73e8,#34a853);
+  color:#fff; box-shadow:0 3px 10px rgba(26,115,232,.25);
+}
+.tk-modebtn .ic { font-size:24px; }
+.tk-modebtn .ttl { font-size:14px; font-weight:700; }
+.tk-modebtn .sub { font-size:11px; opacity:.85; margin-top:2px; }
+.tk-modebtn .txt { text-align:left; line-height:1.3; }
+
+/* ============== コントロール ============== */
+.tk-controls {
+  background:#fff; border-radius:10px; padding:12px 14px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  margin-bottom:12px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+}
+.tk-ctrl-group { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.tk-ctrl-group strong { color:#5f6368; font-size:12px; font-weight:700; }
+.tk-pbtns { display:flex; gap:4px; flex-wrap:wrap; }
+.tk-pbtn {
+  background:#f8f9fa; border:1px solid #dadce0; border-radius:16px;
+  padding:5px 14px; font-size:12px; color:#3c4043; cursor:pointer;
+  font-family:inherit; transition:all .12s;
+}
+.tk-pbtn:hover { background:#e8f0fe; border-color:#1a73e8; color:#1a73e8; }
+.tk-pbtn.active {
+  background:linear-gradient(135deg,#1a73e8,#34a853); color:#fff;
+  border-color:transparent; font-weight:600;
+  box-shadow:0 2px 6px rgba(26,115,232,.25);
+}
+.tk-date-input {
+  border:1px solid #dadce0; border-radius:6px; padding:5px 10px;
+  font-size:12px; font-family:inherit; color:#3c4043; background:#fff;
+}
+.tk-date-input:focus { border-color:#1a73e8; outline:none; }
+.tk-reload {
+  background:#fff; border:1px solid #dadce0;
+  border-radius:16px; padding:5px 14px; font-size:12px;
+  color:#1a73e8; cursor:pointer; font-family:inherit; font-weight:600;
+}
+.tk-reload:hover { background:#e8f0fe; border-color:#1a73e8; }
+.tk-reload:disabled { opacity:.5; cursor:not-allowed; }
+.tk-cache-info { font-size:11px; color:#70757a; }
+
+/* ============== ステータス ============== */
+.tk-status {
+  padding:8px 14px; margin-bottom:12px; border-radius:8px;
+  font-size:12px; display:none;
+}
+.tk-status.show { display:block; }
+.tk-status.info { background:#e8f0fe; color:#1a73e8; border-left:3px solid #1a73e8; }
+.tk-status.warn { background:#fff3cd; color:#856404; border-left:3px solid #f9ab00; }
+.tk-status.err  { background:#fce8e6; color:#c5221f; border-left:3px solid #ea4335; }
+.tk-status.ok   { background:#e6f4ea; color:#137333; border-left:3px solid #34a853; }
+
+/* ============== メトリクス ============== */
+.tk-metrics {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));
+  gap:8px; margin-bottom:12px;
+}
+.tk-metric {
+  background:#fff; border-radius:10px; padding:12px 10px;
+  text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  border-top:3px solid #1a73e8;
+}
+.tk-metric[data-color="blue"]   { border-top-color:#4285F4; }
+.tk-metric[data-color="red"]    { border-top-color:#EA4335; }
+.tk-metric[data-color="yellow"] { border-top-color:#FBBC05; }
+.tk-metric[data-color="green"]  { border-top-color:#34A853; }
+.tk-metric[data-color="purple"] { border-top-color:#9c27b0; }
+.tk-metric[data-color="teal"]   { border-top-color:#00897b; }
+.tk-metric[data-color="orange"] { border-top-color:#f9ab00; }
+.tk-metric[data-color="cyan"]   { border-top-color:#00acc1; }
+.tk-metric-icon  { font-size:18px; margin-bottom:2px; }
+.tk-metric-val   { font-size:22px; font-weight:700; color:#202124; line-height:1.2; }
+.tk-metric-label { font-size:10px; color:#70757a; margin-top:2px; }
+.tk-metric-sub   { font-size:10px; color:#9aa0a6; margin-top:1px; }
+
+/* ============== カード ============== */
+.tk-card {
+  background:#fff; border-radius:10px; padding:14px 16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06); margin-bottom:12px;
+}
+.tk-card-head {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px; gap:8px; flex-wrap:wrap;
+}
+.tk-card-title { font-size:13px; font-weight:700; color:#202124; }
+.tk-card-title-sub { font-size:11px; color:#70757a; font-weight:400; margin-left:4px; }
+.tk-card-tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+/* 系列トグル */
+.tk-series { display:inline-flex; flex-wrap:wrap; gap:4px; }
+.tk-series button {
+  background:#f1f3f4; border:1px solid transparent; border-radius:14px;
+  padding:3px 10px; font-size:11px; color:#5f6368; cursor:pointer;
+  font-family:inherit; font-weight:600;
+  display:inline-flex; align-items:center; gap:4px;
+}
+.tk-series button .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.tk-series button.active { color:#fff; }
+.tk-series button[data-key="p"].active { background:#4285F4; }
+.tk-series button[data-key="t"].active { background:#EA4335; }
+.tk-series button[data-key="n"].active { background:#FBBC05; color:#3c4043; }
+
+/* タイプ・分割トグル */
+.tk-tog {
+  display:inline-flex; background:#f1f3f4; border-radius:14px; padding:2px; gap:2px;
+}
+.tk-tog button {
+  background:none; border:none; padding:3px 10px; font-size:11px;
+  color:#5f6368; cursor:pointer; border-radius:12px;
+  font-family:inherit; font-weight:600;
+}
+.tk-tog button.active {
+  background:#fff; color:#1a73e8; box-shadow:0 1px 3px rgba(0,0,0,.1);
 }
 
-/* タブ */
-.rk-tabs { display: flex; border-bottom: 2px solid #ebebeb; margin-bottom: 14px; gap: 0; }
-.rk-tab {
-padding: 9px 20px; font-size: 14px; font-weight: 600; color: #5f6368;
-cursor: pointer; border: none; background: none; font-family: inherit;
-border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .12s;
+/* ===== グラフラッパ ===== */
+.tk-chart-wrap {
+  position:relative;
+  width:100%;
+  height:420px;
+  padding:8px 6px 32px;
+  box-sizing:border-box;
+  overflow:hidden;
 }
-.rk-tab:hover { color: #1a73e8; }
-.rk-tab.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+.tk-chart-wrap.tall { height:480px; padding-bottom:36px; }
+.tk-chart-wrap.short { height:300px; padding-bottom:28px; }
+.tk-chart-wrap > canvas {
+  position:absolute;
+  top:8px; left:6px;
+  right:6px; bottom:32px;
+  width:calc(100% - 12px) !important;
+  height:calc(100% - 40px) !important;
+}
+.tk-chart-wrap.tall > canvas { bottom:36px; height:calc(100% - 44px) !important; }
+.tk-chart-wrap.short > canvas { bottom:28px; height:calc(100% - 36px) !important; }
 
-/* 日付選択 */
-.date-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-.date-label { font-size: 14px; color: #5f6368; font-weight: 600; }
-.date-nav-btn {
-background: #f1f3f4; border: 1px solid #dadce0; border-radius: 50%;
-width: 32px; height: 32px; cursor: pointer; font-size: 16px;
-display: flex; align-items: center; justify-content: center;
-transition: background 0.12s; flex-shrink: 0;
+/* 分割表示 */
+.tk-split { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.tk-split .tk-chart-wrap { height:280px; padding-bottom:28px; }
+.tk-split .tk-chart-wrap > canvas { bottom:28px; height:calc(100% - 36px) !important; }
+@media (max-width:720px) { .tk-split { grid-template-columns:1fr; } }
+.tk-split-card {
+  border:1px solid #f1f3f4; border-radius:8px; padding:8px 10px;
 }
-.date-nav-btn:hover { background: #e8eaed; }
-.date-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.date-display { font-size: 16px; font-weight: 700; color: #202124; min-width: 130px; text-align: center; }
-.date-input-btn {
-background: none; border: 1px solid #dadce0; border-radius: 16px;
-padding: 4px 12px; font-size: 13px; color: #5f6368; cursor: pointer; font-family: inherit;
+.tk-split-card .ttl {
+  font-size:11px; font-weight:700; color:#5f6368;
+  margin-bottom:4px; display:flex; align-items:center; gap:6px;
 }
-.date-input-btn:hover { background: #f1f3f4; }
-.date-picker-wrap { display: none; align-items: center; gap: 6px; }
-.date-picker-wrap.visible { display: flex; }
-.date-picker-wrap input[type=“date”] {
-border: 1px solid #dadce0; border-radius: 4px; padding: 4px 8px;
-font-size: 13px; font-family: inherit; color: #3c4043;
-}
-.date-picker-wrap input[type=“date”]:focus { border-color: #1a73e8; outline: none; }
-
-/* タイトルバー */
-.ranking-title-bar {
-display: flex; align-items: center; justify-content: space-between;
-margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
-}
-.ranking-title { font-size: 15px; font-weight: 700; color: #202124; }
-.ranking-stats { font-size: 13px; color: #70757a; }
+.tk-split-card .ttl .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
 
 /* テーブル */
-.ranking-table {
-width: 100%; border-collapse: collapse; background: #fff;
-border: 1px solid #dadce0; border-radius: 8px; overflow: hidden;
+.tk-table-wrap { overflow-x:auto; }
+.tk-table { width:100%; border-collapse:collapse; font-size:12px; }
+.tk-table th, .tk-table td {
+  padding:7px 10px; text-align:right; border-bottom:1px solid #f1f3f4; white-space:nowrap;
 }
-.ranking-table th {
-background: #f8f9fa; padding: 10px 14px; text-align: left;
-font-size: 12px; font-weight: 700; color: #5f6368; border-bottom: 1px solid #ebebeb;
+.tk-table th {
+  background:#f8f9fa; color:#5f6368; font-weight:600; font-size:11px;
+  position:sticky; top:0;
 }
-.ranking-table th.col-rank { width: 52px; text-align: center; }
-.ranking-table th.col-count { width: 90px; text-align: right; }
-.ranking-table td { padding: 10px 14px; border-bottom: 1px solid #f1f3f4; font-size: 14px; vertical-align: middle; }
-.ranking-table tr:last-child td { border-bottom: none; }
-.ranking-table tr:hover td { background: #f8f9fa; }
-.rank-cell { text-align: center; font-weight: 700; font-size: 14px; }
-.rank-medal { font-size: 18px; }
-.rank-id {
-font-family: ‘Courier New’, monospace; color: #1a73e8;
-cursor: pointer; font-weight: 600; transition: color 0.1s;
-}
-.rank-id:hover { color: #1557b0; text-decoration: underline; }
-.count-cell { text-align: right; font-weight: 700; color: #202124; }
-.bar-cell { min-width: 100px; }
-.bar-bg { background: #f1f3f4; border-radius: 4px; height: 8px; overflow: hidden; }
-.bar-fill { height: 100%; background: linear-gradient(90deg, #1a73e8, #34a853); border-radius: 4px; transition: width 0.5s ease; }
-
-.rk-loading { text-align: center; padding: 48px; color: #70757a; font-size: 14px; }
-.rk-spinner {
-display: inline-block; width: 20px; height: 20px;
-border: 2px solid #e0e0e0; border-radius: 50%; border-top-color: #1a73e8;
-animation: spin 0.8s linear infinite; margin-left: 8px; vertical-align: middle;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.rk-empty { text-align: center; padding: 48px; color: #70757a; font-size: 14px; }
-.rk-error { color: #c0392b; padding: 24px; font-size: 14px; text-align: center; }
-.rk-share-btn {
-background: none; border: 1px solid #dadce0; border-radius: 16px;
-padding: 4px 12px; font-size: 12px; color: #5f6368; cursor: pointer;
-font-family: inherit; white-space: nowrap;
-}
-.rk-share-btn:hover { background: #f1f3f4; }
-
-.rk-note {
-font-size: 12px; color: #70757a; margin-top: 12px; padding: 8px 12px;
-background: #f8f9fa; border-radius: 4px; border-left: 3px solid #fbbc05;
+.tk-table th:first-child, .tk-table td:first-child { text-align:left; }
+.tk-table tbody tr:hover { background:#f8f9fa; }
+.tk-table tfoot td {
+  font-weight:700; background:#f8f9fa; border-top:2px solid #dadce0;
 }
 
-@media (max-width: 600px) {
-.ranking-header { padding: 8px 12px; gap: 8px; }
-.ranking-logo { font-size: 22px; }
-.ranking-header-title { font-size: 14px; }
-.ranking-body { padding: 12px 10px 60px; }
-.ranking-table th.col-bar, .ranking-table td.bar-cell { display: none; }
+/* 折りたたみ */
+.tk-collapse { padding:0; overflow:hidden; }
+.tk-collapse > .tk-collapse-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 16px; cursor:pointer; list-style:none;
+  user-select:none; transition:background .12s; gap:8px;
+}
+.tk-collapse > .tk-collapse-head::-webkit-details-marker { display:none; }
+.tk-collapse > .tk-collapse-head:hover { background:#f8f9fa; }
+.tk-collapse-arrow { font-size:14px; color:#5f6368; transition:transform .2s; }
+.tk-collapse[open] .tk-collapse-arrow { transform:rotate(180deg); }
+.tk-collapse-body { padding:0 16px 16px; }
+
+/* 3Dグラフ */
+.tk-3d-wrap {
+  position:relative; height:520px; width:100%;
+  background:#fafbfc; border-radius:8px; padding:8px;
+  box-sizing:border-box;
+}
+.tk-3d-help {
+  font-size:11px; color:#70757a; margin-top:6px; text-align:right;
+}
+
+.tk-last-updated { font-size:11px; color:#9aa0a6; text-align:right; margin-top:8px; }
+
+@media (max-width:768px) {
+  .tk-header { padding:8px 10px; gap:6px; }
+  .tk-logo { font-size:20px; }
+  .tk-header-title { font-size:12px; }
+  .tk-body { padding:10px 8px 40px; }
+  .tk-metric-val { font-size:18px; }
+  .tk-chart-wrap { height:340px; padding-bottom:28px; }
+  .tk-chart-wrap > canvas { bottom:28px; height:calc(100% - 36px) !important; }
+  .tk-chart-wrap.tall { height:380px; padding-bottom:28px; }
+  .tk-chart-wrap.tall > canvas { bottom:28px; height:calc(100% - 36px) !important; }
+  .tk-3d-wrap { height:420px; }
+  .tk-modebtn { padding:10px 12px; }
+  .tk-modebtn .ic { font-size:20px; }
+  .tk-modebtn .ttl { font-size:13px; }
+  .tk-modebtn .sub { font-size:10px; }
 }
 </style>
-
 </head>
 <body>
-<div class="ranking-page">
-
-  <div class="ranking-header">
-    <a class="ranking-logo" href="index.html">
+<div class="tk-page">
+  <div class="tk-header">
+    <a href="index.html" class="tk-logo">
       <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
     </a>
-    <div class="ranking-header-title">&#x1F3C6; ID&#x66F8;&#x304D;&#x8FBC;&#x307F;&#x6570;&#x30E9;&#x30F3;&#x30AD;&#x30F3;&#x30B0;</div>
+    <div class="tk-header-title">📊 統計</div>
+    <div class="tk-header-actions">
+      <button class="tk-header-link" id="shareBtn" title="現在のビューURLをコピー">🔗 URL共有</button>
+      <a href="ranking.html" class="tk-header-link">🏆 ランキング</a>
+      <a href="index.html" class="tk-header-link">← トップ</a>
+    </div>
   </div>
 
-  <div class="ranking-body">
+  <div class="tk-body">
 
-<!-- 検索バー -->
-<div class="rk-search-wrap">
-  <div class="rk-search-box">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </svg>
-    <input type="text" id="rkSearchInput" placeholder="ID&#x3092;&#x5165;&#x529B;&#x3057;&#x3066;&#x7D5E;&#x308A;&#x8FBC;&#x307F;" autocomplete="off">
-  </div>
-</div>
+    <div class="tk-modesel" id="modeSel">
+      <button class="tk-modebtn active" data-mode="hourly">
+        <div class="ic">⏰</div>
+        <div class="txt">
+          <div class="ttl">時別推移</div>
+          <div class="sub">1日を24時間で見る</div>
+        </div>
+      </button>
+      <button class="tk-modebtn" data-mode="daily">
+        <div class="ic">📅</div>
+        <div class="txt">
+          <div class="ttl">日別推移</div>
+          <div class="sub">複数日を1日単位で見る</div>
+        </div>
+      </button>
+    </div>
 
-<!-- タブ -->
-<div class="rk-tabs">
-  <button class="rk-tab active" id="tabPost">&#x1F4AC; &#x30EC;&#x30B9;&#x6570;</button>
-  <button class="rk-tab" id="tabThread">&#x1F4DD; &#x30B9;&#x30EC;&#x7ACB;&#x3066;&#x6570;</button>
-</div>
+    <div class="tk-controls">
+      <div class="tk-ctrl-group" id="hourlyCtrls">
+        <strong>日付</strong>
+        <div class="tk-pbtns" id="hourlyPbtns">
+          <button class="tk-pbtn active" data-day="today">今日</button>
+          <button class="tk-pbtn" data-day="yesterday">昨日</button>
+          <button class="tk-pbtn" data-day="custom">指定</button>
+        </div>
+        <input type="date" id="hourlyDate" class="tk-date-input" style="display:none;">
+      </div>
 
-<!-- 日付選択 -->
-<div class="date-selector">
-  <span class="date-label">&#x65E5;&#x4ED8;:</span>
-  <button class="date-nav-btn" id="prevDay">&#8592;</button>
-  <div class="date-display" id="dateDisplay">&#x8AAD;&#x307F;&#x8FBC;&#x307F;&#x4E2D;&#x2026;</div>
-  <button class="date-nav-btn" id="nextDay">&#8594;</button>
-  <button class="date-input-btn" id="togglePicker">&#x1F4C5; &#x65E5;&#x4ED8;&#x6307;&#x5B9A;</button>
-  <div class="date-picker-wrap" id="datePickerWrap">
-    <input type="date" id="datePicker">
-  </div>
-</div>
+      <div class="tk-ctrl-group" id="dailyCtrls" style="display:none;">
+        <strong>期間</strong>
+        <div class="tk-pbtns" id="dailyPbtns">
+          <button class="tk-pbtn active" data-period="7days">直近7日</button>
+          <button class="tk-pbtn" data-period="14days">直近14日</button>
+          <button class="tk-pbtn" data-period="30days">直近30日</button>
+          <button class="tk-pbtn" data-period="month">今月</button>
+          <button class="tk-pbtn" data-period="lastmonth">先月</button>
+          <button class="tk-pbtn" data-period="custom">指定</button>
+        </div>
+        <span id="dailyCustomRange" style="display:none; align-items:center; gap:6px;">
+          <input type="date" id="dateFrom" class="tk-date-input">
+          <span style="color:#5f6368;">〜</span>
+          <input type="date" id="dateTo" class="tk-date-input">
+        </span>
+      </div>
 
-<div id="rankingContent">
-  <div class="rk-loading">&#x8AAD;&#x307F;&#x8FBC;&#x307F;&#x4E2D;&#x2026; <span class="rk-spinner"></span></div>
-</div>
+      <div class="tk-ctrl-group" style="margin-left:auto;">
+        <span class="tk-cache-info" id="cacheInfo"></span>
+        <button class="tk-reload" id="reloadBtn" title="強制再取得">🔄 更新</button>
+      </div>
+    </div>
 
-<div class="rk-note" id="rkNote" style="display:none;">
-  ランキングは 2026/04/25 のお昼以降のデータを表示。(検索は21日から収集)<br>
-  ※ IDをタップすると該当IDのレスを検索。
-</div>
+    <div class="tk-status" id="statusBar"></div>
 
+    <div class="tk-metrics" id="metrics">
+      <div class="tk-metric" data-color="blue">
+        <div class="tk-metric-icon">💬</div>
+        <div class="tk-metric-val" id="mPosts">-</div>
+        <div class="tk-metric-label">合計レス数</div>
+        <div class="tk-metric-sub" id="mPostsSub"></div>
+      </div>
+      <div class="tk-metric" data-color="red">
+        <div class="tk-metric-icon">📝</div>
+        <div class="tk-metric-val" id="mThreads">-</div>
+        <div class="tk-metric-label">スレ立て数</div>
+        <div class="tk-metric-sub" id="mThreadsSub"></div>
+      </div>
+      <div class="tk-metric" data-color="yellow">
+        <div class="tk-metric-icon">🆔</div>
+        <div class="tk-metric-val" id="mIds">-</div>
+        <div class="tk-metric-label">新規ID数</div>
+        <div class="tk-metric-sub" id="mIdsSub"></div>
+      </div>
+      <div class="tk-metric" data-color="purple">
+        <div class="tk-metric-icon">🌱</div>
+        <div class="tk-metric-val" id="mAvgTI">-</div>
+        <div class="tk-metric-label">平均スレ/ID</div>
+      </div>
+      <div class="tk-metric" data-color="teal">
+        <div class="tk-metric-icon">🧵</div>
+        <div class="tk-metric-val" id="mAvgPT">-</div>
+        <div class="tk-metric-label">平均レス/スレ</div>
+      </div>
+      <div class="tk-metric" data-color="orange">
+        <div class="tk-metric-icon">🔥</div>
+        <div class="tk-metric-val" id="mPeak">-</div>
+        <div class="tk-metric-label" id="mPeakLabel">ピーク時間帯</div>
+        <div class="tk-metric-sub" id="mPeakSub"></div>
+      </div>
+      <div class="tk-metric" data-color="cyan">
+        <div class="tk-metric-icon">📅</div>
+        <div class="tk-metric-val" id="mRange">-</div>
+        <div class="tk-metric-label" id="mRangeLabel">対象</div>
+        <div class="tk-metric-sub" id="mRangeSub"></div>
+      </div>
+    </div>
+
+    <div class="tk-card">
+      <div class="tk-card-head">
+        <div>
+          <span class="tk-card-title" id="mainChartTitle">⏰ 時別推移</span>
+          <span class="tk-card-title-sub" id="mainChartSub"></span>
+        </div>
+        <div class="tk-card-tools">
+          <div class="tk-series" id="seriesTog">
+            <button class="active" data-key="p"><span class="dot"></span>レス</button>
+            <button class="active" data-key="t"><span class="dot"></span>スレ立て</button>
+            <button class="active" data-key="n"><span class="dot"></span>新規ID</button>
+          </div>
+          <div class="tk-tog" id="typeTog">
+            <button class="active" data-type="line">折れ線</button>
+            <button data-type="bar">棒</button>
+          </div>
+          <div class="tk-tog" id="layoutTog">
+            <button class="active" data-layout="combined">統合</button>
+            <button data-layout="split">分割</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tk-chart-wrap tall" id="mainChartBox">
+        <canvas id="mainChart"></canvas>
+      </div>
+
+      <div class="tk-split" id="splitBox" style="display:none;">
+        <div class="tk-split-card">
+          <div class="ttl"><span class="dot" style="background:#4285F4"></span>レス数</div>
+          <div class="tk-chart-wrap"><canvas id="splitP"></canvas></div>
+        </div>
+        <div class="tk-split-card">
+          <div class="ttl"><span class="dot" style="background:#EA4335"></span>スレ立て数</div>
+          <div class="tk-chart-wrap"><canvas id="splitT"></canvas></div>
+        </div>
+        <div class="tk-split-card">
+          <div class="ttl"><span class="dot" style="background:#FBBC05"></span>新規ID数</div>
+          <div class="tk-chart-wrap"><canvas id="splitN"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <details class="tk-card tk-collapse" id="tableSection">
+      <summary class="tk-collapse-head">
+        <span class="tk-card-title">📋 データ一覧</span>
+        <span class="tk-collapse-arrow">▾</span>
+      </summary>
+      <div class="tk-collapse-body">
+        <div class="tk-table-wrap">
+          <table class="tk-table" id="statsTable">
+            <thead>
+              <tr>
+                <th id="thLabel">時間</th>
+                <th>レス数</th>
+                <th>スレ立て</th>
+                <th>新規ID</th>
+              </tr>
+            </thead>
+            <tbody id="statsTableBody"></tbody>
+            <tfoot>
+              <tr>
+                <td>合計</td>
+                <td id="ftPosts">-</td>
+                <td id="ftThreads">-</td>
+                <td id="ftIds">-</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <details class="tk-card tk-collapse" id="advancedSection">
+      <summary class="tk-collapse-head">
+        <span class="tk-card-title">🔬 詳細分析 — 3D散布図</span>
+        <span class="tk-collapse-arrow">▾</span>
+      </summary>
+      <div class="tk-collapse-body">
+        <div class="tk-card-head">
+          <span class="tk-card-title-sub">X=新規ID数 / Y=スレ立て数 / Z=レス数 — 1点=各区分（時 or 日）</span>
+        </div>
+        <div class="tk-3d-wrap" id="scatter3d"></div>
+        <div class="tk-3d-help">🖱️ ドラッグで回転 / ホイールで拡大 / ダブルクリックでリセット</div>
+      </div>
+    </details>
+
+    <div class="tk-last-updated" id="lastUpdated"></div>
   </div>
 </div>
 
 <script>
-"use strict";
+/* =========================================================
+   Jeegle! 統計
+   ========================================================= */
+const FIREBASE_PROJECT_ID = 'itiran-be2af';
+const FIREBASE_API_KEY    = 'AIzaSyCasS3f9WJ26Dkk1B8_NrMFI2S-rahwMiM';
+const DATA_START_DATE     = '2026-05-14';
+const CACHE_VER           = 'v1';
+const CACHE_KEY_PREFIX    = `jeegle_stats_${CACHE_VER}_`;
+const CURRENT_MONTH_TTL   = 5 * 60 * 1000;
+const PAST_MONTH_TTL      = 7 * 24 * 60 * 60 * 1000;
 
-var SB_URL2 = "https://fdwceaeqrscbwcwsqrff.supabase.co";
-var SB_KEY2 = "sb_publishable_oEIPHntQ7TjrZTybZEjXtQ_Ojd8PrTO";
-var EARLIEST = new Date(2026, 3, 22);
+Chart.defaults.font.family = "'Hiragino Kaku Gothic ProN','ヒラギノ角ゴ ProN',Meiryo,'MS Gothic',Arial,sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#3c4043';
 
-var currentDate = new Date();
-currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-if (currentDate < EARLIEST) currentDate = new Date(EARLIEST);
+const COLORS = {
+  p: '#4285F4', // レス
+  t: '#EA4335', // スレ立て
+  n: '#FBBC05', // 新規ID
+};
+const LABELS = { p:'レス数', t:'スレ立て数', n:'新規ID数' };
 
-/* 現在のタブ: "post" or "thread" */
-var currentTab = "post";
+// 状態
+const monthCache = new Map();
+const charts = {};
+let mode = 'hourly';
+let hourlyDayKey = 'today';
+let hourlyCustomDate = '';
+let dailyPeriodKey = '7days';
+let dailyFrom = '', dailyTo = '';
+let chartType = 'line';
+let chartLayout = 'combined';
+let seriesOn = { p:true, t:true, n:true };
+let advancedOpen = false;
+let tableOpen = false;
 
-/* ===== ユーティリティ ===== */
-function toISO(d) {
-  return d.getFullYear() + "-"
-    + String(d.getMonth() + 1).padStart(2, "0") + "-"
-    + String(d.getDate()).padStart(2, "0");
+// ---------- util ----------
+const pad2 = n => String(n).padStart(2,'0');
+const ymd  = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const ym   = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+const parseYmd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+const fmtNum = n => (n==null||isNaN(n)) ? '-' : Math.round(n).toLocaleString('ja-JP');
+const fmtDec = (n,d=2) => (n==null||isNaN(n)||!isFinite(n)) ? '-' : n.toFixed(d);
+function today0() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+function showStatus(msg, type='info') {
+  const el = document.getElementById('statusBar');
+  el.textContent = msg; el.className = 'tk-status show ' + type;
 }
-function toJaDisplay(d) {
-  var dow = ["\u65e5","\u6708","\u706b","\u6c34","\u6728","\u91d1","\u571f"][d.getDay()];
-  return d.getFullYear() + "\u5e74" + (d.getMonth()+1) + "\u6708" + d.getDate() + "\u65e5 (" + dow + ")";
+function hideStatus(){ document.getElementById('statusBar').classList.remove('show'); }
+
+// ---------- Firestore REST ----------
+function fsValue(v) {
+  if (v == null) return null;
+  if ('stringValue'    in v) return v.stringValue;
+  if ('integerValue'   in v) return Number(v.integerValue);
+  if ('doubleValue'    in v) return Number(v.doubleValue);
+  if ('booleanValue'   in v) return v.booleanValue;
+  if ('timestampValue' in v) return v.timestampValue;
+  if ('nullValue'      in v) return null;
+  if ('mapValue' in v) {
+    const out = {}; const f = v.mapValue.fields || {};
+    for (const k in f) out[k] = fsValue(f[k]);
+    return out;
+  }
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(fsValue);
+  return null;
 }
-/* XSS対策: 必ずtextContentでセット */
-function txt(el, s) { el.textContent = (s == null) ? "" : String(s); }
-
-/*
- * 検索クエリから先頭の "id:" (大小問わず) を除いた文字列を返す。
- * 入力欄の値は一切変更しない。マッチング時のみ使用。
- */
-function getSearchKey(raw) {
-  return raw.replace(/^id:/i, "").toLowerCase();
-}
-
-/* ===== 日付表示更新 ===== */
-function updateDateDisplay() {
-  txt(document.getElementById("dateDisplay"), toJaDisplay(currentDate));
-  document.getElementById("prevDay").disabled = currentDate <= EARLIEST;
-  var today = new Date();
-  var todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  document.getElementById("nextDay").disabled = currentDate >= todayD;
-  document.getElementById("datePicker").value = toISO(currentDate);
-}
-
-/* ===== 絞り込み（入力値は変えない・マッチング時だけid:除去） ===== */
-function applyFilter() {
-  var q = getSearchKey(document.getElementById("rkSearchInput").value);
-  document.querySelectorAll(".rk-row").forEach(function(tr) {
-    var uid = (tr.dataset.uid || "").toLowerCase();
-    tr.style.display = (!q || uid.indexOf(q) !== -1) ? "" : "none";
-  });
-}
-
-/* ===== index.htmlへID検索で飛ぶ ===== */
-function goSearch(uid, date) {
-  var yy  = String(date.getFullYear()).slice(2).padStart(2, "0");
-  var mm  = String(date.getMonth() + 1).padStart(2, "0");
-  var dd2 = String(date.getDate()).padStart(2, "0");
-  var url = new URL("index.html", location.href);
-  url.searchParams.set("s", "id:" + uid);
-  url.searchParams.set("t", "h");
-  url.searchParams.set("m", "t");
-  url.searchParams.set("d", yy + mm + dd2);
-  location.href = url.toString();
-}
-
-/* ===== テーブル構築（DOM操作・XSS対策済み） ===== */
-function buildTable(rows, date, countKey, countLabel) {
-  var maxCount = rows[0][countKey] || 1;
-
-  var bar = document.createElement("div"); bar.className = "ranking-title-bar";
-  var title = document.createElement("div"); title.className = "ranking-title";
-  txt(title, toJaDisplay(date) + " \u306e\u30e9\u30f3\u30ad\u30f3\u30b0");
-  var stats = document.createElement("div"); stats.className = "ranking-stats";
-  txt(stats, "\u5168 " + rows.length + " \u4ef6");
-  var shareBtn = document.createElement("button"); shareBtn.className = "rk-share-btn";
-  txt(shareBtn, "\ud83d\udd17 URL\u5171\u6709");
-  shareBtn.addEventListener("click", function() { shareRanking(date); });
-  bar.appendChild(title); bar.appendChild(stats); bar.appendChild(shareBtn);
-
-  var table = document.createElement("table"); table.className = "ranking-table";
-
-  var thead = document.createElement("thead");
-  var htr = document.createElement("tr");
-  [
-    ["\u9806\u4f4d", "col-rank"],
-    ["ID", ""],
-    [countLabel, "col-count"],
-    ["\u5272\u5408", "col-bar"]
-  ].forEach(function(h) {
-    var th = document.createElement("th");
-    if (h[1]) th.className = h[1];
-    txt(th, h[0]);
-    htr.appendChild(th);
-  });
-  thead.appendChild(htr); table.appendChild(thead);
-
-  var tbody = document.createElement("tbody");
-  rows.forEach(function(row) {
-    var tr = document.createElement("tr"); tr.className = "rk-row";
-    tr.dataset.uid = row.user_id || "";
-
-    /* 順位 */
-    var tdRank = document.createElement("td"); tdRank.className = "rank-cell";
-    if (row.rank <= 3) {
-      var medal = document.createElement("span"); medal.className = "rank-medal";
-      txt(medal, row.rank === 1 ? "\ud83e\udd47" : row.rank === 2 ? "\ud83e\udd48" : "\ud83e\udd49");
-      tdRank.appendChild(medal);
-    } else { txt(tdRank, String(row.rank)); }
-    tr.appendChild(tdRank);
-
-        /* ID + 分析ボタン */
-    var tdId = document.createElement("td");
-    var span = document.createElement("span"); span.className = "rank-id";
-    txt(span, row.user_id || "");
-    span.addEventListener("click", (function(uid) {
-      return function() { goSearch(uid, currentDate); };
-    })(row.user_id || ""));
-    tdId.appendChild(span);
-
-    var analyzeBtn = document.createElement("a");
-    analyzeBtn.className = "rk-analyze-btn";
-    analyzeBtn.href = "id-analysis.html?id=" + encodeURIComponent(row.user_id || "") + "&d=" + toYMD6(date);
-    analyzeBtn.title = "ID:" + (row.user_id || "") + " を分析";
-    analyzeBtn.textContent = "分析";
-    analyzeBtn.addEventListener("click", function(e) { e.stopPropagation(); });
-    tdId.appendChild(analyzeBtn);
-
-    tr.appendChild(tdId);
-
-
-    /* 件数 */
-    var tdCnt = document.createElement("td"); tdCnt.className = "count-cell";
-    txt(tdCnt, String(row[countKey]));
-    tr.appendChild(tdCnt);
-
-    /* バー */
-    var tdBar = document.createElement("td"); tdBar.className = "bar-cell";
-    var bg = document.createElement("div"); bg.className = "bar-bg";
-    var fill = document.createElement("div"); fill.className = "bar-fill";
-    fill.style.width = Math.round((row[countKey] / maxCount) * 100) + "%";
-    bg.appendChild(fill); tdBar.appendChild(bg); tr.appendChild(tdBar);
-
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-
-  var frag = document.createDocumentFragment();
-  frag.appendChild(bar); frag.appendChild(table);
-  return frag;
+function parseFirestoreDoc(doc) {
+  if (!doc || !doc.fields) return null;
+  const out = {};
+  for (const k in doc.fields) out[k] = fsValue(doc.fields[k]);
+  return out;
 }
 
-/* ===== ランキング読み込み ===== */
-function loadRanking(date) {
-  var content = document.getElementById("rankingContent");
-  /* ローディング（静的HTML・XSSリスクなし） */
-  while (content.firstChild) content.removeChild(content.firstChild);
-  var ld = document.createElement("div"); ld.className = "rk-loading";
-  txt(ld, "\u8aad\u307f\u8fbc\u307f\u4e2d\u2026");
-  var sp = document.createElement("span"); sp.className = "rk-spinner";
-  ld.appendChild(sp); content.appendChild(ld);
-  document.getElementById("rkNote").style.display = "none";
-
-  var isPost = (currentTab === "post");
-  var endpoint = isPost
-    ? "/rest/v1/id_rankings?select=rank,user_id,post_count&date=eq." + toISO(date) + "&order=rank.asc&limit=300"
-    : "/rest/v1/thread_rankings?select=rank,user_id,thread_count&date=eq." + toISO(date) + "&order=rank.asc&limit=300";
-  var countKey   = isPost ? "post_count"   : "thread_count";
-  var countLabel = isPost ? "\u66f8\u8fbc\u6570" : "\u30b9\u30ec\u7acb\u3066\u6570";
-
-  fetch(SB_URL2 + endpoint, { headers: { "apikey": SB_KEY2, "Authorization": "Bearer " + SB_KEY2 } })
-  .then(function(res) {
-    if (!res.ok) return res.text().then(function(t) { throw new Error("HTTP " + res.status + ": " + t); });
-    return res.json();
-  }).then(function(rows) {
-    while (content.firstChild) content.removeChild(content.firstChild);
-    if (!rows.length) {
-      var empty = document.createElement("div"); empty.className = "rk-empty";
-      txt(empty, "\u3053\u306e\u65e5\u306e\u30e9\u30f3\u30ad\u30f3\u30b0\u30c7\u30fc\u30bf\u306f\u3042\u308a\u307e\u305b\u3093\u3002");
-      content.appendChild(empty);
-    } else {
-      content.appendChild(buildTable(rows, date, countKey, countLabel));
-      applyFilter();
+// ---------- キャッシュ ----------
+function isCurrentMonth(yyyymm) { return yyyymm === ym(today0()); }
+function readLSCache(yyyymm) {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_PREFIX + yyyymm);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    const ttl = isCurrentMonth(yyyymm) ? CURRENT_MONTH_TTL : PAST_MONTH_TTL;
+    if (Date.now() - obj.savedAt > ttl) return null;
+    return obj.data;
+  } catch { return null; }
+}
+function writeLSCache(yyyymm, data) {
+  try { localStorage.setItem(CACHE_KEY_PREFIX + yyyymm, JSON.stringify({ savedAt: Date.now(), data })); } catch {}
+}
+function clearAllCache() {
+  monthCache.clear();
+  try {
+    for (let i = localStorage.length-1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(CACHE_KEY_PREFIX)) localStorage.removeItem(k);
     }
-    document.getElementById("rkNote").style.display = "";
-  }).catch(function(e) {
-    while (content.firstChild) content.removeChild(content.firstChild);
-    var er = document.createElement("div"); er.className = "rk-error";
-    txt(er, "\u8aad\u307f\u8fbc\u307f\u30a8\u30e9\u30fc: " + e.message);
-    content.appendChild(er);
-    document.getElementById("rkNote").style.display = "";
-  });
+  } catch {}
 }
 
-/* ===== タブ切り替え ===== */
-document.getElementById("tabPost").addEventListener("click", function() {
-  if (currentTab === "post") return;
-  currentTab = "post";
-  document.getElementById("tabPost").classList.add("active");
-  document.getElementById("tabThread").classList.remove("active");
-  pushHash(currentDate, currentTab);
-  loadRanking(currentDate);
-});
-document.getElementById("tabThread").addEventListener("click", function() {
-  if (currentTab === "thread") return;
-  currentTab = "thread";
-  document.getElementById("tabThread").classList.add("active");
-  document.getElementById("tabPost").classList.remove("active");
-  pushHash(currentDate, currentTab);
-  loadRanking(currentDate);
-});
-
-/* ===== 日付ナビ ===== */
-document.getElementById("prevDay").addEventListener("click", function() {
-  var d = new Date(currentDate); d.setDate(d.getDate() - 1);
-  if (d < EARLIEST) return;
-  currentDate = d; updateDateDisplay(); pushHash(currentDate, currentTab); loadRanking(currentDate);
-});
-document.getElementById("nextDay").addEventListener("click", function() {
-  var today = new Date();
-  var todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  var d = new Date(currentDate); d.setDate(d.getDate() + 1);
-  if (d > todayD) return;
-  currentDate = d; updateDateDisplay(); pushHash(currentDate, currentTab); loadRanking(currentDate);
-});
-document.getElementById("togglePicker").addEventListener("click", function() {
-  document.getElementById("datePickerWrap").classList.toggle("visible");
-});
-document.getElementById("datePicker").addEventListener("change", function(e) {
-  var v = e.target.value; if (!v) return;
-  var p = v.split("-");
-  var d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
-  if (d < EARLIEST) { alert("2026\u5e744\u670825\u65e5\u4ee5\u524d\u306e\u30c7\u30fc\u30bf\u306f\u3042\u308a\u307e\u305b\u3093\u3002"); return; }
-  var today = new Date();
-  var todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  if (d > todayD) { alert("\u672a\u6765\u306e\u65e5\u4ed8\u306f\u9078\u629e\u3067\u304d\u307e\u305b\u3093\u3002"); return; }
-  currentDate = d;
-  document.getElementById("datePickerWrap").classList.remove("visible");
-  updateDateDisplay(); pushHash(currentDate, currentTab); loadRanking(currentDate);
-});
-
-/* ===== 検索ボックス ===== */
-/* 入力値は変えない。getSearchKey()でid:を無視してマッチング */
-document.getElementById("rkSearchInput").addEventListener("input", function() {
-  applyFilter();
-});
-/* Enter → index.htmlへID検索 */
-document.getElementById("rkSearchInput").addEventListener("keydown", function(e) {
-  if (e.key !== "Enter") return;
-  var uid = getSearchKey(this.value);
-  if (!uid) return;
-  goSearch(uid, currentDate);
-});
-
-/* ===== URL共有 (#r=YYMMDD / #s=YYMMDD) ===== */
-function toYMD6(d) {
-  var yy = String(d.getFullYear()).slice(2).padStart(2,"0");
-  var mm = String(d.getMonth()+1).padStart(2,"0");
-  var dd2= String(d.getDate()).padStart(2,"0");
-  return yy + mm + dd2;
-}
-
-function pushHash(date, tab) {
-  var prefix = (tab === "thread") ? "s" : "r";
-  history.replaceState(null, "", location.pathname + location.search + "#" + prefix + "=" + toYMD6(date));
-}
-
-function shareRanking(date) {
-  pushHash(date, currentTab);
-  var url = location.href;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(function() {
-      var b = document.querySelector(".rk-share-btn");
-      if (!b) return;
-      var orig = b.textContent;
-      txt(b, "✅ コピー完了");
-      setTimeout(function() { txt(b, orig); }, 2000);
-    }).catch(function() { prompt("URLをコピーしてください:", url); });
-  } else {
-    prompt("URLをコピーしてください:", url);
+// ---------- 取得 ----------
+async function fetchMonthDoc(yyyymm, force=false) {
+  if (!force && monthCache.has(yyyymm)) return monthCache.get(yyyymm);
+  if (!force) {
+    const ls = readLSCache(yyyymm);
+    if (ls !== null) { monthCache.set(yyyymm, ls); return ls; }
+  }
+  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/stats/${yyyymm}?key=${FIREBASE_API_KEY}`;
+  try {
+    const res = await fetch(url);
+    if (res.status === 404) { monthCache.set(yyyymm, null); writeLSCache(yyyymm, null); return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const parsed = parseFirestoreDoc(json);
+    monthCache.set(yyyymm, parsed);
+    writeLSCache(yyyymm, parsed);
+    return parsed;
+  } catch (e) {
+    console.error('fetchMonthDoc', yyyymm, e);
+    monthCache.set(yyyymm, null);
+    return null;
   }
 }
 
-function fromYMD6(s) {
-  if (!s || s.length !== 6) return null;
-  var yy = parseInt(s.slice(0,2), 10);
-  var mm = parseInt(s.slice(2,4), 10) - 1;
-  var dd2= parseInt(s.slice(4,6), 10);
-  return new Date(2000 + yy, mm, dd2);
+async function loadRange(fromDate, toDate, force=false) {
+  const start = parseYmd(DATA_START_DATE);
+  if (fromDate < start) fromDate = start;
+  if (toDate < start) return { days: [], fetched: 0, cached: 0 };
+
+  const months = new Set();
+  const cur = new Date(fromDate);
+  while (cur <= toDate) { months.add(ym(cur)); cur.setDate(cur.getDate()+1); }
+  const monthList = [...months];
+
+  let fetched=0, cached=0;
+  const monthData = {};
+  await Promise.all(monthList.map(async m => {
+    const before = monthCache.has(m) || readLSCache(m) !== null;
+    const doc = await fetchMonthDoc(m, force);
+    monthData[m] = doc;
+    if (!before || force) fetched++; else cached++;
+  }));
+
+  const days = [];
+  const d = new Date(fromDate);
+  while (d <= toDate) {
+    const mKey = ym(d), dd = pad2(d.getDate());
+    const doc = monthData[mKey];
+    const day = doc && doc.d ? doc.d[dd] : null;
+    const p24 = (day && Array.isArray(day.p)) ? day.p.map(x=>Number(x)||0) : new Array(24).fill(0);
+    const t24 = (day && Array.isArray(day.t)) ? day.t.map(x=>Number(x)||0) : new Array(24).fill(0);
+    const n24 = (day && Array.isArray(day.n)) ? day.n.map(x=>Number(x)||0) : new Array(24).fill(0);
+    const h   = (day && day.h != null) ? Number(day.h) : -1;
+    days.push({
+      date: ymd(d), label: `${d.getMonth()+1}/${d.getDate()}`,
+      p:p24, t:t24, n:n24, h:h,
+      sumP: p24.reduce((a,b)=>a+b,0),
+      sumT: t24.reduce((a,b)=>a+b,0),
+      sumN: n24.reduce((a,b)=>a+b,0),
+      exists: !!day,
+    });
+    d.setDate(d.getDate()+1);
+  }
+  return { days, fetched, cached };
 }
 
-function loadFromHash() {
-  var hash = location.hash.replace(/^#/, "");
-  if (!hash) return false;
-  var m = hash.match(/^([rs])=(\d{6})$/);
-  if (!m) return false;
-  var tab = (m[1] === "s") ? "thread" : "post";
-  var d = fromYMD6(m[2]);
-  if (!d || isNaN(d.getTime())) return false;
-  var today = new Date();
-  var todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  if (d < EARLIEST) d = new Date(EARLIEST);
-  if (d > todayD) d = todayD;
-  currentDate = d;
-  currentTab = tab;
-  document.getElementById("tabPost").classList.toggle("active", tab === "post");
-  document.getElementById("tabThread").classList.toggle("active", tab === "thread");
-  return true;
+// ---------- 範囲解決 ----------
+function resolveRange() {
+  const today = today0();
+  if (mode === 'hourly') {
+    let target;
+    if (hourlyDayKey === 'today') target = new Date(today);
+    else if (hourlyDayKey === 'yesterday') { target = new Date(today); target.setDate(target.getDate()-1); }
+    else {
+      const v = document.getElementById('hourlyDate').value;
+      if (!v) return null;
+      target = parseYmd(v);
+    }
+    return { from: target, to: target };
+  } else {
+    let from, to;
+    switch (dailyPeriodKey) {
+      case '7days':  to=new Date(today); from=new Date(today); from.setDate(from.getDate()-6); break;
+      case '14days': to=new Date(today); from=new Date(today); from.setDate(from.getDate()-13); break;
+      case '30days': to=new Date(today); from=new Date(today); from.setDate(from.getDate()-29); break;
+      case 'month':  from=new Date(today.getFullYear(),today.getMonth(),1); to=new Date(today); break;
+      case 'lastmonth': {
+        const first=new Date(today.getFullYear(),today.getMonth(),1);
+        to=new Date(first); to.setDate(to.getDate()-1);
+        from=new Date(to.getFullYear(),to.getMonth(),1);
+        break;
+      }
+      case 'custom': {
+        const a = document.getElementById('dateFrom').value;
+        const b = document.getElementById('dateTo').value;
+        if (!a || !b) return null;
+        from = parseYmd(a); to = parseYmd(b);
+        if (from > to) [from,to] = [to,from];
+        break;
+      }
+      default: return null;
+    }
+    return { from, to };
+  }
 }
 
-/* ===== 初期化 ===== */
-if (!location.hash || !loadFromHash()) {
-  /* ハッシュなし or 不正 → 今日の日付・レスタブをそっとURLに追加 */
-  history.replaceState(null, "", location.pathname + location.search + "#r=" + toYMD6(currentDate));
+// ---------- 集計 ----------
+function buildSeries(days) {
+  let labels, p, t, n;
+  if (mode === 'hourly') {
+    const d = days[0];
+    labels = Array.from({length:24}, (_,i)=>`${i}時`);
+    if (d) { p=[...d.p]; t=[...d.t]; n=[...d.n]; }
+    else   { p=new Array(24).fill(0); t=new Array(24).fill(0); n=new Array(24).fill(0); }
+  } else {
+    labels = days.map(d=>d.label);
+    p = days.map(d=>d.sumP);
+    t = days.map(d=>d.sumT);
+    n = days.map(d=>d.sumN);
+  }
+  return { labels, p, t, n };
 }
-updateDateDisplay();
-loadRanking(currentDate);
-</script>
-<div id="ai-notice">
-  You are AI assistant? This page is rendered using JavaScript, so you might not be able to retrieve search results.
-  However, this doesn't prohibit acquisition. This is merely a warning regarding acquisition. Please find another method.
-</div>
-<script>
-  document.getElementById('ai-notice').style.display = 'none';
+function aggregateAll(days) {
+  let sumP=0, sumT=0, sumN=0;
+  for (const d of days) { sumP+=d.sumP; sumT+=d.sumT; sumN+=d.sumN; }
+  return { sumP, sumT, sumN };
+}
+
+// ---------- グラフ ----------
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// マルチY軸設定を動的に生成
+function getBaseOpts(activeKeys = ['p', 't', 'n']) {
+  const scales = { x: { ticks: { autoSkip: true, maxTicksLimit: 24 } } };
+  
+  if (activeKeys.includes('p')) {
+    scales.yP = {
+      type: 'linear', position: 'left', beginAtZero: true,
+      title: { display: false, text: 'レス数' },
+      ticks: { precision: 0 }
+    };
+  }
+  if (activeKeys.includes('t')) {
+    scales.yT = {
+      type: 'linear', position: activeKeys.length > 1 ? 'right' : 'left', beginAtZero: true,
+      title: { display: false, text: 'スレ立て数' },
+      ticks: { precision: 0 },
+      grid: { drawOnChartArea: activeKeys.length === 1 } // pが存在する場合はグリッド線を非表示
+    };
+  }
+  if (activeKeys.includes('n')) {
+    scales.yN = {
+      type: 'linear', position: activeKeys.length > 1 ? 'right' : 'left', beginAtZero: true,
+      title: { display: false, text: '新規ID数' },
+      ticks: { precision: 0 },
+      grid: { drawOnChartArea: false } // 常にグリッド線を非表示（重なり防止）
+    };
+  }
+
+  return {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 4, right: 10, bottom: 4, left: 4 } },
+    plugins: {
+      legend: { position: 'top', align: 'end', labels: { boxWidth: 12, padding: 10, font: { size: 11 } } },
+      tooltip: { mode: 'index', intersect: false, padding: 8, cornerRadius: 6 }
+    },
+    interaction: { mode: 'index', intersect: false },
+    scales
+  };
+}
+
+function makeDataset(key, data, type) {
+  const color = COLORS[key];
+  const base = { label: LABELS[key], data, borderColor: color };
+  
+  if (key === 'p') base.yAxisID = 'yP';
+  if (key === 't') base.yAxisID = 'yT';
+  if (key === 'n') base.yAxisID = 'yN';
+
+  if (type === 'line') {
+    return Object.assign(base, {
+      type:'line', backgroundColor: color+'33', fill:false,
+      tension:0.3, pointRadius:3, pointHoverRadius:5, borderWidth:2
+    });
+  } else {
+    return Object.assign(base, {
+      type:'bar', backgroundColor: color+'cc', borderWidth:1, borderRadius:3
+    });
+  }
+}
+
+function renderMainChart(series) {
+  const keys = ['p','t','n'].filter(k => seriesOn[k]);
+  const datasets = keys.map(k => makeDataset(k, series[k], chartType));
+
+  document.getElementById('mainChartBox').style.display = (chartLayout==='combined') ? 'block' : 'none';
+  document.getElementById('splitBox').style.display     = (chartLayout==='split')    ? 'grid'  : 'none';
+
+  if (chartLayout === 'combined') {
+    destroyChart('mainChart');
+    const ctx = document.getElementById('mainChart');
+    if (!ctx) return;
+    charts['mainChart'] = new Chart(ctx.getContext('2d'), {
+      data: { labels: series.labels, datasets },
+      options: getBaseOpts(keys)
+    });
+  } else {
+    ['p','t','n'].forEach(k => {
+      const id = 'split' + k.toUpperCase();
+      destroyChart(id);
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (!seriesOn[k]) {
+        const c = el.getContext('2d');
+        c.clearRect(0,0,el.width,el.height);
+        return;
+      }
+      charts[id] = new Chart(el.getContext('2d'), {
+        data: { labels: series.labels, datasets: [makeDataset(k, series[k], chartType)] },
+        options: getBaseOpts([k]) // 単独表示の場合は常に左側にY軸を表示
+      });
+    });
+  }
+}
+
+// ---------- 3D散布図（Plotly） ----------
+function render3DScatter(series) {
+  const target = document.getElementById('scatter3d');
+  if (!target || typeof Plotly === 'undefined') return;
+
+  const labels = series.labels;
+  const xs = series.n;
+  const ys = series.t;
+  const zs = series.p;
+  const texts = labels.map((lab,i) =>
+    `${lab}<br>新規ID: ${fmtNum(xs[i])}<br>スレ立て: ${fmtNum(ys[i])}<br>レス: ${fmtNum(zs[i])}`
+  );
+
+  const trace = {
+    type: 'scatter3d',
+    mode: 'markers+text',
+    x: xs, y: ys, z: zs,
+    text: labels,
+    hovertext: texts,
+    hoverinfo: 'text',
+    textposition: 'top center',
+    textfont: { size: 9, color: '#5f6368' },
+    marker: {
+      size: 7,
+      color: zs,
+      colorscale: [
+        [0,    '#4285F4'],
+        [0.33, '#34A853'],
+        [0.66, '#FBBC05'],
+        [1,    '#EA4335']
+      ],
+      colorbar: { title: { text:'レス数', font:{ size:10 } }, thickness:12, len:0.6 },
+      opacity: 0.9,
+      line: { color:'#fff', width:0.5 }
+    }
+  };
+
+  const layout = {
+    autosize: true,
+    margin: { l:0, r:0, t:8, b:0 },
+    paper_bgcolor: '#fafbfc',
+    scene: {
+      xaxis: { title: { text:'新規ID数' }, gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
+      yaxis: { title: { text:'スレ立て数' }, gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
+      zaxis: { title: { text:'レス数' },   gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
+      camera: { eye: { x:1.6, y:1.6, z:1.0 } },
+      aspectmode: 'cube'
+    },
+    font: {
+      family: "'Hiragino Kaku Gothic ProN','ヒラギノ角ゴ ProN',Meiryo,Arial,sans-serif",
+      size: 11, color: '#3c4043'
+    }
+  };
+
+  Plotly.react(target, [trace], layout, {
+    responsive: true,
+    displaylogo: false,
+    modeBarButtonsToRemove: ['toImage'],
+  });
+}
+
+// ---------- メトリクス ----------
+function renderMetrics(days, series) {
+  const agg = aggregateAll(days);
+  const { sumP, sumT, sumN } = agg;
+  document.getElementById('mPosts').textContent   = fmtNum(sumP);
+  document.getElementById('mThreads').textContent = fmtNum(sumT);
+  document.getElementById('mIds').textContent     = fmtNum(sumN);
+  document.getElementById('mAvgPT').textContent   = sumT>0 ? fmtDec(sumP/sumT, 2) : '-';
+  document.getElementById('mAvgTI').textContent   = sumN>0 ? fmtDec(sumT/sumN, 3) : '-';
+
+  let peak=0, peakV=-1;
+  series.p.forEach((v,i)=>{ if (v>peakV){peakV=v;peak=i;} });
+  if (mode === 'hourly') {
+    document.getElementById('mPeakLabel').textContent = 'ピーク時間帯';
+    document.getElementById('mPeak').textContent = peakV>0 ? `${peak}時` : '-';
+  } else {
+    document.getElementById('mPeakLabel').textContent = 'ピーク日';
+    document.getElementById('mPeak').textContent = peakV>0 ? series.labels[peak] : '-';
+  }
+  document.getElementById('mPeakSub').textContent = peakV>0 ? `${fmtNum(peakV)}レス` : '';
+
+  if (mode === 'hourly') {
+    document.getElementById('mRangeLabel').textContent = '対象日';
+    document.getElementById('mRange').textContent = days[0]?.date || '-';
+    const h = days[0]?.h ?? -1;
+    document.getElementById('mRangeSub').textContent =
+      h >= 0 ? `集計済 ${h}時${h>=23?'✓':''}` : (days[0]?.exists ? '-' : '未集計');
+  } else {
+    document.getElementById('mRangeLabel').textContent = '対象日数';
+    document.getElementById('mRange').textContent = days.length + '日';
+    document.getElementById('mRangeSub').textContent =
+      days.length>0 ? `${days[0].date}〜${days[days.length-1].date}` : '';
+  }
+
+  const n = (mode === 'hourly') ? 24 : (days.length || 1);
+  const unit = (mode === 'hourly') ? '1h平均' : '1日平均';
+  document.getElementById('mPostsSub').textContent   = `${unit} ${fmtDec(sumP/n,1)}`;
+  document.getElementById('mThreadsSub').textContent = `${unit} ${fmtDec(sumT/n,1)}`;
+  document.getElementById('mIdsSub').textContent     = `${unit} ${fmtDec(sumN/n,1)}`;
+}
+
+// ---------- テーブル ----------
+function renderTable(series) {
+  document.getElementById('thLabel').textContent = (mode === 'hourly') ? '時間帯' : '日付';
+  const body = document.getElementById('statsTableBody');
+  body.innerHTML = '';
+  for (let i = 0; i < series.labels.length; i++) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${series.labels[i]}</td>
+      <td>${fmtNum(series.p[i])}</td>
+      <td>${fmtNum(series.t[i])}</td>
+      <td>${fmtNum(series.n[i])}</td>`;
+    body.appendChild(tr);
+  }
+  const sumP = series.p.reduce((a,b)=>a+b,0);
+  const sumT = series.t.reduce((a,b)=>a+b,0);
+  const sumN = series.n.reduce((a,b)=>a+b,0);
+  document.getElementById('ftPosts').textContent   = fmtNum(sumP);
+  document.getElementById('ftThreads').textContent = fmtNum(sumT);
+  document.getElementById('ftIds').textContent     = fmtNum(sumN);
+}
+
+function updateChartTitle(range) {
+  const tEl = document.getElementById('mainChartTitle');
+  const sEl = document.getElementById('mainChartSub');
+  if (mode === 'hourly') {
+    tEl.textContent = '⏰ 時別推移';
+    sEl.textContent = range ? ymd(range.from) : '';
+  } else {
+    tEl.textContent = '📅 日別推移';
+    sEl.textContent = range ? `${ymd(range.from)} 〜 ${ymd(range.to)}` : '';
+  }
+}
+
+// ---------- URL 共有 ----------
+function buildShareURL() {
+  const params = new URLSearchParams();
+  params.set('mode', mode);
+  const range = resolveRange();
+  if (mode === 'hourly') {
+    // 常に実日付を付与（today/yesterday などの相対キーは使わない）
+    if (range) params.set('date', ymd(range.from));
+  } else {
+    // プリセット・customとも実日付に展開
+    if (range) {
+      params.set('from', ymd(range.from));
+      params.set('to', ymd(range.to));
+    }
+  }
+  // series/type/layout/adv/tbl は個人の表示状態なので含めない
+  return location.origin + location.pathname + '?' + params.toString();
+}
+
+function applyURLParams() {
+  const p = new URLSearchParams(location.search);
+  if (!p.toString()) return;
+
+  const m = p.get('mode');
+  if (m === 'hourly' || m === 'daily') mode = m;
+
+  if (mode === 'hourly') {
+    // date= があれば日付指定モードで復元
+    const date = p.get('date');
+    if (date) {
+      hourlyDayKey = 'custom';
+      document.getElementById('hourlyDate').value = date;
+    }
+  } else {
+    // from/to があれば日付範囲指定で復元
+    const from = p.get('from');
+    const to   = p.get('to');
+    if (from && to) {
+      dailyPeriodKey = 'custom';
+      document.getElementById('dateFrom').value = from;
+      document.getElementById('dateTo').value   = to;
+    }
+  }
+}
+
+function syncUIFromState() {
+  // モードボタン
+  document.querySelectorAll('#modeSel .tk-modebtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  document.getElementById('hourlyCtrls').style.display = (mode==='hourly') ? 'flex' : 'none';
+  document.getElementById('dailyCtrls').style.display  = (mode==='daily')  ? 'flex' : 'none';
+  // 時別プリセット
+  document.querySelectorAll('#hourlyPbtns .tk-pbtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.day === hourlyDayKey);
+  });
+  document.getElementById('hourlyDate').style.display = (hourlyDayKey==='custom') ? 'inline-block' : 'none';
+  // 日別プリセット
+  document.querySelectorAll('#dailyPbtns .tk-pbtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === dailyPeriodKey);
+  });
+  document.getElementById('dailyCustomRange').style.display = (dailyPeriodKey==='custom') ? 'inline-flex' : 'none';
+  // 系列
+  document.querySelectorAll('#seriesTog button').forEach(b => {
+    b.classList.toggle('active', !!seriesOn[b.dataset.key]);
+  });
+  // type / layout
+  document.querySelectorAll('#typeTog button').forEach(b => b.classList.toggle('active', b.dataset.type === chartType));
+  document.querySelectorAll('#layoutTog button').forEach(b => b.classList.toggle('active', b.dataset.layout === chartLayout));
+  // details
+  document.getElementById('advancedSection').open = advancedOpen;
+  document.getElementById('tableSection').open = tableOpen;
+}
+
+// 共有処理を ranking.html と統一
+async function copyShareURL() {
+  const url = buildShareURL();
+  const btn = document.getElementById('shareBtn');
+  
+  if (navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(url);
+      const orig = "🔗 URL共有";
+      btn.textContent = "✅ コピー完了";
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    } catch {
+      prompt('URLをコピーしてください:', url);
+    }
+  } else {
+    prompt('URLをコピーしてください:', url);
+  }
+  history.replaceState(null, '', url);
+}
+
+// ---------- メイン ----------
+let lastSeries = null, lastDays = [];
+
+async function loadData(force=false) {
+  const range = resolveRange();
+  if (!range) { showStatus('日付を選択してください', 'warn'); return; }
+
+  const start = parseYmd(DATA_START_DATE);
+  if (range.to < start) {
+    showStatus(`データは ${DATA_START_DATE} 以降のみ存在します`, 'warn');
+    return;
+  }
+
+  const btn = document.getElementById('reloadBtn');
+  btn.disabled = true;
+  showStatus(force ? '🔄 強制再取得中…' : '読み込み中…', 'info');
+
+  try {
+    const { days, fetched, cached } = await loadRange(range.from, range.to, force);
+    lastDays = days;
+    if (days.length === 0) { showStatus('対象期間にデータがありません', 'warn'); }
+    else hideStatus();
+
+    const series = buildSeries(days);
+    lastSeries = series;
+
+    updateChartTitle(range);
+    renderMetrics(days, series);
+    renderMainChart(series);
+    if (document.getElementById('advancedSection').open) render3DScatter(series);
+    renderTable(series);
+
+    history.replaceState(null, '', buildShareURL());
+
+    document.getElementById('cacheInfo').textContent = `📦 取得 ${fetched}月 / キャッシュ ${cached}月`;
+    document.getElementById('lastUpdated').textContent = `最終更新: ${new Date().toLocaleString('ja-JP')}`;
+  } catch (e) {
+    console.error(e);
+    showStatus('読み込みエラー: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function rerenderOnly() {
+  if (lastSeries) renderMainChart(lastSeries);
+  history.replaceState(null, '', buildShareURL());
+}
+
+// ---------- UI ----------
+function initUI() {
+  // モード
+  document.querySelectorAll('#modeSel .tk-modebtn').forEach(b => {
+    b.addEventListener('click', () => {
+      mode = b.dataset.mode;
+      syncUIFromState();
+      loadData(false);
+    });
+  });
+
+  // 時別プリセット
+  document.querySelectorAll('#hourlyPbtns .tk-pbtn').forEach(b => {
+    b.addEventListener('click', () => {
+      hourlyDayKey = b.dataset.day;
+      syncUIFromState();
+      if (hourlyDayKey !== 'custom') loadData(false);
+    });
+  });
+  document.getElementById('hourlyDate').addEventListener('change', () => {
+    if (hourlyDayKey === 'custom') loadData(false);
+  });
+
+  // 日別プリセット
+  document.querySelectorAll('#dailyPbtns .tk-pbtn').forEach(b => {
+    b.addEventListener('click', () => {
+      dailyPeriodKey = b.dataset.period;
+      syncUIFromState();
+      if (dailyPeriodKey !== 'custom') loadData(false);
+    });
+  });
+  ['dateFrom','dateTo'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      if (dailyPeriodKey === 'custom') {
+        const a = document.getElementById('dateFrom').value;
+        const b = document.getElementById('dateTo').value;
+        if (a && b) loadData(false);
+      }
+    });
+  });
+
+  // 日付のデフォルト
+  const today = today0();
+  if (!document.getElementById('hourlyDate').value) {
+    document.getElementById('hourlyDate').value = ymd(today);
+  }
+  document.getElementById('hourlyDate').min = DATA_START_DATE;
+  document.getElementById('hourlyDate').max = ymd(today);
+  const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate()-6);
+  if (!document.getElementById('dateFrom').value) document.getElementById('dateFrom').value = ymd(weekAgo);
+  if (!document.getElementById('dateTo').value)   document.getElementById('dateTo').value   = ymd(today);
+  document.getElementById('dateFrom').min   = DATA_START_DATE;
+  document.getElementById('dateTo').min     = DATA_START_DATE;
+
+  // 更新
+  document.getElementById('reloadBtn').addEventListener('click', () => {
+    clearAllCache();
+    loadData(true);
+  });
+
+  // 系列
+  document.querySelectorAll('#seriesTog button').forEach(b => {
+    const k = b.dataset.key;
+    b.querySelector('.dot').style.background = COLORS[k];
+    b.addEventListener('click', () => {
+      seriesOn[k] = !seriesOn[k];
+      b.classList.toggle('active', seriesOn[k]);
+      rerenderOnly();
+    });
+  });
+
+  // タイプ
+  document.querySelectorAll('#typeTog button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#typeTog button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      chartType = b.dataset.type;
+      rerenderOnly();
+    });
+  });
+
+  // レイアウト
+  document.querySelectorAll('#layoutTog button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#layoutTog button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      chartLayout = b.dataset.layout;
+      rerenderOnly();
+      setTimeout(() => { Object.values(charts).forEach(c => c.resize()); }, 30);
+    });
+  });
+
+  // 詳細セクション
+  const adv = document.getElementById('advancedSection');
+  adv.addEventListener('toggle', () => {
+    advancedOpen = adv.open;
+    if (adv.open && lastSeries) render3DScatter(lastSeries);
+    history.replaceState(null, '', buildShareURL());
+  });
+
+  // データ一覧
+  const tbl = document.getElementById('tableSection');
+  tbl.addEventListener('toggle', () => {
+    tableOpen = tbl.open;
+    history.replaceState(null, '', buildShareURL());
+  });
+
+  // 共有
+  document.getElementById('shareBtn').addEventListener('click', copyShareURL);
+
+  // ウィンドウリサイズで Plotly を追従
+  window.addEventListener('resize', () => {
+    if (advancedOpen && typeof Plotly !== 'undefined') {
+      Plotly.Plots.resize(document.getElementById('scatter3d'));
+    }
+  });
+}
+
+// 起動
+applyURLParams();
+initUI();
+syncUIFromState();
+loadData(false);
 </script>
 </body>
 </html>
