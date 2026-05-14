@@ -160,7 +160,6 @@
 .tk-series button[data-key="p"].active { background:#4285F4; }
 .tk-series button[data-key="t"].active { background:#EA4335; }
 .tk-series button[data-key="n"].active { background:#FBBC05; color:#3c4043; }
-.tk-series button[data-key="a"].active { background:#34A853; }
 
 /* タイプ・分割トグル */
 .tk-tog {
@@ -401,7 +400,6 @@
             <button class="active" data-key="p"><span class="dot"></span>レス</button>
             <button class="active" data-key="t"><span class="dot"></span>スレ立て</button>
             <button class="active" data-key="n"><span class="dot"></span>新規ID</button>
-            <button class="active" data-key="a"><span class="dot"></span>平均レス/ID</button>
           </div>
           <div class="tk-tog" id="typeTog">
             <button class="active" data-type="line">折れ線</button>
@@ -430,10 +428,6 @@
         <div class="tk-split-card">
           <div class="ttl"><span class="dot" style="background:#FBBC05"></span>新規ID数</div>
           <div class="tk-chart-wrap"><canvas id="splitN"></canvas></div>
-        </div>
-        <div class="tk-split-card">
-          <div class="ttl"><span class="dot" style="background:#34A853"></span>平均レス/ID</div>
-          <div class="tk-chart-wrap"><canvas id="splitA"></canvas></div>
         </div>
       </div>
     </div>
@@ -510,9 +504,8 @@ const COLORS = {
   p: '#4285F4', // レス
   t: '#EA4335', // スレ立て
   n: '#FBBC05', // 新規ID
-  a: '#34A853', // 平均レス/ID
 };
-const LABELS = { p:'レス数', t:'スレ立て数', n:'新規ID数', a:'平均レス/ID' };
+const LABELS = { p:'レス数', t:'スレ立て数', n:'新規ID数' };
 
 // 状態
 const monthCache = new Map();
@@ -524,7 +517,7 @@ let dailyPeriodKey = '7days';
 let dailyFrom = '', dailyTo = '';
 let chartType = 'line';
 let chartLayout = 'combined';
-let seriesOn = { p:true, t:true, n:true, a:true };
+let seriesOn = { p:true, t:true, n:true };
 let advancedOpen = false;
 let tableOpen = false;
 
@@ -711,8 +704,7 @@ function buildSeries(days) {
     t = days.map(d=>d.sumT);
     n = days.map(d=>d.sumN);
   }
-  const a = p.map((pv,i) => n[i] > 0 ? pv/n[i] : 0);
-  return { labels, p, t, n, a };
+  return { labels, p, t, n };
 }
 function aggregateAll(days) {
   let sumP=0, sumT=0, sumN=0;
@@ -723,61 +715,92 @@ function aggregateAll(days) {
 // ---------- グラフ ----------
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-function baseOpts(useTwoAxes) {
-  const opts = {
+function baseOpts(opts={}) {
+  return Object.assign({
     responsive:true, maintainAspectRatio:false,
+    layout: { padding: { top: 4, right: 60, bottom: 4, left: 4 } },
     plugins: {
-      legend: { position:'top', labels:{ boxWidth:12, padding:8, font:{size:11} } },
+      legend: { position:'top', align:'end',
+        labels:{ boxWidth:12, padding:10, font:{size:11} } },
       tooltip: { mode:'index', intersect:false, padding:8, cornerRadius:6 }
     },
     interaction: { mode:'index', intersect:false },
-    scales: { y: { beginAtZero:true, ticks:{ precision:0 } } }
-  };
-  if (useTwoAxes) {
-    opts.scales = {
-      y:  { beginAtZero:true, position:'left',  title:{display:true, text:'件数', font:{size:10}} },
-      y1: { beginAtZero:true, position:'right', title:{display:true, text:'平均レス/ID', font:{size:10}},
-            grid:{drawOnChartArea:false} }
-    };
-  }
-  return opts;
+    scales: {
+      yLeft: {
+        type: 'linear',
+        position: 'left',
+        beginAtZero: true,
+        ticks: { precision:0 },
+        grid: { color: 'rgba(0,0,0,0.06)' },
+        title: { display: false },
+      },
+      yRight: {
+        type: 'linear',
+        position: 'right',
+        beginAtZero: true,
+        ticks: { precision:0 },
+        grid: { drawOnChartArea: false },
+        title: { display: false },
+      },
+      x: {}
+    }
+  }, opts);
 }
 
 function makeDataset(key, data, type) {
   const color = COLORS[key];
-  const useY1 = (key === 'a'); // 平均は右軸
   const base = { label: LABELS[key], data, borderColor: color };
-  if (useY1) base.yAxisID = 'y1';
+  // レス数は左Y軸、スレ立て・新規IDは右Y軸
+  const yAxisID = (key === 'p') ? 'yLeft' : 'yRight';
   if (type === 'line') {
     return Object.assign(base, {
       type:'line', backgroundColor: color+'33', fill:false,
-      tension:0.3, pointRadius:3, pointHoverRadius:5, borderWidth:2
+      tension:0.3, pointRadius:3, pointHoverRadius:5, borderWidth:2,
+      yAxisID
     });
   } else {
     return Object.assign(base, {
-      type:'bar', backgroundColor: color+'cc', borderWidth:1, borderRadius:3
+      type:'bar', backgroundColor: color+'cc', borderWidth:1, borderRadius:3,
+      yAxisID
     });
   }
 }
 
 function renderMainChart(series) {
-  const activeKeys = ['p','t','n','a'].filter(k => seriesOn[k]);
-  const useTwoAxes = seriesOn.a && (seriesOn.p || seriesOn.t || seriesOn.n);
-  const datasets = activeKeys.map(k => makeDataset(k, series[k], chartType));
+  const keys = ['p','t','n'].filter(k => seriesOn[k]);
+  const datasets = keys.map(k => makeDataset(k, series[k], chartType));
 
-  destroyChart('mainChart');
-  const ctx = document.getElementById('mainChart');
-  if (!ctx) return;
   document.getElementById('mainChartBox').style.display = (chartLayout==='combined') ? 'block' : 'none';
   document.getElementById('splitBox').style.display     = (chartLayout==='split')    ? 'grid'  : 'none';
 
   if (chartLayout === 'combined') {
+    destroyChart('mainChart');
+    const ctx = document.getElementById('mainChart');
+    if (!ctx) return;
+
+    // アクティブな系列に応じてY軸表示を制御
+    const hasLeft  = keys.includes('p');
+    const hasRight = keys.includes('t') || keys.includes('n');
+
+    const opts = baseOpts();
+    opts.scales.yLeft.display  = hasLeft;
+    opts.scales.yRight.display = hasRight;
+    // 右軸しかない場合は右軸をチャートエリア内グリッドも描く
+    if (!hasLeft && hasRight) {
+      opts.scales.yRight.grid = { color: 'rgba(0,0,0,0.06)' };
+      opts.layout.padding.right = 4;
+    }
+    if (!hasRight) {
+      opts.layout.padding.right = 4;
+    }
+
     charts['mainChart'] = new Chart(ctx.getContext('2d'), {
       data: { labels: series.labels, datasets },
-      options: baseOpts(useTwoAxes)
+      options: opts
     });
   } else {
-    ['p','t','n','a'].forEach(k => {
+    // 分割表示：各グラフは単一系列なのでシンプルなY軸
+    ['p','t','n'].forEach(k => {
       const id = 'split' + k.toUpperCase();
       destroyChart(id);
       const el = document.getElementById(id);
@@ -787,9 +810,20 @@ function renderMainChart(series) {
         c.clearRect(0,0,el.width,el.height);
         return;
       }
+      const ds = makeDataset(k, series[k], chartType);
+      // 分割表示では単一Y軸に統一
+      ds.yAxisID = 'y';
       charts[id] = new Chart(el.getContext('2d'), {
-        data: { labels: series.labels, datasets: [makeDataset(k, series[k], chartType)] },
-        options: baseOpts(false)
+        data: { labels: series.labels, datasets: [ds] },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          layout: { padding: { top:4, right:10, bottom:4, left:4 } },
+          plugins: {
+            legend: { display:false },
+            tooltip: { mode:'index', intersect:false, padding:8, cornerRadius:6 }
+          },
+          scales: { y: { beginAtZero:true, ticks:{ precision:0 } } }
+        }
       });
     });
   }
@@ -958,49 +992,19 @@ function applyURLParams() {
   const m = p.get('mode');
   if (m === 'hourly' || m === 'daily') mode = m;
 
-  const t = today0();
-  const tStr = ymd(t);
-  const y = new Date(t); y.setDate(y.getDate() - 1);
-  const yStr = ymd(y);
-
   if (mode === 'hourly') {
     const date = p.get('date');
     if (date) {
-      if (date === tStr) {
-        hourlyDayKey = 'today';
-      } else if (date === yStr) {
-        hourlyDayKey = 'yesterday';
-      } else {
-        hourlyDayKey = 'custom';
-        document.getElementById('hourlyDate').value = date;
-      }
+      hourlyDayKey = 'custom';
+      document.getElementById('hourlyDate').value = date;
     }
   } else {
     const from = p.get('from');
     const to   = p.get('to');
     if (from && to) {
-      let matched = 'custom';
-      const d7 = new Date(t); d7.setDate(d7.getDate()-6);
-      const d14 = new Date(t); d14.setDate(d14.getDate()-13);
-      const d30 = new Date(t); d30.setDate(d30.getDate()-29);
-      const m1 = new Date(t.getFullYear(), t.getMonth(), 1);
-      const lmFrom = new Date(t.getFullYear(), t.getMonth()-1, 1);
-      const lmTo = new Date(t.getFullYear(), t.getMonth(), 0);
-
-      if (to === tStr) {
-        if (from === ymd(d7)) matched = '7days';
-        else if (from === ymd(d14)) matched = '14days';
-        else if (from === ymd(d30)) matched = '30days';
-        else if (from === ymd(m1)) matched = 'month';
-      } else if (from === ymd(lmFrom) && to === ymd(lmTo)) {
-        matched = 'lastmonth';
-      }
-
-      dailyPeriodKey = matched;
-      if (matched === 'custom') {
-        document.getElementById('dateFrom').value = from;
-        document.getElementById('dateTo').value   = to;
-      }
+      dailyPeriodKey = 'custom';
+      document.getElementById('dateFrom').value = from;
+      document.getElementById('dateTo').value   = to;
     }
   }
 }
