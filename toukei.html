@@ -253,6 +253,7 @@
 .tk-last-updated { font-size:11px; color:#9aa0a6; text-align:right; margin-top:8px; }
 
 /* ============== スマホ対応 ============== */
+/* ============== スマホ対応 ============== */
 @media (max-width:768px) {
   .tk-header { padding:8px 10px; gap:6px; flex-wrap:wrap; }
   .tk-logo { font-size:20px; }
@@ -260,17 +261,14 @@
   .tk-header-actions { gap:6px; }
   .rk-share-btn, .tk-header-link { padding:3px 9px; font-size:11px; }
 
-  /* 本文の左右余白を極小化してグラフを画面いっぱいに */
   .tk-body { padding:8px 4px 40px; }
 
-  /* モード選択：縦並び風コンパクト */
   .tk-modesel { gap:6px; margin-bottom:10px; }
   .tk-modebtn { padding:10px 10px; gap:8px; border-radius:10px; }
   .tk-modebtn .ic { font-size:20px; }
   .tk-modebtn .ttl { font-size:13px; }
   .tk-modebtn .sub { font-size:10px; }
 
-  /* コントロール：縦に積む */
   .tk-controls { padding:10px; gap:8px; flex-direction:column; align-items:stretch; }
   .tk-ctrl-group { width:100%; }
   .tk-ctrl-group[style*="margin-left:auto"],
@@ -281,7 +279,6 @@
   #dailyCustomRange { flex-wrap:wrap; width:100%; }
   #dailyCustomRange .tk-date-input { flex:1 1 40%; }
 
-  /* メトリクス：2列で詰める */
   .tk-metrics { grid-template-columns:repeat(2, 1fr); gap:6px; }
   .tk-metric { padding:10px 8px; }
   .tk-metric-val { font-size:18px; }
@@ -289,16 +286,15 @@
   .tk-metric-label { font-size:10px; }
   .tk-metric-sub { font-size:9px; }
 
-  /* カード余白を極小化 → グラフ領域を最大化 */
   .tk-card { padding:10px 6px; border-radius:8px; }
   .tk-card-head { gap:6px; padding:0 4px; margin-bottom:8px; }
   .tk-card-tools { width:100%; gap:6px; }
   .tk-card-title { font-size:12px; }
   .tk-card-title-sub { font-size:10px; display:block; margin-left:0; margin-top:2px; }
 
-  /* グラフ：画面の縦をしっかり使う + 左右パディング極小 */
+  /* ★ ここが今回の主変更点：vh ベース → 固定 px に戻して縦長を解消 */
   .tk-chart-wrap {
-    height:60vh; min-height:380px; max-height:560px;
+    height:300px;
     padding:4px 0 24px;
   }
   .tk-chart-wrap > canvas {
@@ -306,20 +302,18 @@
     width:100% !important; height:calc(100% - 28px) !important;
   }
   .tk-chart-wrap.tall {
-    height:65vh; min-height:420px; max-height:620px;
+    height:340px;
     padding-bottom:26px;
   }
   .tk-chart-wrap.tall > canvas {
     bottom:26px; height:calc(100% - 30px) !important;
   }
   .tk-split { gap:8px; }
-  .tk-split .tk-chart-wrap { height:42vh; min-height:260px; max-height:360px; }
+  .tk-split .tk-chart-wrap { height:220px; }
   .tk-split-card { padding:6px 4px; }
 
-  /* 3D */
-  .tk-3d-wrap { height:55vh; min-height:380px; padding:4px; }
+  .tk-3d-wrap { height:360px; padding:4px; }
 
-  /* テーブル：横スクロール時に詰める */
   .tk-table th, .tk-table td { padding:6px 8px; font-size:11px; }
   .tk-collapse > .tk-collapse-head { padding:12px 12px; }
   .tk-collapse-body { padding:0 6px 12px; }
@@ -332,17 +326,22 @@
   .tk-metric-val { font-size:16px; }
   .tk-body { padding:6px 2px 40px; }
   .tk-card { padding:8px 4px; }
-  .tk-chart-wrap { height:62vh; min-height:360px; padding:2px 0 22px; }
+
+  /* ★ ここも vh ベース → 固定 px に変更 */
+  .tk-chart-wrap { height:280px; padding:2px 0 22px; }
   .tk-chart-wrap > canvas { bottom:22px; height:calc(100% - 24px) !important; }
-  .tk-chart-wrap.tall { height:68vh; min-height:400px; padding-bottom:24px; }
+  .tk-chart-wrap.tall { height:320px; padding-bottom:24px; }
   .tk-chart-wrap.tall > canvas { bottom:24px; height:calc(100% - 26px) !important; }
+  .tk-split .tk-chart-wrap { height:200px; }
+  .tk-3d-wrap { height:340px; }
 }
 
-/* 横向き（landscape）スマホでは縦を使えないので少し抑える */
+/* 横向き（landscape）スマホ */
 @media (max-width:900px) and (orientation:landscape) {
-  .tk-chart-wrap { height:80vh; min-height:280px; }
-  .tk-chart-wrap.tall { height:85vh; min-height:300px; }
-  .tk-3d-wrap { height:80vh; min-height:300px; }
+  /* ★ vh ベース → 固定 px。横向きは縦が短いので更に小さく */
+  .tk-chart-wrap { height:240px; }
+  .tk-chart-wrap.tall { height:260px; }
+  .tk-3d-wrap { height:280px; }
 }
 </style>
 </head>
