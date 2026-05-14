@@ -3,460 +3,491 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jeegle! - 統計</title>
+<title>統計 - Jeegle!</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  /* ===== 統計ページ専用スタイル ===== */
-  .toukei-page { min-height: 100vh; background: #fff; }
-  .toukei-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 16px 20px 60px;
-  }
+/* ============== レイアウト ============== */
+.tk-page { min-height:100vh; background:#f0f2f5; }
 
-  /* コントロールバー */
-  .toukei-controls {
-    background: #f8f9fa;
-    border: 1px solid #ebebeb;
-    border-radius: 8px;
-    padding: 14px 18px;
-    margin-bottom: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    align-items: center;
-  }
-  .toukei-controls .ctrl-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .toukei-controls strong { color: #5f6368; font-size: 12px; }
-  .toukei-controls label {
-    display: inline-flex; align-items: center; gap: 4px;
-    cursor: pointer; color: #3c4043; font-size: 13px;
-  }
-  .toukei-controls label:hover { color: #1a73e8; }
-  .toukei-controls input[type="radio"] { accent-color: #1a73e8; }
-  .toukei-controls .date-input { font-size: 13px; }
-  .toukei-controls .reload-btn {
-    background: #1a73e8; color: #fff; border: none; border-radius: 4px;
-    padding: 6px 16px; font-size: 13px; cursor: pointer; font-family: inherit;
-  }
-  .toukei-controls .reload-btn:hover { background: #1765c8; }
-  .toukei-controls .reload-btn:disabled { opacity: .5; cursor: not-allowed; }
+.tk-header {
+  display:flex; align-items:center; padding:10px 20px;
+  border-bottom:1px solid #dadce0; background:#fff;
+  position:sticky; top:0; z-index:100; gap:12px;
+}
+.tk-logo {
+  font-size:26px; font-weight:bold; white-space:nowrap;
+  font-family:Arial,sans-serif; flex-shrink:0; text-decoration:none; cursor:pointer;
+}
+.tk-logo span:nth-child(1){color:#4285F4}
+.tk-logo span:nth-child(2){color:#EA4335}
+.tk-logo span:nth-child(3){color:#FBBC05}
+.tk-logo span:nth-child(4){color:#4285F4}
+.tk-logo span:nth-child(5){color:#34A853}
+.tk-logo span:nth-child(6){color:#EA4335}
+.tk-logo span:nth-child(7){color:#FBBC05}
+.tk-header-title { font-size:15px; font-weight:700; color:#202124; }
+.tk-header-actions { margin-left:auto; display:flex; gap:8px; }
+.tk-header-link {
+  font-size:12px; color:#5f6368; text-decoration:none;
+  border:1px solid #dadce0; border-radius:16px; padding:4px 12px;
+}
+.tk-header-link:hover { background:#f1f3f4; }
 
-  /* サマリーカード */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .summary-card {
-    background: #fff;
-    border: 1px solid #dadce0;
-    border-radius: 8px;
-    padding: 14px 16px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  }
-  .summary-card .label {
-    font-size: 12px;
-    color: #5f6368;
-    margin-bottom: 4px;
-  }
-  .summary-card .value {
-    font-size: 24px;
-    font-weight: 700;
-    color: #202124;
-    line-height: 1.2;
-  }
-  .summary-card .sub {
-    font-size: 11px;
-    color: #70757a;
-    margin-top: 4px;
-  }
-  .summary-card.accent-blue   { border-top: 3px solid #4285F4; }
-  .summary-card.accent-red    { border-top: 3px solid #EA4335; }
-  .summary-card.accent-yellow { border-top: 3px solid #FBBC05; }
-  .summary-card.accent-green  { border-top: 3px solid #34A853; }
+.tk-body { max-width:1200px; margin:0 auto; padding:16px 16px 40px; }
 
-  /* グラフセクション */
-  .chart-section {
-    background: #fff;
-    border: 1px solid #dadce0;
-    border-radius: 8px;
-    padding: 16px 18px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  }
-  .chart-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #202124;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .chart-title .chart-sub {
-    font-size: 11px;
-    font-weight: normal;
-    color: #70757a;
-  }
-  .chart-wrap { position: relative; height: 280px; }
-  .chart-wrap.tall { height: 340px; }
+/* ============== コントロール ============== */
+.tk-controls {
+  background:#fff; border-radius:10px; padding:12px 14px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  margin-bottom:12px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+}
+.tk-ctrl-group { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.tk-ctrl-group strong { color:#5f6368; font-size:12px; font-weight:700; }
+.tk-period-btns { display:flex; gap:4px; flex-wrap:wrap; }
+.tk-pbtn {
+  background:#f8f9fa; border:1px solid #dadce0; border-radius:16px;
+  padding:5px 14px; font-size:12px; color:#3c4043; cursor:pointer;
+  font-family:inherit; transition:all .12s;
+}
+.tk-pbtn:hover { background:#e8f0fe; border-color:#1a73e8; color:#1a73e8; }
+.tk-pbtn.active {
+  background:linear-gradient(135deg,#1a73e8,#34a853); color:#fff;
+  border-color:transparent; font-weight:600;
+  box-shadow:0 2px 6px rgba(26,115,232,.25);
+}
+.tk-date-input {
+  border:1px solid #dadce0; border-radius:6px; padding:5px 10px;
+  font-size:12px; font-family:inherit; color:#3c4043; background:#fff;
+}
+.tk-date-input:focus { border-color:#1a73e8; outline:none; }
+.tk-reload {
+  margin-left:auto; background:#fff; border:1px solid #dadce0;
+  border-radius:16px; padding:5px 14px; font-size:12px;
+  color:#1a73e8; cursor:pointer; font-family:inherit; font-weight:600;
+}
+.tk-reload:hover { background:#e8f0fe; border-color:#1a73e8; }
+.tk-reload:disabled { opacity:.5; cursor:not-allowed; }
+.tk-cache-info { font-size:11px; color:#70757a; }
 
-  .chart-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  @media (max-width: 720px) {
-    .chart-grid-2 { grid-template-columns: 1fr; }
-  }
+/* ============== ステータス ============== */
+.tk-status {
+  padding:8px 14px; margin-bottom:12px; border-radius:8px;
+  font-size:12px; display:none;
+}
+.tk-status.show { display:block; }
+.tk-status.info { background:#e8f0fe; color:#1a73e8; border-left:3px solid #1a73e8; }
+.tk-status.warn { background:#fff3cd; color:#856404; border-left:3px solid #f9ab00; }
+.tk-status.err  { background:#fce8e6; color:#c5221f; border-left:3px solid #ea4335; }
 
-  /* テーブル */
-  .stats-table-wrap {
-    background: #fff;
-    border: 1px solid #dadce0;
-    border-radius: 8px;
-    padding: 16px 18px;
-    overflow-x: auto;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  }
-  .stats-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .stats-table th, .stats-table td {
-    padding: 7px 10px; text-align: right;
-    border-bottom: 1px solid #f1f3f4;
-    white-space: nowrap;
-  }
-  .stats-table th {
-    background: #f8f9fa;
-    color: #5f6368;
-    font-weight: 600;
-    font-size: 12px;
-    position: sticky; top: 0;
-  }
-  .stats-table th:first-child, .stats-table td:first-child { text-align: left; }
-  .stats-table tbody tr:hover { background: #f8f9fa; }
-  .stats-table tfoot td {
-    font-weight: 700;
-    background: #f8f9fa;
-    border-top: 2px solid #dadce0;
-  }
+/* ============== メトリクスカード（id-analysis風） ============== */
+.tk-metrics {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));
+  gap:8px; margin-bottom:12px;
+}
+.tk-metric {
+  background:#fff; border-radius:10px; padding:12px 10px;
+  text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  border-top:3px solid #1a73e8;
+}
+.tk-metric[data-color="blue"]   { border-top-color:#4285F4; }
+.tk-metric[data-color="red"]    { border-top-color:#EA4335; }
+.tk-metric[data-color="yellow"] { border-top-color:#FBBC05; }
+.tk-metric[data-color="green"]  { border-top-color:#34A853; }
+.tk-metric[data-color="purple"] { border-top-color:#9c27b0; }
+.tk-metric[data-color="teal"]   { border-top-color:#00897b; }
+.tk-metric[data-color="orange"] { border-top-color:#f9ab00; }
+.tk-metric[data-color="cyan"]   { border-top-color:#00acc1; }
+.tk-metric-icon  { font-size:18px; margin-bottom:2px; }
+.tk-metric-val   { font-size:22px; font-weight:700; color:#202124; line-height:1.2; }
+.tk-metric-label { font-size:10px; color:#70757a; margin-top:2px; }
+.tk-metric-sub   { font-size:10px; color:#9aa0a6; margin-top:1px; }
 
-  /* ステータス */
-  .status-bar {
-    padding: 10px 14px;
-    margin-bottom: 16px;
-    border-radius: 6px;
-    font-size: 13px;
-    display: none;
-  }
-  .status-bar.show { display: block; }
-  .status-bar.info { background: #e8f0fe; color: #1a73e8; border-left: 4px solid #1a73e8; }
-  .status-bar.warn { background: #fff3cd; color: #856404; border-left: 4px solid #f9ab00; }
-  .status-bar.err  { background: #fce8e6; color: #c5221f; border-left: 4px solid #ea4335; }
+/* ============== グラフカード ============== */
+.tk-chart-grid {
+  display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;
+}
+.tk-chart-grid-wide { grid-template-columns: 1fr; }
+@media (max-width:760px) { .tk-chart-grid { grid-template-columns: 1fr; } }
 
-  .loading-overlay {
-    text-align: center;
-    padding: 40px;
-    color: #70757a;
-    font-size: 14px;
-  }
+.tk-card {
+  background:#fff; border-radius:10px; padding:14px 16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+.tk-card-head {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px; gap:8px; flex-wrap:wrap;
+}
+.tk-card-title { font-size:13px; font-weight:700; color:#202124; }
+.tk-card-title-sub { font-size:11px; color:#70757a; font-weight:400; margin-left:4px; }
 
-  /* タブ */
-  .toukei-tabs {
-    display: flex;
-    border-bottom: 1px solid #dadce0;
-    margin-bottom: 18px;
-    gap: 4px;
-  }
-  .toukei-tab {
-    padding: 10px 18px;
-    cursor: pointer;
-    font-size: 13px;
-    color: #5f6368;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -1px;
-    transition: color .12s, border-color .12s;
-  }
-  .toukei-tab:hover { color: #1a73e8; }
-  .toukei-tab.active {
-    color: #1a73e8;
-    border-bottom-color: #1a73e8;
-    font-weight: 600;
-  }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
+/* グラフ種類トグル */
+.tk-typetog {
+  display:inline-flex; background:#f1f3f4; border-radius:14px; padding:2px; gap:2px;
+}
+.tk-typetog button {
+  background:none; border:none; padding:3px 10px; font-size:11px;
+  color:#5f6368; cursor:pointer; border-radius:12px;
+  font-family:inherit; font-weight:600;
+}
+.tk-typetog button.active {
+  background:#fff; color:#1a73e8; box-shadow:0 1px 3px rgba(0,0,0,.1);
+}
 
-  .last-updated {
-    font-size: 11px;
-    color: #70757a;
-    text-align: right;
-    margin-top: 6px;
-  }
+.tk-chart-wrap { position:relative; height:260px; }
+.tk-chart-wrap.tall { height:320px; }
+
+/* ============== タブ ============== */
+.tk-tabs {
+  display:flex; background:#fff; border-radius:10px; padding:4px;
+  gap:2px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  overflow-x:auto;
+}
+.tk-tab {
+  flex:1; min-width:80px; padding:8px 14px; cursor:pointer;
+  font-size:13px; color:#5f6368; text-align:center;
+  border-radius:8px; transition:all .12s; white-space:nowrap;
+  font-weight:600;
+}
+.tk-tab:hover { background:#f8f9fa; color:#1a73e8; }
+.tk-tab.active {
+  background:linear-gradient(135deg,#1a73e8,#34a853); color:#fff;
+}
+.tk-pane { display:none; }
+.tk-pane.active { display:block; }
+
+/* ============== テーブル ============== */
+.tk-table-wrap { overflow-x:auto; }
+.tk-table { width:100%; border-collapse:collapse; font-size:12px; }
+.tk-table th, .tk-table td {
+  padding:7px 10px; text-align:right; border-bottom:1px solid #f1f3f4; white-space:nowrap;
+}
+.tk-table th {
+  background:#f8f9fa; color:#5f6368; font-weight:600; font-size:11px;
+  position:sticky; top:0;
+}
+.tk-table th:first-child, .tk-table td:first-child { text-align:left; }
+.tk-table tbody tr:hover { background:#f8f9fa; }
+.tk-table tfoot td {
+  font-weight:700; background:#f8f9fa; border-top:2px solid #dadce0;
+}
+
+.tk-last-updated { font-size:11px; color:#9aa0a6; text-align:right; margin-top:8px; }
+
+@media (max-width:768px) {
+  .tk-header { padding:8px 10px; gap:6px; }
+  .tk-logo { font-size:20px; }
+  .tk-header-title { font-size:12px; }
+  .tk-body { padding:10px 8px 40px; }
+  .tk-metric-val { font-size:18px; }
+  .tk-chart-wrap { height:220px; }
+  .tk-chart-wrap.tall { height:260px; }
+}
 </style>
 </head>
 <body>
-<div class="toukei-page">
-  <!-- ヘッダー -->
-  <div class="result-header">
-    <div class="result-logo" onclick="location.href='index.html'">
+<div class="tk-page">
+  <div class="tk-header">
+    <a href="index.html" class="tk-logo">
       <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
+    </a>
+    <div class="tk-header-title">📊 統計ダッシュボード</div>
+    <div class="tk-header-actions">
+      <a href="ranking.html" class="tk-header-link">🏆 ランキング</a>
+      <a href="index.html" class="tk-header-link">← トップ</a>
     </div>
-    <div style="flex:1; font-size:18px; font-weight:600; color:#3c4043; margin-left:8px;">
-      📊 統計
-    </div>
-    <a href="index.html" class="share-btn" style="text-decoration:none;">← トップへ</a>
-    <a href="ranking.html" class="share-btn" style="text-decoration:none;">🏆 ランキング</a>
   </div>
 
-  <div class="toukei-container">
-
+  <div class="tk-body">
     <!-- コントロール -->
-    <div class="toukei-controls">
-      <div class="ctrl-group">
-        <strong>期間:</strong>
-        <label><input type="radio" name="period" value="today" checked> 今日</label>
-        <label><input type="radio" name="period" value="yesterday"> 昨日</label>
-        <label><input type="radio" name="period" value="7days"> 直近7日</label>
-        <label><input type="radio" name="period" value="month"> 今月</label>
-        <label><input type="radio" name="period" value="custom"> 指定</label>
+    <div class="tk-controls">
+      <div class="tk-ctrl-group">
+        <strong>期間</strong>
+        <div class="tk-period-btns" id="periodBtns">
+          <button class="tk-pbtn active" data-period="today">今日</button>
+          <button class="tk-pbtn" data-period="yesterday">昨日</button>
+          <button class="tk-pbtn" data-period="7days">7日</button>
+          <button class="tk-pbtn" data-period="30days">30日</button>
+          <button class="tk-pbtn" data-period="month">今月</button>
+          <button class="tk-pbtn" data-period="lastmonth">先月</button>
+          <button class="tk-pbtn" data-period="custom">指定</button>
+        </div>
       </div>
-      <div class="ctrl-group" id="customRange" style="display:none;">
-        <input type="date" id="dateFrom" class="date-input">
+      <div class="tk-ctrl-group" id="customRange" style="display:none;">
+        <input type="date" id="dateFrom" class="tk-date-input">
         <span style="color:#5f6368;">〜</span>
-        <input type="date" id="dateTo" class="date-input">
+        <input type="date" id="dateTo" class="tk-date-input">
       </div>
-      <div class="ctrl-group" style="margin-left:auto;">
-        <button class="reload-btn" id="reloadBtn" onclick="loadData()">🔄 更新</button>
+      <div class="tk-ctrl-group" style="margin-left:auto;">
+        <span class="tk-cache-info" id="cacheInfo"></span>
+        <button class="tk-reload" id="reloadBtn" title="強制再取得">🔄 更新</button>
       </div>
     </div>
 
-    <!-- ステータス -->
-    <div class="status-bar" id="statusBar"></div>
+    <div class="tk-status" id="statusBar"></div>
+
+    <!-- メトリクスカード -->
+    <div class="tk-metrics" id="metrics">
+      <div class="tk-metric" data-color="blue">
+        <div class="tk-metric-icon">💬</div>
+        <div class="tk-metric-val" id="mPosts">-</div>
+        <div class="tk-metric-label">合計レス数</div>
+        <div class="tk-metric-sub" id="mPostsSub"></div>
+      </div>
+      <div class="tk-metric" data-color="red">
+        <div class="tk-metric-icon">📝</div>
+        <div class="tk-metric-val" id="mThreads">-</div>
+        <div class="tk-metric-label">スレ立て数</div>
+        <div class="tk-metric-sub" id="mThreadsSub"></div>
+      </div>
+      <div class="tk-metric" data-color="yellow">
+        <div class="tk-metric-icon">🆔</div>
+        <div class="tk-metric-val" id="mIds">-</div>
+        <div class="tk-metric-label">新規ID数</div>
+        <div class="tk-metric-sub" id="mIdsSub"></div>
+      </div>
+      <div class="tk-metric" data-color="green">
+        <div class="tk-metric-icon">📈</div>
+        <div class="tk-metric-val" id="mAvgPI">-</div>
+        <div class="tk-metric-label">平均レス/ID</div>
+      </div>
+      <div class="tk-metric" data-color="teal">
+        <div class="tk-metric-icon">🧵</div>
+        <div class="tk-metric-val" id="mAvgPT">-</div>
+        <div class="tk-metric-label">平均レス/スレ</div>
+      </div>
+      <div class="tk-metric" data-color="purple">
+        <div class="tk-metric-icon">🌱</div>
+        <div class="tk-metric-val" id="mAvgTI">-</div>
+        <div class="tk-metric-label">平均スレ/ID</div>
+      </div>
+      <div class="tk-metric" data-color="orange">
+        <div class="tk-metric-icon">🔥</div>
+        <div class="tk-metric-val" id="mPeak">-</div>
+        <div class="tk-metric-label">ピーク時間帯</div>
+        <div class="tk-metric-sub" id="mPeakSub"></div>
+      </div>
+      <div class="tk-metric" data-color="cyan">
+        <div class="tk-metric-icon">📅</div>
+        <div class="tk-metric-val" id="mDays">-</div>
+        <div class="tk-metric-label">対象日数</div>
+        <div class="tk-metric-sub" id="mDaysSub"></div>
+      </div>
+    </div>
 
     <!-- タブ -->
-    <div class="toukei-tabs">
-      <div class="toukei-tab active" data-tab="summary">概要</div>
-      <div class="toukei-tab" data-tab="hourly">時間帯別</div>
-      <div class="toukei-tab" data-tab="daily">日別</div>
-      <div class="toukei-tab" data-tab="table">テーブル</div>
+    <div class="tk-tabs" id="tabs">
+      <div class="tk-tab active" data-pane="overview">📊 概要</div>
+      <div class="tk-tab" data-pane="hourly">⏰ 時間帯別</div>
+      <div class="tk-tab" data-pane="daily">📅 日別</div>
+      <div class="tk-tab" data-pane="table">📋 テーブル</div>
     </div>
 
     <!-- 概要タブ -->
-    <div class="tab-content active" id="tab-summary">
-      <div class="summary-grid">
-        <div class="summary-card accent-blue">
-          <div class="label">合計レス数</div>
-          <div class="value" id="sumPosts">-</div>
-          <div class="sub" id="sumPostsSub"></div>
-        </div>
-        <div class="summary-card accent-red">
-          <div class="label">合計スレ立て数</div>
-          <div class="value" id="sumThreads">-</div>
-          <div class="sub" id="sumThreadsSub"></div>
-        </div>
-        <div class="summary-card accent-yellow">
-          <div class="label">合計新規ID数</div>
-          <div class="value" id="sumIds">-</div>
-          <div class="sub" id="sumIdsSub"></div>
-        </div>
-        <div class="summary-card accent-green">
-          <div class="label">1IDあたり平均レス数</div>
-          <div class="value" id="avgPostPerId">-</div>
-          <div class="sub">合計レス ÷ 合計新規ID</div>
-        </div>
-        <div class="summary-card accent-green">
-          <div class="label">1IDあたり平均スレ立て数</div>
-          <div class="value" id="avgThreadPerId">-</div>
-          <div class="sub">合計スレ ÷ 合計新規ID</div>
-        </div>
-        <div class="summary-card accent-blue">
-          <div class="label">1スレあたり平均レス数</div>
-          <div class="value" id="avgPostPerThread">-</div>
-          <div class="sub">合計レス ÷ 合計スレ</div>
-        </div>
-        <div class="summary-card accent-red">
-          <div class="label">ピーク時間帯（レス）</div>
-          <div class="value" id="peakHour">-</div>
-          <div class="sub" id="peakHourSub"></div>
-        </div>
-        <div class="summary-card accent-yellow">
-          <div class="label">対象日数</div>
-          <div class="value" id="dayCount">-</div>
-          <div class="sub" id="dayCountSub"></div>
+    <div class="tk-pane active" id="pane-overview">
+      <div class="tk-chart-grid tk-chart-grid-wide">
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">📈 日別推移
+              <span class="tk-card-title-sub">レス・スレ・新規ID</span>
+            </div>
+            <div class="tk-typetog" data-target="chartOverviewDaily">
+              <button class="active" data-type="line">折れ線</button>
+              <button data-type="bar">棒</button>
+            </div>
+          </div>
+          <div class="tk-chart-wrap tall"><canvas id="chartOverviewDaily"></canvas></div>
         </div>
       </div>
-
-      <div class="chart-section">
-        <div class="chart-title">
-          📈 期間全体の推移（日別）
-          <span class="chart-sub">複数日を選択すると表示</span>
+      <div class="tk-chart-grid">
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">⏰ 時間帯別 レス数（合計）</div>
+            <div class="tk-typetog" data-target="chartOverviewHourly">
+              <button class="active" data-type="bar">棒</button>
+              <button data-type="line">折れ線</button>
+            </div>
+          </div>
+          <div class="tk-chart-wrap"><canvas id="chartOverviewHourly"></canvas></div>
         </div>
-        <div class="chart-wrap tall"><canvas id="chartDailyOverview"></canvas></div>
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">🥧 構成比</div>
+          </div>
+          <div class="tk-chart-wrap"><canvas id="chartOverviewPie"></canvas></div>
+        </div>
       </div>
-
-      <div class="chart-section">
-        <div class="chart-title">⏰ 時間帯別 合計レス数</div>
-        <div class="chart-wrap"><canvas id="chartHourlySummary"></canvas></div>
-      </div>
-
-      <div class="last-updated" id="lastUpdated"></div>
     </div>
 
     <!-- 時間帯別タブ -->
-    <div class="tab-content" id="tab-hourly">
-      <div class="chart-grid-2">
-        <div class="chart-section">
-          <div class="chart-title">⏰ 時間帯別 レス数</div>
-          <div class="chart-wrap"><canvas id="chartHourPosts"></canvas></div>
+    <div class="tk-pane" id="pane-hourly">
+      <div class="tk-chart-grid">
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">💬 時間帯別 レス数</div>
+            <div class="tk-typetog" data-target="chartHourPosts">
+              <button class="active" data-type="bar">棒</button>
+              <button data-type="line">折れ線</button>
+            </div>
+          </div>
+          <div class="tk-chart-wrap"><canvas id="chartHourPosts"></canvas></div>
         </div>
-        <div class="chart-section">
-          <div class="chart-title">⏰ 時間帯別 スレ立て数</div>
-          <div class="chart-wrap"><canvas id="chartHourThreads"></canvas></div>
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">📝 時間帯別 スレ立て数</div>
+            <div class="tk-typetog" data-target="chartHourThreads">
+              <button class="active" data-type="bar">棒</button>
+              <button data-type="line">折れ線</button>
+            </div>
+          </div>
+          <div class="tk-chart-wrap"><canvas id="chartHourThreads"></canvas></div>
         </div>
-        <div class="chart-section">
-          <div class="chart-title">⏰ 時間帯別 新規ID出現数</div>
-          <div class="chart-wrap"><canvas id="chartHourIds"></canvas></div>
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">🆔 時間帯別 新規ID数</div>
+            <div class="tk-typetog" data-target="chartHourIds">
+              <button class="active" data-type="bar">棒</button>
+              <button data-type="line">折れ線</button>
+            </div>
+          </div>
+          <div class="tk-chart-wrap"><canvas id="chartHourIds"></canvas></div>
         </div>
-        <div class="chart-section">
-          <div class="chart-title">⏰ 時間帯別 1IDあたり平均レス</div>
-          <div class="chart-wrap"><canvas id="chartHourAvg"></canvas></div>
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">📈 時間帯別 平均レス/ID</div>
+            <div class="tk-typetog" data-target="chartHourAvg">
+              <button class="active" data-type="line">折れ線</button>
+              <button data-type="bar">棒</button>
+            </div>
+          </div>
+          <div class="tk-chart-wrap"><canvas id="chartHourAvg"></canvas></div>
         </div>
       </div>
     </div>
 
     <!-- 日別タブ -->
-    <div class="tab-content" id="tab-daily">
-      <div class="chart-section">
-        <div class="chart-title">📅 日別 レス数 / スレ立て数 / 新規ID数</div>
-        <div class="chart-wrap tall"><canvas id="chartDailyAll"></canvas></div>
+    <div class="tk-pane" id="pane-daily">
+      <div class="tk-chart-grid tk-chart-grid-wide">
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">📅 日別 全体</div>
+            <div class="tk-typetog" data-target="chartDailyAll">
+              <button class="active" data-type="bar">棒</button>
+              <button data-type="line">折れ線</button>
+            </div>
+          </div>
+          <div class="tk-chart-wrap tall"><canvas id="chartDailyAll"></canvas></div>
+        </div>
       </div>
-      <div class="chart-section">
-        <div class="chart-title">📅 日別 平均レス数（合計レス ÷ 新規ID）</div>
-        <div class="chart-wrap"><canvas id="chartDailyAvg"></canvas></div>
+      <div class="tk-chart-grid">
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">📈 日別 平均レス/ID</div>
+            <div class="tk-typetog" data-target="chartDailyAvg">
+              <button class="active" data-type="line">折れ線</button>
+              <button data-type="bar">棒</button>
+            </div>
+          </div>
+          <div class="tk-chart-wrap"><canvas id="chartDailyAvg"></canvas></div>
+        </div>
+        <div class="tk-card">
+          <div class="tk-card-head">
+            <div class="tk-card-title">🧵 日別 平均レス/スレ</div>
+            <div class="tk-typetog" data-target="chartDailyAvgPT">
+              <button class="active" data-type="line">折れ線</button>
+              <button data-type="bar">棒</button>
+            </div>
+          </div>
+          <div class="tk-chart-wrap"><canvas id="chartDailyAvgPT"></canvas></div>
+        </div>
       </div>
     </div>
 
     <!-- テーブルタブ -->
-    <div class="tab-content" id="tab-table">
-      <div class="stats-table-wrap">
-        <table class="stats-table" id="statsTable">
-          <thead>
-            <tr>
-              <th>日付</th>
-              <th>レス数</th>
-              <th>スレ立て</th>
-              <th>新規ID</th>
-              <th>平均レス/ID</th>
-              <th>平均レス/スレ</th>
-              <th>最終集計</th>
-            </tr>
-          </thead>
-          <tbody id="statsTableBody"></tbody>
-          <tfoot>
-            <tr>
-              <td>合計 / 平均</td>
-              <td id="ftPosts">-</td>
-              <td id="ftThreads">-</td>
-              <td id="ftIds">-</td>
-              <td id="ftAvgPI">-</td>
-              <td id="ftAvgPT">-</td>
-              <td>-</td>
-            </tr>
-          </tfoot>
-        </table>
+    <div class="tk-pane" id="pane-table">
+      <div class="tk-card">
+        <div class="tk-card-head">
+          <div class="tk-card-title">📋 日別データ一覧</div>
+        </div>
+        <div class="tk-table-wrap">
+          <table class="tk-table" id="statsTable">
+            <thead>
+              <tr>
+                <th>日付</th>
+                <th>レス数</th>
+                <th>スレ立て</th>
+                <th>新規ID</th>
+                <th>平均レス/ID</th>
+                <th>平均レス/スレ</th>
+                <th>最終集計</th>
+              </tr>
+            </thead>
+            <tbody id="statsTableBody"></tbody>
+            <tfoot>
+              <tr>
+                <td>合計 / 平均</td>
+                <td id="ftPosts">-</td>
+                <td id="ftThreads">-</td>
+                <td id="ftIds">-</td>
+                <td id="ftAvgPI">-</td>
+                <td id="ftAvgPT">-</td>
+                <td>-</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </div>
 
+    <div class="tk-last-updated" id="lastUpdated"></div>
   </div>
 </div>
 
 <script>
-/* ===========================================================
-   Jeegle! 統計ページ
-   - Firestore REST API でドキュメント取得（read公開）
-   - stats/{YYYY-MM}
-     { u: timestamp, d: { "DD": { p:[24], t:[24], n:[24], h:int } } }
-   =========================================================== */
-
+/* =========================================================
+   Jeegle! 統計ダッシュボード
+   - 月単位ドキュメントを取得し localStorage にキャッシュ
+   - 完了月（過去月）は事実上不変なので長期キャッシュ
+   - 当月は最新時更新時刻 u を見て短時間キャッシュ
+   ========================================================= */
 const FIREBASE_PROJECT_ID = 'itiran-be2af';
 const FIREBASE_API_KEY    = 'AIzaSyCasS3f9WJ26Dkk1B8_NrMFI2S-rahwMiM';
-const DATA_START_DATE     = '2026-05-14'; // データ開始日
+const DATA_START_DATE     = '2026-05-14';
+const CACHE_VER           = 'v1';
+const CACHE_KEY_PREFIX    = `jeegle_stats_${CACHE_VER}_`;
+const CURRENT_MONTH_TTL   = 5 * 60 * 1000;       // 当月: 5分
+const PAST_MONTH_TTL      = 7 * 24 * 60 * 60 * 1000; // 過去月: 7日
 
-// Chart.js デフォルト
 Chart.defaults.font.family = "'Hiragino Kaku Gothic ProN','ヒラギノ角ゴ ProN',Meiryo,'MS Gothic',Arial,sans-serif";
-Chart.defaults.font.size = 12;
+Chart.defaults.font.size = 11;
 Chart.defaults.color = '#3c4043';
 
-// Google 4色（ロゴと統一感）
-const COLOR_BLUE   = '#4285F4';
-const COLOR_RED    = '#EA4335';
-const COLOR_YELLOW = '#FBBC05';
-const COLOR_GREEN  = '#34A853';
+const COLOR_BLUE='#4285F4', COLOR_RED='#EA4335', COLOR_YELLOW='#FBBC05', COLOR_GREEN='#34A853';
 
-// 状態
-const monthCache = new Map(); // "YYYY-MM" -> doc.fields (parsed)
-const charts = {};            // chartId -> Chart instance
-let lastLoadedDays = [];      // 現在表示中の日次データ
+// ---------- 状態 ----------
+const monthCache = new Map(); // YYYY-MM -> parsed doc
+const charts = {};
+const chartTypes = {};        // chartId -> 'bar' | 'line'
+const chartConfigs = {};      // chartId -> () => Chart config (再描画用)
+let currentPeriod = 'today';
+let currentDays = [];
 
 // ---------- ユーティリティ ----------
-function pad2(n){ return String(n).padStart(2,'0'); }
-function ymd(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
-function ym(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
-function parseYmd(s){
-  const [y,m,d] = s.split('-').map(Number);
-  return new Date(y, m-1, d);
-}
-function fmtNum(n){
-  if (n === null || n === undefined || isNaN(n)) return '-';
-  return Math.round(n).toLocaleString('ja-JP');
-}
-function fmtDec(n, digits=2){
-  if (n === null || n === undefined || isNaN(n) || !isFinite(n)) return '-';
-  return n.toFixed(digits);
-}
-function todayJst(){
-  // ブラウザのローカル日付をそのまま使用
-  const d = new Date();
-  d.setHours(0,0,0,0);
-  return d;
-}
-function showStatus(msg, type='info'){
+const pad2 = n => String(n).padStart(2,'0');
+const ymd  = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const ym   = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+const parseYmd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+const fmtNum = n => (n==null||isNaN(n)) ? '-' : Math.round(n).toLocaleString('ja-JP');
+const fmtDec = (n,d=2) => (n==null||isNaN(n)||!isFinite(n)) ? '-' : n.toFixed(d);
+function today0() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+function showStatus(msg, type='info') {
   const el = document.getElementById('statusBar');
-  el.textContent = msg;
-  el.className = 'status-bar show ' + type;
+  el.textContent = msg; el.className = 'tk-status show ' + type;
 }
-function hideStatus(){
-  document.getElementById('statusBar').classList.remove('show');
-}
+function hideStatus(){ document.getElementById('statusBar').classList.remove('show'); }
 
-// ---------- Firestore REST 取得 ----------
-async function fetchMonthDoc(yyyymm){
-  if (monthCache.has(yyyymm)) return monthCache.get(yyyymm);
-  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/stats/${yyyymm}?key=${FIREBASE_API_KEY}`;
-  try {
-    const res = await fetch(url);
-    if (res.status === 404) {
-      monthCache.set(yyyymm, null);
-      return null;
-    }
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    const json = await res.json();
-    const parsed = parseFirestoreDoc(json);
-    monthCache.set(yyyymm, parsed);
-    return parsed;
-  } catch (e) {
-    console.error('fetchMonthDoc error', yyyymm, e);
-    monthCache.set(yyyymm, null);
-    return null;
-  }
-}
-
-// Firestore REST のフィールド形式 → 素のオブジェクト
-function fsValue(v){
+// ---------- Firestore REST 値変換 ----------
+function fsValue(v) {
   if (v == null) return null;
   if ('stringValue'    in v) return v.stringValue;
   if ('integerValue'   in v) return Number(v.integerValue);
@@ -464,66 +495,111 @@ function fsValue(v){
   if ('booleanValue'   in v) return v.booleanValue;
   if ('timestampValue' in v) return v.timestampValue;
   if ('nullValue'      in v) return null;
-  if ('mapValue'       in v) {
-    const out = {};
-    const f = v.mapValue.fields || {};
+  if ('mapValue' in v) {
+    const out = {}; const f = v.mapValue.fields || {};
     for (const k in f) out[k] = fsValue(f[k]);
     return out;
   }
   if ('arrayValue' in v) {
-    const arr = v.arrayValue.values || [];
-    return arr.map(fsValue);
+    return (v.arrayValue.values || []).map(fsValue);
   }
   return null;
 }
-function parseFirestoreDoc(doc){
+function parseFirestoreDoc(doc) {
   if (!doc || !doc.fields) return null;
   const out = {};
   for (const k in doc.fields) out[k] = fsValue(doc.fields[k]);
-  // out.d は { "DD": { p:[..], t:[..], n:[..], h:int } }
   return out;
 }
 
-// ---------- 日付範囲 → 日次データ配列 ----------
-async function loadRange(fromDate, toDate){
-  // 開始日チェック
+// ---------- キャッシュ（localStorage + メモリ）----------
+function isCurrentMonth(yyyymm) { return yyyymm === ym(today0()); }
+
+function readLSCache(yyyymm) {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_PREFIX + yyyymm);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    const ttl = isCurrentMonth(yyyymm) ? CURRENT_MONTH_TTL : PAST_MONTH_TTL;
+    if (Date.now() - obj.savedAt > ttl) return null;
+    return obj.data;
+  } catch { return null; }
+}
+function writeLSCache(yyyymm, data) {
+  try {
+    localStorage.setItem(CACHE_KEY_PREFIX + yyyymm, JSON.stringify({ savedAt: Date.now(), data }));
+  } catch {}
+}
+function clearAllCache() {
+  monthCache.clear();
+  try {
+    for (let i = localStorage.length-1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(CACHE_KEY_PREFIX)) localStorage.removeItem(k);
+    }
+  } catch {}
+}
+
+// ---------- 取得 ----------
+async function fetchMonthDoc(yyyymm, force=false) {
+  if (!force && monthCache.has(yyyymm)) return monthCache.get(yyyymm);
+  if (!force) {
+    const ls = readLSCache(yyyymm);
+    if (ls !== null) { monthCache.set(yyyymm, ls); return ls; }
+  }
+  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/stats/${yyyymm}?key=${FIREBASE_API_KEY}`;
+  try {
+    const res = await fetch(url);
+    if (res.status === 404) { monthCache.set(yyyymm, null); writeLSCache(yyyymm, null); return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const parsed = parseFirestoreDoc(json);
+    monthCache.set(yyyymm, parsed);
+    writeLSCache(yyyymm, parsed);
+    return parsed;
+  } catch (e) {
+    console.error('fetchMonthDoc', yyyymm, e);
+    monthCache.set(yyyymm, null);
+    return null;
+  }
+}
+
+async function loadRange(fromDate, toDate, force=false) {
   const start = parseYmd(DATA_START_DATE);
   if (fromDate < start) fromDate = start;
-  if (toDate   < start) {
-    return [];
-  }
+  if (toDate < start) return { days: [], fetched: 0, cached: 0 };
 
-  // 必要な月一覧
+  // 月一覧
   const months = new Set();
   const cur = new Date(fromDate);
-  while (cur <= toDate) {
-    months.add(ym(cur));
-    cur.setDate(cur.getDate()+1);
-  }
-  // 並列取得
+  while (cur <= toDate) { months.add(ym(cur)); cur.setDate(cur.getDate()+1); }
   const monthList = [...months];
-  const docs = await Promise.all(monthList.map(m => fetchMonthDoc(m)));
-  const docMap = {};
-  monthList.forEach((m,i) => docMap[m] = docs[i]);
 
-  // 日次データ組み立て
-  const result = [];
+  // どれが新規取得か数える
+  let fetched=0, cached=0;
+  const monthData = {};
+  await Promise.all(monthList.map(async m => {
+    const before = monthCache.has(m) || readLSCache(m) !== null;
+    const doc = await fetchMonthDoc(m, force);
+    monthData[m] = doc;
+    if (!before || force) fetched++; else cached++;
+  }));
+
+  // 日次配列構築
+  const days = [];
   const d = new Date(fromDate);
   while (d <= toDate) {
-    const ymKey = ym(d);
-    const dd    = pad2(d.getDate());
-    const doc   = docMap[ymKey];
-    const day   = doc && doc.d ? doc.d[dd] : null;
-
-    const p24 = (day && Array.isArray(day.p)) ? day.p.map(x => Number(x)||0) : new Array(24).fill(0);
-    const t24 = (day && Array.isArray(day.t)) ? day.t.map(x => Number(x)||0) : new Array(24).fill(0);
-    const n24 = (day && Array.isArray(day.n)) ? day.n.map(x => Number(x)||0) : new Array(24).fill(0);
+    const mKey = ym(d), dd = pad2(d.getDate());
+    const doc = monthData[mKey];
+    const day = doc && doc.d ? doc.d[dd] : null;
+    const p24 = (day && Array.isArray(day.p)) ? day.p.map(x=>Number(x)||0) : new Array(24).fill(0);
+    const t24 = (day && Array.isArray(day.t)) ? day.t.map(x=>Number(x)||0) : new Array(24).fill(0);
+    const n24 = (day && Array.isArray(day.n)) ? day.n.map(x=>Number(x)||0) : new Array(24).fill(0);
     const h   = (day && day.h != null) ? Number(day.h) : -1;
-
-    result.push({
+    days.push({
       date: ymd(d),
       label: `${d.getMonth()+1}/${d.getDate()}`,
-      p: p24, t: t24, n: n24, h: h,
+      p:p24, t:t24, n:n24, h:h,
       sumP: p24.reduce((a,b)=>a+b,0),
       sumT: t24.reduce((a,b)=>a+b,0),
       sumN: n24.reduce((a,b)=>a+b,0),
@@ -531,226 +607,236 @@ async function loadRange(fromDate, toDate){
     });
     d.setDate(d.getDate()+1);
   }
-  return result;
+  return { days, fetched, cached };
 }
 
-// ---------- 期間プリセット ----------
-function resolvePeriod(){
-  const sel = document.querySelector('input[name="period"]:checked').value;
-  const today = todayJst();
+// ---------- 期間解決 ----------
+function resolvePeriod() {
+  const today = today0();
   let from, to;
-  if (sel === 'today') {
-    from = new Date(today); to = new Date(today);
-  } else if (sel === 'yesterday') {
-    from = new Date(today); from.setDate(from.getDate()-1);
-    to   = new Date(from);
-  } else if (sel === '7days') {
-    to = new Date(today);
-    from = new Date(today); from.setDate(from.getDate()-6);
-  } else if (sel === 'month') {
-    from = new Date(today.getFullYear(), today.getMonth(), 1);
-    to   = new Date(today);
-  } else { // custom
-    const f = document.getElementById('dateFrom').value;
-    const t = document.getElementById('dateTo').value;
-    if (!f || !t) return null;
-    from = parseYmd(f); to = parseYmd(t);
-    if (from > to) [from, to] = [to, from];
+  switch (currentPeriod) {
+    case 'today':
+      from = new Date(today); to = new Date(today); break;
+    case 'yesterday':
+      from = new Date(today); from.setDate(from.getDate()-1); to = new Date(from); break;
+    case '7days':
+      to = new Date(today); from = new Date(today); from.setDate(from.getDate()-6); break;
+    case '30days':
+      to = new Date(today); from = new Date(today); from.setDate(from.getDate()-29); break;
+    case 'month':
+      from = new Date(today.getFullYear(), today.getMonth(), 1); to = new Date(today); break;
+    case 'lastmonth': {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      to = new Date(first); to.setDate(to.getDate()-1);
+      from = new Date(to.getFullYear(), to.getMonth(), 1);
+      break;
+    }
+    case 'custom': {
+      const f = document.getElementById('dateFrom').value;
+      const t = document.getElementById('dateTo').value;
+      if (!f || !t) return null;
+      from = parseYmd(f); to = parseYmd(t);
+      if (from > to) [from, to] = [to, from];
+      break;
+    }
+    default: return null;
   }
   return { from, to };
 }
 
 // ---------- 集計 ----------
-function aggregate(days){
-  const hourly = { p: new Array(24).fill(0), t: new Array(24).fill(0), n: new Array(24).fill(0) };
+function aggregate(days) {
+  const hourly = { p:new Array(24).fill(0), t:new Array(24).fill(0), n:new Array(24).fill(0) };
   let sumP=0, sumT=0, sumN=0;
   for (const d of days) {
     sumP += d.sumP; sumT += d.sumT; sumN += d.sumN;
-    for (let i=0;i<24;i++){
-      hourly.p[i] += d.p[i];
-      hourly.t[i] += d.t[i];
-      hourly.n[i] += d.n[i];
-    }
+    for (let i=0;i<24;i++){ hourly.p[i]+=d.p[i]; hourly.t[i]+=d.t[i]; hourly.n[i]+=d.n[i]; }
   }
   return { hourly, sumP, sumT, sumN };
 }
 
-// ---------- 描画 ----------
-function destroyChart(id){
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-}
-function makeChart(canvasId, config){
-  destroyChart(canvasId);
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  charts[canvasId] = new Chart(ctx, config);
-}
-
+// ---------- グラフユーティリティ ----------
 const HOUR_LABELS = Array.from({length:24}, (_,i)=>`${i}時`);
 
-function commonOpts(extra){
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function renderChart(id, configFactory) {
+  chartConfigs[id] = configFactory;
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx.getContext('2d'), configFactory(chartTypes[id] || 'bar'));
+}
+function commonOpts(extra) {
   return Object.assign({
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'top', labels: { boxWidth: 12, padding: 10 } },
-      tooltip: { mode: 'index', intersect: false }
+      legend: { position:'top', labels:{ boxWidth:12, padding:8, font:{size:11} } },
+      tooltip: { mode:'index', intersect:false, padding:8, cornerRadius:6 }
     },
-    interaction: { mode: 'index', intersect: false },
-    scales: {
-      y: { beginAtZero: true, ticks: { precision: 0 } }
-    }
+    interaction: { mode:'index', intersect:false },
+    scales: { y: { beginAtZero:true, ticks:{ precision:0 } } }
   }, extra || {});
 }
-
-function renderHourlyCharts(hourly){
-  // 概要ページの時間帯合計（複合）
-  makeChart('chartHourlySummary', {
-    type: 'bar',
-    data: {
-      labels: HOUR_LABELS,
-      datasets: [
-        { label:'レス数',    data: hourly.p, backgroundColor: COLOR_BLUE+'cc',  borderColor: COLOR_BLUE,  borderWidth:1 },
-        { label:'スレ立て',  data: hourly.t, backgroundColor: COLOR_RED+'cc',   borderColor: COLOR_RED,   borderWidth:1 },
-        { label:'新規ID',    data: hourly.n, backgroundColor: COLOR_YELLOW+'cc',borderColor: COLOR_YELLOW,borderWidth:1 },
-      ]
-    },
-    options: commonOpts()
-  });
-  // 個別
-  makeChart('chartHourPosts', {
-    type: 'bar',
-    data: { labels: HOUR_LABELS, datasets: [{ label:'レス数', data: hourly.p, backgroundColor: COLOR_BLUE }] },
-    options: commonOpts()
-  });
-  makeChart('chartHourThreads', {
-    type: 'bar',
-    data: { labels: HOUR_LABELS, datasets: [{ label:'スレ立て数', data: hourly.t, backgroundColor: COLOR_RED }] },
-    options: commonOpts()
-  });
-  makeChart('chartHourIds', {
-    type: 'bar',
-    data: { labels: HOUR_LABELS, datasets: [{ label:'新規ID', data: hourly.n, backgroundColor: COLOR_YELLOW }] },
-    options: commonOpts()
-  });
-  // 時間帯別 平均レス/ID
-  const avg = hourly.p.map((p,i) => hourly.n[i] > 0 ? p / hourly.n[i] : 0);
-  makeChart('chartHourAvg', {
-    type: 'line',
-    data: { labels: HOUR_LABELS, datasets: [{
-      label:'平均レス/ID', data: avg,
-      borderColor: COLOR_GREEN, backgroundColor: COLOR_GREEN+'33',
-      fill: true, tension: 0.3, pointRadius: 3
-    }] },
-    options: commonOpts()
-  });
+function dsBar(label, data, color) {
+  return { type:'bar', label, data, backgroundColor: color+'cc', borderColor: color, borderWidth:1, borderRadius:3 };
+}
+function dsLine(label, data, color, fill=false) {
+  return { type:'line', label, data,
+    borderColor: color, backgroundColor: color+'33',
+    fill: fill, tension:0.3, pointRadius:3, pointHoverRadius:5, borderWidth:2 };
 }
 
-function renderDailyCharts(days){
+// ---------- レンダリング ----------
+function renderAll(days) {
+  currentDays = days;
+  const agg = aggregate(days);
+  renderMetrics(days, agg);
+  renderOverview(days, agg);
+  renderHourly(agg.hourly);
+  renderDaily(days);
+  renderTable(days, agg);
+}
+
+function renderMetrics(days, agg) {
+  const { sumP, sumT, sumN, hourly } = agg;
+  document.getElementById('mPosts').textContent   = fmtNum(sumP);
+  document.getElementById('mThreads').textContent = fmtNum(sumT);
+  document.getElementById('mIds').textContent     = fmtNum(sumN);
+  document.getElementById('mAvgPI').textContent   = sumN>0 ? fmtDec(sumP/sumN, 2) : '-';
+  document.getElementById('mAvgPT').textContent   = sumT>0 ? fmtDec(sumP/sumT, 2) : '-';
+  document.getElementById('mAvgTI').textContent   = sumN>0 ? fmtDec(sumT/sumN, 3) : '-';
+
+  let peak=0, peakV=-1;
+  hourly.p.forEach((v,i)=>{ if (v>peakV){peakV=v;peak=i;} });
+  document.getElementById('mPeak').textContent = peakV>0 ? `${peak}時` : '-';
+  document.getElementById('mPeakSub').textContent = peakV>0 ? `${fmtNum(peakV)}レス` : '';
+
+  document.getElementById('mDays').textContent = days.length + '日';
+  document.getElementById('mDaysSub').textContent = days.length>0 ? `${days[0].date}〜` : '';
+
+  const n = days.length || 1;
+  document.getElementById('mPostsSub').textContent   = `1日平均 ${fmtDec(sumP/n,1)}`;
+  document.getElementById('mThreadsSub').textContent = `1日平均 ${fmtDec(sumT/n,1)}`;
+  document.getElementById('mIdsSub').textContent     = `1日平均 ${fmtDec(sumN/n,1)}`;
+}
+
+function renderOverview(days, agg) {
   const labels = days.map(d=>d.label);
-  const dataP = days.map(d=>d.sumP);
-  const dataT = days.map(d=>d.sumT);
-  const dataN = days.map(d=>d.sumN);
-  const showDaily = days.length >= 2;
+  const dataP = days.map(d=>d.sumP), dataT = days.map(d=>d.sumT), dataN = days.map(d=>d.sumN);
 
-  // 概要：日別推移
-  if (showDaily) {
-    makeChart('chartDailyOverview', {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          { label:'レス数',    data: dataP, borderColor: COLOR_BLUE,   backgroundColor: COLOR_BLUE+'22',   fill:false, tension:0.25, pointRadius:3, yAxisID:'y' },
-          { label:'スレ立て',  data: dataT, borderColor: COLOR_RED,    backgroundColor: COLOR_RED+'22',    fill:false, tension:0.25, pointRadius:3, yAxisID:'y1' },
-          { label:'新規ID',    data: dataN, borderColor: COLOR_YELLOW, backgroundColor: COLOR_YELLOW+'22', fill:false, tension:0.25, pointRadius:3, yAxisID:'y' },
-        ]
-      },
-      options: commonOpts({
-        scales: {
-          y:  { beginAtZero: true, position:'left',  title:{display:true,text:'レス/ID'} },
-          y1: { beginAtZero: true, position:'right', title:{display:true,text:'スレ立て'}, grid:{drawOnChartArea:false} }
-        }
-      })
-    });
-  } else {
-    destroyChart('chartDailyOverview');
-    const ctx = document.getElementById('chartDailyOverview').getContext('2d');
-    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
-    ctx.fillStyle = '#9aa0a6';
-    ctx.font = '14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('期間を2日以上にすると表示されます', ctx.canvas.width/2, ctx.canvas.height/2);
-  }
-
-  // 日別タブ
-  makeChart('chartDailyAll', {
-    type: 'bar',
+  renderChart('chartOverviewDaily', type => ({
+    type: type,
     data: {
       labels,
       datasets: [
-        { label:'レス数',    data: dataP, backgroundColor: COLOR_BLUE   },
-        { label:'スレ立て',  data: dataT, backgroundColor: COLOR_RED    },
-        { label:'新規ID',    data: dataN, backgroundColor: COLOR_YELLOW },
+        type==='line'
+          ? dsLine('レス数', dataP, COLOR_BLUE, true)
+          : dsBar('レス数', dataP, COLOR_BLUE),
+        type==='line'
+          ? dsLine('スレ立て', dataT, COLOR_RED)
+          : dsBar('スレ立て', dataT, COLOR_RED),
+        type==='line'
+          ? dsLine('新規ID', dataN, COLOR_YELLOW)
+          : dsBar('新規ID', dataN, COLOR_YELLOW),
       ]
     },
     options: commonOpts()
-  });
+  }));
 
-  const dailyAvg = days.map(d => d.sumN > 0 ? d.sumP / d.sumN : 0);
-  makeChart('chartDailyAvg', {
-    type: 'line',
-    data: { labels, datasets: [{
-      label:'平均レス/ID', data: dailyAvg,
-      borderColor: COLOR_GREEN, backgroundColor: COLOR_GREEN+'33',
-      fill: true, tension: 0.3, pointRadius: 3
-    }] },
+  renderChart('chartOverviewHourly', type => ({
+    type: type,
+    data: {
+      labels: HOUR_LABELS,
+      datasets: [
+        type==='line'
+          ? dsLine('レス数', agg.hourly.p, COLOR_BLUE, true)
+          : dsBar('レス数', agg.hourly.p, COLOR_BLUE),
+      ]
+    },
     options: commonOpts()
-  });
+  }));
+
+  // 構成比（円グラフは type 切替対象外）
+  destroyChart('chartOverviewPie');
+  const pctx = document.getElementById('chartOverviewPie');
+  if (pctx) {
+    charts['chartOverviewPie'] = new Chart(pctx.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['レス数', 'スレ立て数', '新規ID数'],
+        datasets: [{
+          data: [agg.sumP, agg.sumT, agg.sumN],
+          backgroundColor: [COLOR_BLUE, COLOR_RED, COLOR_YELLOW],
+          borderWidth: 2, borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'right', labels:{ boxWidth:12, padding:10 } } },
+        cutout: '55%'
+      }
+    });
+  }
 }
 
-function renderSummary(days, agg){
-  const { sumP, sumT, sumN, hourly } = agg;
-  document.getElementById('sumPosts').textContent   = fmtNum(sumP);
-  document.getElementById('sumThreads').textContent = fmtNum(sumT);
-  document.getElementById('sumIds').textContent     = fmtNum(sumN);
-
-  document.getElementById('avgPostPerId').textContent     = sumN>0 ? fmtDec(sumP/sumN, 2) : '-';
-  document.getElementById('avgThreadPerId').textContent   = sumN>0 ? fmtDec(sumT/sumN, 3) : '-';
-  document.getElementById('avgPostPerThread').textContent = sumT>0 ? fmtDec(sumP/sumT, 2) : '-';
-
-  // ピーク時間帯
-  let peak = 0, peakV = -1;
-  hourly.p.forEach((v,i) => { if (v > peakV) { peakV = v; peak = i; } });
-  if (peakV > 0) {
-    document.getElementById('peakHour').textContent = `${peak}時`;
-    document.getElementById('peakHourSub').textContent = `${fmtNum(peakV)} レス`;
-  } else {
-    document.getElementById('peakHour').textContent = '-';
-    document.getElementById('peakHourSub').textContent = '';
-  }
-
-  // 対象日数
-  document.getElementById('dayCount').textContent = days.length + '日';
-  if (days.length > 0) {
-    document.getElementById('dayCountSub').textContent = `${days[0].date} 〜 ${days[days.length-1].date}`;
-  } else {
-    document.getElementById('dayCountSub').textContent = '';
-  }
-
-  // 1日あたり
-  const n = days.length || 1;
-  document.getElementById('sumPostsSub').textContent   = `1日平均 ${fmtDec(sumP/n,1)}`;
-  document.getElementById('sumThreadsSub').textContent = `1日平均 ${fmtDec(sumT/n,1)}`;
-  document.getElementById('sumIdsSub').textContent     = `1日平均 ${fmtDec(sumN/n,1)}`;
+function renderHourly(hourly) {
+  renderChart('chartHourPosts', type => ({
+    type, data:{ labels: HOUR_LABELS, datasets: [
+      type==='line' ? dsLine('レス数', hourly.p, COLOR_BLUE, true) : dsBar('レス数', hourly.p, COLOR_BLUE)
+    ]}, options: commonOpts()
+  }));
+  renderChart('chartHourThreads', type => ({
+    type, data:{ labels: HOUR_LABELS, datasets: [
+      type==='line' ? dsLine('スレ立て', hourly.t, COLOR_RED, true) : dsBar('スレ立て', hourly.t, COLOR_RED)
+    ]}, options: commonOpts()
+  }));
+  renderChart('chartHourIds', type => ({
+    type, data:{ labels: HOUR_LABELS, datasets: [
+      type==='line' ? dsLine('新規ID', hourly.n, COLOR_YELLOW, true) : dsBar('新規ID', hourly.n, COLOR_YELLOW)
+    ]}, options: commonOpts()
+  }));
+  const avg = hourly.p.map((p,i) => hourly.n[i]>0 ? p/hourly.n[i] : 0);
+  renderChart('chartHourAvg', type => ({
+    type, data:{ labels: HOUR_LABELS, datasets: [
+      type==='line' ? dsLine('平均レス/ID', avg, COLOR_GREEN, true) : dsBar('平均レス/ID', avg, COLOR_GREEN)
+    ]}, options: commonOpts({ scales:{ y:{ beginAtZero:true } } })
+  }));
 }
 
-function renderTable(days, agg){
+function renderDaily(days) {
+  const labels = days.map(d=>d.label);
+  const dataP = days.map(d=>d.sumP), dataT = days.map(d=>d.sumT), dataN = days.map(d=>d.sumN);
+
+  renderChart('chartDailyAll', type => ({
+    type, data:{ labels, datasets: [
+      type==='line' ? dsLine('レス数', dataP, COLOR_BLUE, true)   : dsBar('レス数', dataP, COLOR_BLUE),
+      type==='line' ? dsLine('スレ立て', dataT, COLOR_RED)         : dsBar('スレ立て', dataT, COLOR_RED),
+      type==='line' ? dsLine('新規ID', dataN, COLOR_YELLOW)        : dsBar('新規ID', dataN, COLOR_YELLOW),
+    ]}, options: commonOpts()
+  }));
+
+  const avgPI = days.map(d => d.sumN>0 ? d.sumP/d.sumN : 0);
+  renderChart('chartDailyAvg', type => ({
+    type, data:{ labels, datasets: [
+      type==='line' ? dsLine('平均レス/ID', avgPI, COLOR_GREEN, true) : dsBar('平均レス/ID', avgPI, COLOR_GREEN)
+    ]}, options: commonOpts()
+  }));
+  const avgPT = days.map(d => d.sumT>0 ? d.sumP/d.sumT : 0);
+  renderChart('chartDailyAvgPT', type => ({
+    type, data:{ labels, datasets: [
+      type==='line' ? dsLine('平均レス/スレ', avgPT, '#00897b', true) : dsBar('平均レス/スレ', avgPT, '#00897b')
+    ]}, options: commonOpts()
+  }));
+}
+
+function renderTable(days, agg) {
   const body = document.getElementById('statsTableBody');
   body.innerHTML = '';
   for (const d of days) {
     const tr = document.createElement('tr');
-    const avgPI = d.sumN > 0 ? (d.sumP / d.sumN) : null;
-    const avgPT = d.sumT > 0 ? (d.sumP / d.sumT) : null;
-    const hCell = d.h >= 0 ? `${d.h}時${d.h>=23?'（完）':''}` : (d.exists?'-':'未集計');
+    const avgPI = d.sumN>0 ? d.sumP/d.sumN : null;
+    const avgPT = d.sumT>0 ? d.sumP/d.sumT : null;
+    const hCell = d.h>=0 ? `${d.h}時${d.h>=23?'✓':''}` : (d.exists?'-':'未集計');
     tr.innerHTML = `
       <td>${d.date}</td>
       <td>${fmtNum(d.sumP)}</td>
@@ -758,8 +844,7 @@ function renderTable(days, agg){
       <td>${fmtNum(d.sumN)}</td>
       <td>${avgPI!=null?fmtDec(avgPI,2):'-'}</td>
       <td>${avgPT!=null?fmtDec(avgPT,2):'-'}</td>
-      <td style="text-align:right;color:#5f6368;">${hCell}</td>
-    `;
+      <td style="color:#5f6368;">${hCell}</td>`;
     body.appendChild(tr);
   }
   document.getElementById('ftPosts').textContent   = fmtNum(agg.sumP);
@@ -769,44 +854,32 @@ function renderTable(days, agg){
   document.getElementById('ftAvgPT').textContent   = agg.sumT>0 ? fmtDec(agg.sumP/agg.sumT, 2) : '-';
 }
 
-// ---------- メイン読み込み ----------
-async function loadData(){
+// ---------- メインロード ----------
+async function loadData(force=false) {
   const range = resolvePeriod();
-  if (!range) { showStatus('指定期間の日付を選択してください', 'warn'); return; }
+  if (!range) { showStatus('日付を選択してください', 'warn'); return; }
 
   const start = parseYmd(DATA_START_DATE);
   if (range.to < start) {
     showStatus(`データは ${DATA_START_DATE} 以降のみ存在します`, 'warn');
-    lastLoadedDays = [];
-    renderSummary([], { sumP:0,sumT:0,sumN:0, hourly:{p:new Array(24).fill(0),t:new Array(24).fill(0),n:new Array(24).fill(0)} });
-    renderHourlyCharts({p:new Array(24).fill(0),t:new Array(24).fill(0),n:new Array(24).fill(0)});
-    renderDailyCharts([]);
-    renderTable([], { sumP:0,sumT:0,sumN:0 });
+    renderAll([]);
     return;
   }
 
   const btn = document.getElementById('reloadBtn');
   btn.disabled = true;
-  showStatus('読み込み中…', 'info');
+  showStatus(force ? '🔄 強制再取得中…' : '読み込み中…', 'info');
 
   try {
-    // キャッシュをクリアして必ず再取得（更新ボタン押下時）
-    monthCache.clear();
-    const days = await loadRange(range.from, range.to);
-    lastLoadedDays = days;
-
+    const { days, fetched, cached } = await loadRange(range.from, range.to, force);
     if (days.length === 0) {
       showStatus('対象期間にデータがありません', 'warn');
     } else {
       hideStatus();
     }
-
-    const agg = aggregate(days);
-    renderSummary(days, agg);
-    renderHourlyCharts(agg.hourly);
-    renderDailyCharts(days);
-    renderTable(days, agg);
-
+    renderAll(days);
+    const info = `📦 取得: ${fetched}月 / キャッシュ: ${cached}月`;
+    document.getElementById('cacheInfo').textContent = info;
     document.getElementById('lastUpdated').textContent = `最終更新: ${new Date().toLocaleString('ja-JP')}`;
   } catch (e) {
     console.error(e);
@@ -817,13 +890,15 @@ async function loadData(){
 }
 
 // ---------- UI 初期化 ----------
-function initUI(){
-  // 期間ラジオ
-  document.querySelectorAll('input[name="period"]').forEach(r => {
-    r.addEventListener('change', () => {
-      const isCustom = r.value === 'custom' && r.checked;
-      document.getElementById('customRange').style.display = isCustom ? 'flex' : 'none';
-      if (r.checked && !isCustom) loadData();
+function initUI() {
+  // 期間ボタン
+  document.querySelectorAll('#periodBtns .tk-pbtn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#periodBtns .tk-pbtn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      currentPeriod = b.dataset.period;
+      document.getElementById('customRange').style.display = (currentPeriod==='custom') ? 'flex' : 'none';
+      if (currentPeriod !== 'custom') loadData(false);
     });
   });
   // カスタム日付
@@ -831,37 +906,60 @@ function initUI(){
     document.getElementById(id).addEventListener('change', () => {
       const a = document.getElementById('dateFrom').value;
       const b = document.getElementById('dateTo').value;
-      if (a && b) loadData();
+      if (a && b && currentPeriod==='custom') loadData(false);
     });
   });
-  // カスタム日付デフォルト
-  const today = todayJst();
+  const today = today0();
   const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate()-6);
   document.getElementById('dateFrom').value = ymd(weekAgo);
   document.getElementById('dateTo').value   = ymd(today);
-  // 最小値（データ開始日）
   document.getElementById('dateFrom').min = DATA_START_DATE;
   document.getElementById('dateTo').min   = DATA_START_DATE;
 
+  // 更新ボタン（強制再取得＋キャッシュクリア）
+  document.getElementById('reloadBtn').addEventListener('click', () => {
+    clearAllCache();
+    loadData(true);
+  });
+
   // タブ
-  document.querySelectorAll('.toukei-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const name = tab.dataset.tab;
-      document.querySelectorAll('.toukei-tab').forEach(t => t.classList.toggle('active', t === tab));
-      document.querySelectorAll('.tab-content').forEach(c => {
-        c.classList.toggle('active', c.id === 'tab-' + name);
+  document.querySelectorAll('#tabs .tk-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('#tabs .tk-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      const name = t.dataset.pane;
+      document.querySelectorAll('.tk-pane').forEach(p => {
+        p.classList.toggle('active', p.id === 'pane-' + name);
       });
-      // 隠れていたタブのチャートが正しいサイズで描画されるよう resize
-      setTimeout(() => {
-        Object.values(charts).forEach(c => c.resize());
-      }, 30);
+      setTimeout(() => { Object.values(charts).forEach(c => c.resize()); }, 30);
+    });
+  });
+
+  // グラフ種類トグル
+  document.querySelectorAll('.tk-typetog').forEach(tog => {
+    const target = tog.dataset.target;
+    // 初期 type を保持
+    const activeBtn = tog.querySelector('button.active');
+    chartTypes[target] = activeBtn ? activeBtn.dataset.type : 'bar';
+    tog.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tog.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        chartTypes[target] = btn.dataset.type;
+        // 再描画
+        if (chartConfigs[target]) {
+          destroyChart(target);
+          const ctx = document.getElementById(target).getContext('2d');
+          charts[target] = new Chart(ctx, chartConfigs[target](chartTypes[target]));
+        }
+      });
     });
   });
 }
 
 // 起動
 initUI();
-loadData();
+loadData(false);
 </script>
 </body>
 </html>
