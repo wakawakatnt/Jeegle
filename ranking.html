@@ -29,10 +29,19 @@
 .tk-logo span:nth-child(7){color:#FBBC05}
 .tk-header-title { font-size:15px; font-weight:700; color:#202124; }
 .tk-header-actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+/* ===== 共有ボタン（ranking.html と統一） ===== */
+.rk-share-btn {
+  background:none; border:1px solid #dadce0; border-radius:16px;
+  padding:4px 12px; font-size:12px; color:#5f6368; cursor:pointer;
+  font-family:inherit; white-space:nowrap;
+}
+.rk-share-btn:hover { background:#f1f3f4; }
+
 .tk-header-link {
   font-size:12px; color:#5f6368; text-decoration:none;
   border:1px solid #dadce0; border-radius:16px; padding:4px 12px;
-  background:none; font-family:inherit; cursor:pointer; white-space:nowrap;
+  background:#fff; font-family:inherit; cursor:pointer;
 }
 .tk-header-link:hover { background:#f1f3f4; }
 
@@ -267,7 +276,7 @@
     </a>
     <div class="tk-header-title">📊 統計</div>
     <div class="tk-header-actions">
-      <button class="tk-header-link" id="shareBtn" title="現在のビューURLをコピー">🔗 URL共有</button>
+      <button class="rk-share-btn" id="shareBtn" title="現在のビューURLをコピー">🔗 URL共有</button>
       <a href="ranking.html" class="tk-header-link">🏆 ランキング</a>
       <a href="index.html" class="tk-header-link">← トップ</a>
     </div>
@@ -702,70 +711,50 @@ function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete chart
 function baseOpts(opts={}) {
   return Object.assign({
     responsive:true, maintainAspectRatio:false,
-    layout: { padding: { top: 4, right: 10, bottom: 4, left: 4 } },
+    layout: { padding: { top: 4, right: 60, bottom: 4, left: 4 } },
     plugins: {
       legend: { position:'top', align:'end',
         labels:{ boxWidth:12, padding:10, font:{size:11} } },
       tooltip: { mode:'index', intersect:false, padding:8, cornerRadius:6 }
     },
-    interaction: { mode:'index', intersect:false }
-  }, opts);
-}
-
-// 軸を動的に設定する処理（張り付き解消のため）
-function getChartOptions(isCombined, keys) {
-  const opts = baseOpts();
-  if (isCombined) {
-    const hasP = keys.includes('p');
-    const hasOther = keys.includes('t') || keys.includes('n');
-    
-    opts.scales = {};
-    if (hasP) {
-      opts.scales.y = {
+    interaction: { mode:'index', intersect:false },
+    scales: {
+      yLeft: {
         type: 'linear',
-        display: true,
         position: 'left',
         beginAtZero: true,
-        ticks: { precision: 0 }
-      };
-    }
-    if (hasOther) {
-      opts.scales.y1 = {
+        ticks: { precision:0 },
+        grid: { color: 'rgba(0,0,0,0.06)' },
+        title: { display: false },
+      },
+      yRight: {
         type: 'linear',
-        display: true,
-        position: (hasP ? 'right' : 'left'), // レス数があれば右軸に配置
+        position: 'right',
         beginAtZero: true,
-        ticks: { precision: 0 },
-        grid: { drawOnChartArea: !hasP } // レス数がある場合は右軸のグリッドを消す
-      };
+        ticks: { precision:0 },
+        grid: { drawOnChartArea: false },
+        title: { display: false },
+      },
+      x: {}
     }
-  } else {
-    opts.scales = {
-      y: { beginAtZero: true, ticks: { precision: 0 } }
-    };
-  }
-  return opts;
+  }, opts);
 }
 
 function makeDataset(key, data, type) {
   const color = COLORS[key];
   const base = { label: LABELS[key], data, borderColor: color };
-  
-  // 統合グラフの場合はレス数を左軸(y)、スレ立てと新規IDを右軸(y1)にする
-  if (chartLayout === 'combined') {
-    base.yAxisID = (key === 'p') ? 'y' : 'y1';
-  } else {
-    base.yAxisID = 'y';
-  }
-
+  // レス数は左Y軸、スレ立て・新規IDは右Y軸
+  const yAxisID = (key === 'p') ? 'yLeft' : 'yRight';
   if (type === 'line') {
     return Object.assign(base, {
       type:'line', backgroundColor: color+'33', fill:false,
-      tension:0.3, pointRadius:3, pointHoverRadius:5, borderWidth:2
+      tension:0.3, pointRadius:3, pointHoverRadius:5, borderWidth:2,
+      yAxisID
     });
   } else {
     return Object.assign(base, {
-      type:'bar', backgroundColor: color+'cc', borderWidth:1, borderRadius:3
+      type:'bar', backgroundColor: color+'cc', borderWidth:1, borderRadius:3,
+      yAxisID
     });
   }
 }
@@ -781,11 +770,29 @@ function renderMainChart(series) {
     destroyChart('mainChart');
     const ctx = document.getElementById('mainChart');
     if (!ctx) return;
+
+    // アクティブな系列に応じてY軸表示を制御
+    const hasLeft  = keys.includes('p');
+    const hasRight = keys.includes('t') || keys.includes('n');
+
+    const opts = baseOpts();
+    opts.scales.yLeft.display  = hasLeft;
+    opts.scales.yRight.display = hasRight;
+    // 右軸しかない場合は右軸をチャートエリア内グリッドも描く
+    if (!hasLeft && hasRight) {
+      opts.scales.yRight.grid = { color: 'rgba(0,0,0,0.06)' };
+      opts.layout.padding.right = 4;
+    }
+    if (!hasRight) {
+      opts.layout.padding.right = 4;
+    }
+
     charts['mainChart'] = new Chart(ctx.getContext('2d'), {
       data: { labels: series.labels, datasets },
-      options: getChartOptions(true, keys)
+      options: opts
     });
   } else {
+    // 分割表示：各グラフは単一系列なのでシンプルなY軸
     ['p','t','n'].forEach(k => {
       const id = 'split' + k.toUpperCase();
       destroyChart(id);
@@ -796,9 +803,20 @@ function renderMainChart(series) {
         c.clearRect(0,0,el.width,el.height);
         return;
       }
+      const ds = makeDataset(k, series[k], chartType);
+      // 分割表示では単一Y軸に統一
+      ds.yAxisID = 'y';
       charts[id] = new Chart(el.getContext('2d'), {
-        data: { labels: series.labels, datasets: [makeDataset(k, series[k], chartType)] },
-        options: getChartOptions(false, [k])
+        data: { labels: series.labels, datasets: [ds] },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          layout: { padding: { top:4, right:10, bottom:4, left:4 } },
+          plugins: {
+            legend: { display:false },
+            tooltip: { mode:'index', intersect:false, padding:8, cornerRadius:6 }
+          },
+          scales: { y: { beginAtZero:true, ticks:{ precision:0 } } }
+        }
       });
     });
   }
@@ -940,22 +958,19 @@ function updateChartTitle(range) {
   }
 }
 
-// ---------- URL 共有 ----------
+// ---------- URL 共有（ranking.html と統一） ----------
 function buildShareURL() {
   const params = new URLSearchParams();
   params.set('mode', mode);
   const range = resolveRange();
   if (mode === 'hourly') {
-    // 常に実日付を付与（today/yesterday などの相対キーは使わない）
     if (range) params.set('date', ymd(range.from));
   } else {
-    // プリセット・customとも実日付に展開
     if (range) {
       params.set('from', ymd(range.from));
       params.set('to', ymd(range.to));
     }
   }
-  // series/type/layout/adv/tbl は個人の表示状態なので含めない
   return location.origin + location.pathname + '?' + params.toString();
 }
 
@@ -967,14 +982,12 @@ function applyURLParams() {
   if (m === 'hourly' || m === 'daily') mode = m;
 
   if (mode === 'hourly') {
-    // date= があれば日付指定モードで復元
     const date = p.get('date');
     if (date) {
       hourlyDayKey = 'custom';
       document.getElementById('hourlyDate').value = date;
     }
   } else {
-    // from/to があれば日付範囲指定で復元
     const from = p.get('from');
     const to   = p.get('to');
     if (from && to) {
@@ -986,49 +999,41 @@ function applyURLParams() {
 }
 
 function syncUIFromState() {
-  // モードボタン
   document.querySelectorAll('#modeSel .tk-modebtn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
   document.getElementById('hourlyCtrls').style.display = (mode==='hourly') ? 'flex' : 'none';
   document.getElementById('dailyCtrls').style.display  = (mode==='daily')  ? 'flex' : 'none';
-  // 時別プリセット
   document.querySelectorAll('#hourlyPbtns .tk-pbtn').forEach(b => {
     b.classList.toggle('active', b.dataset.day === hourlyDayKey);
   });
   document.getElementById('hourlyDate').style.display = (hourlyDayKey==='custom') ? 'inline-block' : 'none';
-  // 日別プリセット
   document.querySelectorAll('#dailyPbtns .tk-pbtn').forEach(b => {
     b.classList.toggle('active', b.dataset.period === dailyPeriodKey);
   });
   document.getElementById('dailyCustomRange').style.display = (dailyPeriodKey==='custom') ? 'inline-flex' : 'none';
-  // 系列
   document.querySelectorAll('#seriesTog button').forEach(b => {
     b.classList.toggle('active', !!seriesOn[b.dataset.key]);
   });
-  // type / layout
   document.querySelectorAll('#typeTog button').forEach(b => b.classList.toggle('active', b.dataset.type === chartType));
   document.querySelectorAll('#layoutTog button').forEach(b => b.classList.toggle('active', b.dataset.layout === chartLayout));
-  // details
   document.getElementById('advancedSection').open = advancedOpen;
   document.getElementById('tableSection').open = tableOpen;
 }
 
-async function copyShareURL() {
+// ---------- 共有ボタン動作（ranking.html と統一） ----------
+function copyShareURL() {
   const url = buildShareURL();
   history.replaceState(null, '', url);
-  
-  const b = document.getElementById('shareBtn');
-  const orig = b.textContent;
-  
+  const btn = document.getElementById('shareBtn');
+  const origText = btn.textContent;
   if (navigator.clipboard) {
-    try {
-      await navigator.clipboard.writeText(url);
-      b.textContent = "✅ コピー完了";
-      setTimeout(() => { b.textContent = orig; }, 2000);
-    } catch {
+    navigator.clipboard.writeText(url).then(function() {
+      btn.textContent = '✅ コピー完了';
+      setTimeout(function() { btn.textContent = origText; }, 2000);
+    }).catch(function() {
       prompt('URLをコピーしてください:', url);
-    }
+    });
   } else {
     prompt('URLをコピーしてください:', url);
   }
@@ -1190,7 +1195,7 @@ function initUI() {
     history.replaceState(null, '', buildShareURL());
   });
 
-  // 共有
+  // 共有ボタン（ranking.html と同じ動作）
   document.getElementById('shareBtn').addEventListener('click', copyShareURL);
 
   // ウィンドウリサイズで Plotly を追従
