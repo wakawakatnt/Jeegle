@@ -992,17 +992,55 @@ function applyURLParams() {
   const m = p.get('mode');
   if (m === 'hourly' || m === 'daily') mode = m;
 
+  // 比較用の現在日付を計算
+  const today = today0();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const strToday = ymd(today);
+  const strYesterday = ymd(yesterday);
+
   if (mode === 'hourly') {
     const date = p.get('date');
     if (date) {
-      hourlyDayKey = 'custom';
+      // 復元した日付が「今日」や「昨日」と一致するか判定
+      if (date === strToday) {
+        hourlyDayKey = 'today';
+      } else if (date === strYesterday) {
+        hourlyDayKey = 'yesterday';
+      } else {
+        hourlyDayKey = 'custom';
+      }
       document.getElementById('hourlyDate').value = date;
     }
   } else {
     const from = p.get('from');
     const to   = p.get('to');
     if (from && to) {
-      dailyPeriodKey = 'custom';
+      let matchedPreset = 'custom';
+      const presets = ['7days', '14days', '30days', 'month', 'lastmonth'];
+      
+      // 復元した日付範囲が各プリセットと一致するか判定
+      for (const preset of presets) {
+        let pFrom, pTo;
+        switch (preset) {
+          case '7days':  pTo=new Date(today); pFrom=new Date(today); pFrom.setDate(pFrom.getDate()-6); break;
+          case '14days': pTo=new Date(today); pFrom=new Date(today); pFrom.setDate(pFrom.getDate()-13); break;
+          case '30days': pTo=new Date(today); pFrom=new Date(today); pFrom.setDate(pFrom.getDate()-29); break;
+          case 'month':  pFrom=new Date(today.getFullYear(),today.getMonth(),1); pTo=new Date(today); break;
+          case 'lastmonth': {
+            const first=new Date(today.getFullYear(),today.getMonth(),1);
+            pTo=new Date(first); pTo.setDate(pTo.getDate()-1);
+            pFrom=new Date(pTo.getFullYear(),pTo.getMonth(),1);
+            break;
+          }
+        }
+        if (ymd(pFrom) === from && ymd(pTo) === to) {
+          matchedPreset = preset;
+          break;
+        }
+      }
+      
+      dailyPeriodKey = matchedPreset;
       document.getElementById('dateFrom').value = from;
       document.getElementById('dateTo').value   = to;
     }
