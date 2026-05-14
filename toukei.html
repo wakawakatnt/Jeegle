@@ -6,6 +6,7 @@
 <title>統計 - Jeegle!</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <style>
 /* ============== レイアウト ============== */
 .tk-page { min-height:100vh; background:#f0f2f5; }
@@ -27,10 +28,11 @@
 .tk-logo span:nth-child(6){color:#EA4335}
 .tk-logo span:nth-child(7){color:#FBBC05}
 .tk-header-title { font-size:15px; font-weight:700; color:#202124; }
-.tk-header-actions { margin-left:auto; display:flex; gap:8px; }
+.tk-header-actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
 .tk-header-link {
   font-size:12px; color:#5f6368; text-decoration:none;
   border:1px solid #dadce0; border-radius:16px; padding:4px 12px;
+  background:#fff; font-family:inherit; cursor:pointer;
 }
 .tk-header-link:hover { background:#f1f3f4; }
 
@@ -98,8 +100,9 @@
 .tk-status.info { background:#e8f0fe; color:#1a73e8; border-left:3px solid #1a73e8; }
 .tk-status.warn { background:#fff3cd; color:#856404; border-left:3px solid #f9ab00; }
 .tk-status.err  { background:#fce8e6; color:#c5221f; border-left:3px solid #ea4335; }
+.tk-status.ok   { background:#e6f4ea; color:#137333; border-left:3px solid #34a853; }
 
-/* ============== メトリクスカード ============== */
+/* ============== メトリクス ============== */
 .tk-metrics {
   display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));
   gap:8px; margin-bottom:12px;
@@ -143,18 +146,11 @@
   font-family:inherit; font-weight:600;
   display:inline-flex; align-items:center; gap:4px;
 }
-.tk-series button .dot {
-  width:8px; height:8px; border-radius:50%; background:currentColor;
-  display:inline-block;
-}
+.tk-series button .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
 .tk-series button.active { color:#fff; }
 .tk-series button[data-key="p"].active { background:#4285F4; }
 .tk-series button[data-key="t"].active { background:#EA4335; }
 .tk-series button[data-key="n"].active { background:#FBBC05; color:#3c4043; }
-.tk-series button[data-key="a"].active { background:#34A853; }
-.tk-series button[data-key="a"][data-disabled="true"] {
-  opacity:.45; cursor:not-allowed;
-}
 
 /* タイプ・分割トグル */
 .tk-tog {
@@ -169,18 +165,21 @@
   background:#fff; color:#1a73e8; box-shadow:0 1px 3px rgba(0,0,0,.1);
 }
 
-/* グラフラッパ：下の凡例が張り付かないようパディング & 高さ確保 */
+/* ===== グラフラッパ：下張り付き解消 ===== */
+/* カードのpaddingにグラフを依存させず、ラッパで余白＋十分な高さを確保 */
 .tk-chart-wrap {
-  position:relative; height:360px;
-  padding:6px 4px 14px;  /* 下余白を確保 */
+  position:relative;
+  height:420px;
+  padding:8px 6px 28px;
   box-sizing:border-box;
 }
-.tk-chart-wrap.tall { height:440px; }
-.tk-chart-wrap.short { height:260px; }
+.tk-chart-wrap.tall { height:480px; }
+.tk-chart-wrap.short { height:300px; padding-bottom:24px; }
+.tk-chart-wrap > canvas { display:block; }
 
 /* 分割表示 */
 .tk-split { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.tk-split .tk-chart-wrap { height:240px; padding-bottom:10px; }
+.tk-split .tk-chart-wrap { height:280px; padding-bottom:24px; }
 @media (max-width:720px) { .tk-split { grid-template-columns:1fr; } }
 .tk-split-card {
   border:1px solid #f1f3f4; border-radius:8px; padding:8px 10px;
@@ -189,9 +188,7 @@
   font-size:11px; font-weight:700; color:#5f6368;
   margin-bottom:4px; display:flex; align-items:center; gap:6px;
 }
-.tk-split-card .ttl .dot {
-  width:10px; height:10px; border-radius:50%; display:inline-block;
-}
+.tk-split-card .ttl .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
 
 /* テーブル */
 .tk-table-wrap { overflow-x:auto; }
@@ -209,7 +206,7 @@
   font-weight:700; background:#f8f9fa; border-top:2px solid #dadce0;
 }
 
-/* ============== 折りたたみ ============== */
+/* 折りたたみ */
 .tk-collapse { padding:0; overflow:hidden; }
 .tk-collapse > .tk-collapse-head {
   display:flex; align-items:center; justify-content:space-between;
@@ -218,29 +215,18 @@
 }
 .tk-collapse > .tk-collapse-head::-webkit-details-marker { display:none; }
 .tk-collapse > .tk-collapse-head:hover { background:#f8f9fa; }
-.tk-collapse-arrow {
-  font-size:14px; color:#5f6368; transition:transform .2s;
-}
+.tk-collapse-arrow { font-size:14px; color:#5f6368; transition:transform .2s; }
 .tk-collapse[open] .tk-collapse-arrow { transform:rotate(180deg); }
 .tk-collapse-body { padding:0 16px 16px; }
 
-/* 詳細セクション */
-.tk-adv-controls {
-  background:#f8f9fa; border-radius:8px; padding:10px 14px;
-  margin-bottom:12px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+/* 3Dグラフ */
+.tk-3d-wrap {
+  position:relative; height:520px; width:100%;
+  background:#fafbfc; border-radius:8px; padding:8px;
+  box-sizing:border-box;
 }
-.tk-checkbox {
-  display:inline-flex; align-items:center; gap:6px; cursor:pointer;
-  font-size:13px; color:#3c4043;
-}
-.tk-checkbox input { accent-color:#1a73e8; }
-.tk-adv-grid {
-  display:grid; grid-template-columns:1fr 1fr; gap:12px;
-}
-.tk-adv-card { margin-bottom:0; }
-.tk-adv-card-wide { grid-column:1 / -1; }
-@media (max-width:760px) {
-  .tk-adv-grid { grid-template-columns:1fr; }
+.tk-3d-help {
+  font-size:11px; color:#70757a; margin-top:6px; text-align:right;
 }
 
 .tk-last-updated { font-size:11px; color:#9aa0a6; text-align:right; margin-top:8px; }
@@ -251,8 +237,9 @@
   .tk-header-title { font-size:12px; }
   .tk-body { padding:10px 8px 40px; }
   .tk-metric-val { font-size:18px; }
-  .tk-chart-wrap { height:300px; padding-bottom:12px; }
-  .tk-chart-wrap.tall { height:360px; }
+  .tk-chart-wrap { height:340px; padding-bottom:24px; }
+  .tk-chart-wrap.tall { height:380px; }
+  .tk-3d-wrap { height:420px; }
   .tk-modebtn { padding:10px 12px; }
   .tk-modebtn .ic { font-size:20px; }
   .tk-modebtn .ttl { font-size:13px; }
@@ -268,6 +255,7 @@
     </a>
     <div class="tk-header-title">📊 統計</div>
     <div class="tk-header-actions">
+      <button class="tk-header-link" id="shareBtn" title="現在のビューURLをコピー">🔗 共有</button>
       <a href="ranking.html" class="tk-header-link">🏆 ランキング</a>
       <a href="index.html" class="tk-header-link">← トップ</a>
     </div>
@@ -295,7 +283,6 @@
 
     <!-- ② 範囲選択 -->
     <div class="tk-controls">
-      <!-- 時別モード用 -->
       <div class="tk-ctrl-group" id="hourlyCtrls">
         <strong>日付</strong>
         <div class="tk-pbtns" id="hourlyPbtns">
@@ -306,7 +293,6 @@
         <input type="date" id="hourlyDate" class="tk-date-input" style="display:none;">
       </div>
 
-      <!-- 日別モード用 -->
       <div class="tk-ctrl-group" id="dailyCtrls" style="display:none;">
         <strong>期間</strong>
         <div class="tk-pbtns" id="dailyPbtns">
@@ -388,7 +374,6 @@
             <button class="active" data-key="p"><span class="dot"></span>レス</button>
             <button class="active" data-key="t"><span class="dot"></span>スレ立て</button>
             <button class="active" data-key="n"><span class="dot"></span>新規ID</button>
-            <button data-key="a" data-disabled="true" title="詳細分析から有効化"><span class="dot"></span>平均レス/ID</button>
           </div>
           <div class="tk-tog" id="typeTog">
             <button class="active" data-type="line">折れ線</button>
@@ -401,12 +386,10 @@
         </div>
       </div>
 
-      <!-- 統合表示 -->
       <div class="tk-chart-wrap tall" id="mainChartBox">
         <canvas id="mainChart"></canvas>
       </div>
 
-      <!-- 分割表示 -->
       <div class="tk-split" id="splitBox" style="display:none;">
         <div class="tk-split-card">
           <div class="ttl"><span class="dot" style="background:#4285F4"></span>レス数</div>
@@ -420,15 +403,11 @@
           <div class="ttl"><span class="dot" style="background:#FBBC05"></span>新規ID数</div>
           <div class="tk-chart-wrap"><canvas id="splitN"></canvas></div>
         </div>
-        <div class="tk-split-card">
-          <div class="ttl"><span class="dot" style="background:#34A853"></span>平均レス/ID</div>
-          <div class="tk-chart-wrap"><canvas id="splitA"></canvas></div>
-        </div>
       </div>
     </div>
 
-    <!-- ⑤ データ一覧（折りたたみ） -->
-    <details class="tk-card tk-collapse">
+    <!-- ⑤ データ一覧 -->
+    <details class="tk-card tk-collapse" id="tableSection">
       <summary class="tk-collapse-head">
         <span class="tk-card-title">📋 データ一覧</span>
         <span class="tk-collapse-arrow">▾</span>
@@ -442,17 +421,15 @@
                 <th>レス数</th>
                 <th>スレ立て</th>
                 <th>新規ID</th>
-                <th>平均レス/ID</th>
               </tr>
             </thead>
             <tbody id="statsTableBody"></tbody>
             <tfoot>
               <tr>
-                <td>合計 / 平均</td>
+                <td>合計</td>
                 <td id="ftPosts">-</td>
                 <td id="ftThreads">-</td>
                 <td id="ftIds">-</td>
-                <td id="ftAvgPI">-</td>
               </tr>
             </tfoot>
           </table>
@@ -460,66 +437,18 @@
       </div>
     </details>
 
-    <!-- ⑥ 詳細分析（折りたたみ） -->
+    <!-- ⑥ 詳細分析（3D散布図のみ） -->
     <details class="tk-card tk-collapse" id="advancedSection">
       <summary class="tk-collapse-head">
-        <span class="tk-card-title">🔬 詳細分析</span>
+        <span class="tk-card-title">🔬 詳細分析 — 3D散布図</span>
         <span class="tk-collapse-arrow">▾</span>
       </summary>
       <div class="tk-collapse-body">
-        <div class="tk-adv-controls">
-          <label class="tk-checkbox">
-            <input type="checkbox" id="enableAvg">
-            <span>メイングラフに「平均レス/ID」を追加表示</span>
-          </label>
+        <div class="tk-card-head">
+          <span class="tk-card-title-sub">X=新規ID数 / Y=スレ立て数 / Z=レス数 — 1点=各区分（時 or 日）</span>
         </div>
-
-        <div class="tk-adv-grid">
-          <div class="tk-card tk-adv-card">
-            <div class="tk-card-head">
-              <span class="tk-card-title">📈 平均レス/ID 推移</span>
-            </div>
-            <div class="tk-chart-wrap short"><canvas id="advAvgPI"></canvas></div>
-          </div>
-          <div class="tk-card tk-adv-card">
-            <div class="tk-card-head">
-              <span class="tk-card-title">🧵 平均レス/スレ 推移</span>
-            </div>
-            <div class="tk-chart-wrap short"><canvas id="advAvgPT"></canvas></div>
-          </div>
-          <div class="tk-card tk-adv-card">
-            <div class="tk-card-head">
-              <span class="tk-card-title">🌱 平均スレ/ID 推移</span>
-            </div>
-            <div class="tk-chart-wrap short"><canvas id="advAvgTI"></canvas></div>
-          </div>
-          <div class="tk-card tk-adv-card">
-            <div class="tk-card-head">
-              <span class="tk-card-title">🥧 構成比</span>
-              <span class="tk-card-title-sub">レス/スレ/新規ID</span>
-            </div>
-            <div class="tk-chart-wrap short"><canvas id="advPie"></canvas></div>
-          </div>
-          <div class="tk-card tk-adv-card">
-            <div class="tk-card-head">
-              <span class="tk-card-title">📊 累積推移</span>
-            </div>
-            <div class="tk-chart-wrap short"><canvas id="advCumulative"></canvas></div>
-          </div>
-          <div class="tk-card tk-adv-card">
-            <div class="tk-card-head">
-              <span class="tk-card-title">🪟 時間帯シェア（積み上げ100%）</span>
-            </div>
-            <div class="tk-chart-wrap short"><canvas id="advShare"></canvas></div>
-          </div>
-          <div class="tk-card tk-adv-card tk-adv-card-wide">
-            <div class="tk-card-head">
-              <span class="tk-card-title">⚖️ 新規ID vs レス数（散布図）</span>
-              <span class="tk-card-title-sub">1点=各区分（時/日）</span>
-            </div>
-            <div class="tk-chart-wrap"><canvas id="advScatter"></canvas></div>
-          </div>
-        </div>
+        <div class="tk-3d-wrap" id="scatter3d"></div>
+        <div class="tk-3d-help">🖱️ ドラッグで回転 / ホイールで拡大 / ダブルクリックでリセット</div>
       </div>
     </details>
 
@@ -547,20 +476,22 @@ const COLORS = {
   p: '#4285F4', // レス
   t: '#EA4335', // スレ立て
   n: '#FBBC05', // 新規ID
-  a: '#34A853', // 平均レス/ID
 };
-const LABELS = { p:'レス数', t:'スレ立て数', n:'新規ID数', a:'平均レス/ID' };
+const LABELS = { p:'レス数', t:'スレ立て数', n:'新規ID数' };
 
 // 状態
 const monthCache = new Map();
 const charts = {};
 let mode = 'hourly';
 let hourlyDayKey = 'today';
+let hourlyCustomDate = '';
 let dailyPeriodKey = '7days';
+let dailyFrom = '', dailyTo = '';
 let chartType = 'line';
 let chartLayout = 'combined';
-let seriesOn = { p:true, t:true, n:true, a:false };  // 平均はデフォOFF
-let avgEnabled = false; // メインに平均を出すかどうか（詳細から有効化）
+let seriesOn = { p:true, t:true, n:true };
+let advancedOpen = false;
+let tableOpen = false;
 
 // ---------- util ----------
 const pad2 = n => String(n).padStart(2,'0');
@@ -745,10 +676,7 @@ function buildSeries(days) {
     t = days.map(d=>d.sumT);
     n = days.map(d=>d.sumN);
   }
-  const a  = p.map((pv,i) => n[i] > 0 ? pv/n[i] : 0);            // 平均レス/ID
-  const ap = p.map((pv,i) => t[i] > 0 ? pv/t[i] : 0);            // 平均レス/スレ
-  const at = t.map((tv,i) => n[i] > 0 ? tv/n[i] : 0);            // 平均スレ/ID
-  return { labels, p, t, n, a, ap, at };
+  return { labels, p, t, n };
 }
 function aggregateAll(days) {
   let sumP=0, sumT=0, sumN=0;
@@ -756,13 +684,13 @@ function aggregateAll(days) {
   return { sumP, sumT, sumN };
 }
 
-// ---------- グラフ共通 ----------
+// ---------- グラフ ----------
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
 function baseOpts(opts={}) {
   return Object.assign({
     responsive:true, maintainAspectRatio:false,
-    layout: { padding: { top: 4, right: 8, bottom: 8, left: 4 } },
+    layout: { padding: { top: 6, right: 12, bottom: 18, left: 6 } },
     plugins: {
       legend: { position:'top', align:'end',
         labels:{ boxWidth:12, padding:10, font:{size:11} } },
@@ -772,22 +700,9 @@ function baseOpts(opts={}) {
     scales: { y: { beginAtZero:true, ticks:{ precision:0 } } }
   }, opts);
 }
-function twoAxesOpts() {
-  return baseOpts({
-    scales: {
-      y:  { beginAtZero:true, position:'left',
-            title:{display:true, text:'件数', font:{size:10}} },
-      y1: { beginAtZero:true, position:'right',
-            title:{display:true, text:'平均レス/ID', font:{size:10}},
-            grid:{drawOnChartArea:false} }
-    }
-  });
-}
 function makeDataset(key, data, type) {
   const color = COLORS[key];
-  const useY1 = (key === 'a');
   const base = { label: LABELS[key], data, borderColor: color };
-  if (useY1) base.yAxisID = 'y1';
   if (type === 'line') {
     return Object.assign(base, {
       type:'line', backgroundColor: color+'33', fill:false,
@@ -800,14 +715,8 @@ function makeDataset(key, data, type) {
   }
 }
 
-// ---------- メイングラフ ----------
 function renderMainChart(series) {
-  // 'a' は avgEnabled かつ seriesOn.a の時だけ
-  const keys = ['p','t','n','a'].filter(k => {
-    if (k === 'a') return avgEnabled && seriesOn.a;
-    return seriesOn[k];
-  });
-  const useTwoAxes = (avgEnabled && seriesOn.a) && (seriesOn.p || seriesOn.t || seriesOn.n);
+  const keys = ['p','t','n'].filter(k => seriesOn[k]);
   const datasets = keys.map(k => makeDataset(k, series[k], chartType));
 
   document.getElementById('mainChartBox').style.display = (chartLayout==='combined') ? 'block' : 'none';
@@ -819,151 +728,86 @@ function renderMainChart(series) {
     if (!ctx) return;
     charts['mainChart'] = new Chart(ctx.getContext('2d'), {
       data: { labels: series.labels, datasets },
-      options: useTwoAxes ? twoAxesOpts() : baseOpts()
+      options: baseOpts()
     });
   } else {
-    ['p','t','n','a'].forEach(k => {
+    ['p','t','n'].forEach(k => {
       const id = 'split' + k.toUpperCase();
       destroyChart(id);
       const el = document.getElementById(id);
       if (!el) return;
-      const enabled = (k === 'a') ? (avgEnabled && seriesOn.a) : seriesOn[k];
-      if (!enabled) {
+      if (!seriesOn[k]) {
         const c = el.getContext('2d');
         c.clearRect(0,0,el.width,el.height);
         return;
       }
-      // 分割は単一系列なので右軸不要
-      const ds = makeDataset(k, series[k], chartType);
-      delete ds.yAxisID;
       charts[id] = new Chart(el.getContext('2d'), {
-        data: { labels: series.labels, datasets: [ds] },
+        data: { labels: series.labels, datasets: [makeDataset(k, series[k], chartType)] },
         options: baseOpts()
       });
     });
   }
 }
 
-// ---------- 詳細グラフ ----------
-function renderAdvanced(series, days, agg) {
-  // 平均レス/ID
-  destroyChart('advAvgPI');
-  charts['advAvgPI'] = new Chart(document.getElementById('advAvgPI').getContext('2d'), {
-    data: { labels: series.labels, datasets: [{
-      type:'line', label:'平均レス/ID', data: series.a,
-      borderColor: COLORS.a, backgroundColor: COLORS.a+'33',
-      fill:true, tension:0.3, pointRadius:3, borderWidth:2
-    }] },
-    options: baseOpts()
-  });
-  // 平均レス/スレ
-  destroyChart('advAvgPT');
-  charts['advAvgPT'] = new Chart(document.getElementById('advAvgPT').getContext('2d'), {
-    data: { labels: series.labels, datasets: [{
-      type:'line', label:'平均レス/スレ', data: series.ap,
-      borderColor:'#00897b', backgroundColor:'#00897b33',
-      fill:true, tension:0.3, pointRadius:3, borderWidth:2
-    }] },
-    options: baseOpts()
-  });
-  // 平均スレ/ID
-  destroyChart('advAvgTI');
-  charts['advAvgTI'] = new Chart(document.getElementById('advAvgTI').getContext('2d'), {
-    data: { labels: series.labels, datasets: [{
-      type:'line', label:'平均スレ/ID', data: series.at,
-      borderColor:'#9c27b0', backgroundColor:'#9c27b033',
-      fill:true, tension:0.3, pointRadius:3, borderWidth:2
-    }] },
-    options: baseOpts()
-  });
-  // 構成比（円）
-  destroyChart('advPie');
-  charts['advPie'] = new Chart(document.getElementById('advPie').getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: ['レス数', 'スレ立て数', '新規ID数'],
-      datasets: [{
-        data: [agg.sumP, agg.sumT, agg.sumN],
-        backgroundColor: [COLORS.p, COLORS.t, COLORS.n],
-        borderWidth: 2, borderColor: '#fff'
-      }]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      layout:{ padding:{ top:4, bottom:8 } },
-      plugins:{ legend:{ position:'right', labels:{ boxWidth:12, padding:10 } } },
-      cutout: '55%'
+// ---------- 3D散布図（Plotly） ----------
+function render3DScatter(series) {
+  const target = document.getElementById('scatter3d');
+  if (!target || typeof Plotly === 'undefined') return;
+
+  const labels = series.labels;
+  const xs = series.n; // 新規ID
+  const ys = series.t; // スレ立て
+  const zs = series.p; // レス
+  const texts = labels.map((lab,i) =>
+    `${lab}<br>新規ID: ${fmtNum(xs[i])}<br>スレ立て: ${fmtNum(ys[i])}<br>レス: ${fmtNum(zs[i])}`
+  );
+
+  // カラースケール（レス数で）
+  const trace = {
+    type: 'scatter3d',
+    mode: 'markers+text',
+    x: xs, y: ys, z: zs,
+    text: labels,
+    hovertext: texts,
+    hoverinfo: 'text',
+    textposition: 'top center',
+    textfont: { size: 9, color: '#5f6368' },
+    marker: {
+      size: 7,
+      color: zs,
+      colorscale: [
+        [0,    '#4285F4'],
+        [0.33, '#34A853'],
+        [0.66, '#FBBC05'],
+        [1,    '#EA4335']
+      ],
+      colorbar: { title: { text:'レス数', font:{ size:10 } }, thickness:12, len:0.6 },
+      opacity: 0.9,
+      line: { color:'#fff', width:0.5 }
     }
-  });
-  // 累積推移
-  const cumP = []; const cumT = []; const cumN = [];
-  let sp=0, st=0, sn=0;
-  for (let i=0;i<series.labels.length;i++) {
-    sp += series.p[i]; st += series.t[i]; sn += series.n[i];
-    cumP.push(sp); cumT.push(st); cumN.push(sn);
-  }
-  destroyChart('advCumulative');
-  charts['advCumulative'] = new Chart(document.getElementById('advCumulative').getContext('2d'), {
-    data: { labels: series.labels, datasets: [
-      { type:'line', label:'累積レス',   data: cumP, borderColor: COLORS.p, backgroundColor: COLORS.p+'33', fill:true, tension:0.2, pointRadius:2, borderWidth:2 },
-      { type:'line', label:'累積スレ',   data: cumT, borderColor: COLORS.t, backgroundColor: COLORS.t+'33', fill:true, tension:0.2, pointRadius:2, borderWidth:2 },
-      { type:'line', label:'累積新規ID', data: cumN, borderColor: COLORS.n, backgroundColor: COLORS.n+'33', fill:true, tension:0.2, pointRadius:2, borderWidth:2 },
-    ] },
-    options: baseOpts()
-  });
-  // 100%積み上げシェア
-  const shareP = [], shareT = [], shareN = [];
-  for (let i=0;i<series.labels.length;i++) {
-    const sum = series.p[i] + series.t[i] + series.n[i];
-    if (sum > 0) {
-      shareP.push(series.p[i]/sum*100);
-      shareT.push(series.t[i]/sum*100);
-      shareN.push(series.n[i]/sum*100);
-    } else { shareP.push(0); shareT.push(0); shareN.push(0); }
-  }
-  destroyChart('advShare');
-  charts['advShare'] = new Chart(document.getElementById('advShare').getContext('2d'), {
-    type:'bar',
-    data: { labels: series.labels, datasets: [
-      { label:'レス',     data: shareP, backgroundColor: COLORS.p },
-      { label:'スレ立て', data: shareT, backgroundColor: COLORS.t },
-      { label:'新規ID',   data: shareN, backgroundColor: COLORS.n },
-    ] },
-    options: baseOpts({
-      scales: {
-        x: { stacked:true },
-        y: { stacked:true, beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } }
-      }
-    })
-  });
-  // 散布図（新規ID vs レス）
-  const points = series.labels.map((lab,i) => ({ x: series.n[i], y: series.p[i], label: lab }));
-  destroyChart('advScatter');
-  charts['advScatter'] = new Chart(document.getElementById('advScatter').getContext('2d'), {
-    type:'scatter',
-    data: { datasets: [{
-      label:'新規ID(横) × レス(縦)',
-      data: points,
-      backgroundColor: COLORS.p+'cc',
-      borderColor: COLORS.p, pointRadius:5, pointHoverRadius:7
-    }] },
-    options: baseOpts({
-      plugins: {
-        legend: { display:false },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => {
-              const p = ctx.raw;
-              return `${p.label}: ID ${fmtNum(p.x)} / レス ${fmtNum(p.y)}`;
-            }
-          }
-        }
-      },
-      scales: {
-        x: { beginAtZero:true, title:{display:true, text:'新規ID数', font:{size:10}} },
-        y: { beginAtZero:true, title:{display:true, text:'レス数',   font:{size:10}} }
-      }
-    })
+  };
+
+  const layout = {
+    autosize: true,
+    margin: { l:0, r:0, t:8, b:0 },
+    paper_bgcolor: '#fafbfc',
+    scene: {
+      xaxis: { title: { text:'新規ID数' }, gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
+      yaxis: { title: { text:'スレ立て数' }, gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
+      zaxis: { title: { text:'レス数' },   gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
+      camera: { eye: { x:1.6, y:1.6, z:1.0 } },
+      aspectmode: 'cube'
+    },
+    font: {
+      family: "'Hiragino Kaku Gothic ProN','ヒラギノ角ゴ ProN',Meiryo,Arial,sans-serif",
+      size: 11, color: '#3c4043'
+    }
+  };
+
+  Plotly.react(target, [trace], layout, {
+    responsive: true,
+    displaylogo: false,
+    modeBarButtonsToRemove: ['toImage'],
   });
 }
 
@@ -1015,13 +859,11 @@ function renderTable(series) {
   body.innerHTML = '';
   for (let i = 0; i < series.labels.length; i++) {
     const tr = document.createElement('tr');
-    const avg = series.n[i] > 0 ? series.p[i]/series.n[i] : null;
     tr.innerHTML = `
       <td>${series.labels[i]}</td>
       <td>${fmtNum(series.p[i])}</td>
       <td>${fmtNum(series.t[i])}</td>
-      <td>${fmtNum(series.n[i])}</td>
-      <td>${avg!=null?fmtDec(avg,2):'-'}</td>`;
+      <td>${fmtNum(series.n[i])}</td>`;
     body.appendChild(tr);
   }
   const sumP = series.p.reduce((a,b)=>a+b,0);
@@ -1030,10 +872,8 @@ function renderTable(series) {
   document.getElementById('ftPosts').textContent   = fmtNum(sumP);
   document.getElementById('ftThreads').textContent = fmtNum(sumT);
   document.getElementById('ftIds').textContent     = fmtNum(sumN);
-  document.getElementById('ftAvgPI').textContent   = sumN>0 ? fmtDec(sumP/sumN, 2) : '-';
 }
 
-// ---------- タイトル ----------
 function updateChartTitle(range) {
   const tEl = document.getElementById('mainChartTitle');
   const sEl = document.getElementById('mainChartSub');
@@ -1044,6 +884,109 @@ function updateChartTitle(range) {
     tEl.textContent = '📅 日別推移';
     sEl.textContent = range ? `${ymd(range.from)} 〜 ${ymd(range.to)}` : '';
   }
+}
+
+// ---------- URL 共有 ----------
+function buildShareURL() {
+  const params = new URLSearchParams();
+  params.set('mode', mode);
+  if (mode === 'hourly') {
+    params.set('d', hourlyDayKey);
+    if (hourlyDayKey === 'custom') {
+      const v = document.getElementById('hourlyDate').value;
+      if (v) params.set('date', v);
+    }
+  } else {
+    params.set('p', dailyPeriodKey);
+    if (dailyPeriodKey === 'custom') {
+      const a = document.getElementById('dateFrom').value;
+      const b = document.getElementById('dateTo').value;
+      if (a) params.set('from', a);
+      if (b) params.set('to', b);
+    }
+  }
+  params.set('series', ['p','t','n'].filter(k=>seriesOn[k]).join(''));
+  params.set('type', chartType);
+  params.set('layout', chartLayout);
+  if (advancedOpen) params.set('adv', '1');
+  if (tableOpen)    params.set('tbl', '1');
+  return location.origin + location.pathname + '?' + params.toString();
+}
+
+function applyURLParams() {
+  const p = new URLSearchParams(location.search);
+  if (!p.toString()) return;
+
+  const m = p.get('mode');
+  if (m === 'hourly' || m === 'daily') mode = m;
+
+  if (mode === 'hourly') {
+    const d = p.get('d');
+    if (d === 'today' || d === 'yesterday' || d === 'custom') hourlyDayKey = d;
+    if (hourlyDayKey === 'custom' && p.get('date')) {
+      document.getElementById('hourlyDate').value = p.get('date');
+    }
+  } else {
+    const pk = p.get('p');
+    if (pk) dailyPeriodKey = pk;
+    if (dailyPeriodKey === 'custom') {
+      if (p.get('from')) document.getElementById('dateFrom').value = p.get('from');
+      if (p.get('to'))   document.getElementById('dateTo').value   = p.get('to');
+    }
+  }
+
+  const s = p.get('series');
+  if (s !== null) {
+    seriesOn = { p: s.includes('p'), t: s.includes('t'), n: s.includes('n') };
+    if (!seriesOn.p && !seriesOn.t && !seriesOn.n) seriesOn = { p:true, t:true, n:true };
+  }
+  const ty = p.get('type'); if (ty === 'line' || ty === 'bar') chartType = ty;
+  const ly = p.get('layout'); if (ly === 'combined' || ly === 'split') chartLayout = ly;
+  if (p.get('adv') === '1') advancedOpen = true;
+  if (p.get('tbl') === '1') tableOpen = true;
+}
+
+function syncUIFromState() {
+  // モードボタン
+  document.querySelectorAll('#modeSel .tk-modebtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  document.getElementById('hourlyCtrls').style.display = (mode==='hourly') ? 'flex' : 'none';
+  document.getElementById('dailyCtrls').style.display  = (mode==='daily')  ? 'flex' : 'none';
+  // 時別プリセット
+  document.querySelectorAll('#hourlyPbtns .tk-pbtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.day === hourlyDayKey);
+  });
+  document.getElementById('hourlyDate').style.display = (hourlyDayKey==='custom') ? 'inline-block' : 'none';
+  // 日別プリセット
+  document.querySelectorAll('#dailyPbtns .tk-pbtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === dailyPeriodKey);
+  });
+  document.getElementById('dailyCustomRange').style.display = (dailyPeriodKey==='custom') ? 'inline-flex' : 'none';
+  // 系列
+  document.querySelectorAll('#seriesTog button').forEach(b => {
+    b.classList.toggle('active', !!seriesOn[b.dataset.key]);
+  });
+  // type / layout
+  document.querySelectorAll('#typeTog button').forEach(b => b.classList.toggle('active', b.dataset.type === chartType));
+  document.querySelectorAll('#layoutTog button').forEach(b => b.classList.toggle('active', b.dataset.layout === chartLayout));
+  // details
+  document.getElementById('advancedSection').open = advancedOpen;
+  document.getElementById('tableSection').open = tableOpen;
+}
+
+async function copyShareURL() {
+  const url = buildShareURL();
+  try {
+    await navigator.clipboard.writeText(url);
+    showStatus('🔗 URLをコピーしました', 'ok');
+    setTimeout(hideStatus, 2000);
+  } catch {
+    // フォールバック：プロンプト
+    prompt('このURLをコピーしてください', url);
+  }
+  // URLバーも更新（リロードせず）
+  history.replaceState(null, '', url);
 }
 
 // ---------- メイン ----------
@@ -1071,16 +1014,15 @@ async function loadData(force=false) {
 
     const series = buildSeries(days);
     lastSeries = series;
-    const agg = aggregateAll(days);
 
     updateChartTitle(range);
     renderMetrics(days, series);
     renderMainChart(series);
-    // 詳細セクションが開いていれば描画
-    if (document.getElementById('advancedSection').open) {
-      renderAdvanced(series, days, agg);
-    }
+    if (document.getElementById('advancedSection').open) render3DScatter(series);
     renderTable(series);
+
+    // URLを現在の状態に同期（履歴汚さず置換）
+    history.replaceState(null, '', buildShareURL());
 
     document.getElementById('cacheInfo').textContent = `📦 取得 ${fetched}月 / キャッシュ ${cached}月`;
     document.getElementById('lastUpdated').textContent = `最終更新: ${new Date().toLocaleString('ja-JP')}`;
@@ -1094,29 +1036,25 @@ async function loadData(force=false) {
 
 function rerenderOnly() {
   if (lastSeries) renderMainChart(lastSeries);
+  history.replaceState(null, '', buildShareURL());
 }
 
 // ---------- UI ----------
 function initUI() {
-  // モード切替
+  // モード
   document.querySelectorAll('#modeSel .tk-modebtn').forEach(b => {
     b.addEventListener('click', () => {
-      document.querySelectorAll('#modeSel .tk-modebtn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
       mode = b.dataset.mode;
-      document.getElementById('hourlyCtrls').style.display = (mode==='hourly') ? 'flex' : 'none';
-      document.getElementById('dailyCtrls').style.display  = (mode==='daily')  ? 'flex' : 'none';
+      syncUIFromState();
       loadData(false);
     });
   });
 
-  // 時別: 日付プリセット
+  // 時別プリセット
   document.querySelectorAll('#hourlyPbtns .tk-pbtn').forEach(b => {
     b.addEventListener('click', () => {
-      document.querySelectorAll('#hourlyPbtns .tk-pbtn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
       hourlyDayKey = b.dataset.day;
-      document.getElementById('hourlyDate').style.display = (hourlyDayKey==='custom') ? 'inline-block' : 'none';
+      syncUIFromState();
       if (hourlyDayKey !== 'custom') loadData(false);
     });
   });
@@ -1124,13 +1062,11 @@ function initUI() {
     if (hourlyDayKey === 'custom') loadData(false);
   });
 
-  // 日別: 期間プリセット
+  // 日別プリセット
   document.querySelectorAll('#dailyPbtns .tk-pbtn').forEach(b => {
     b.addEventListener('click', () => {
-      document.querySelectorAll('#dailyPbtns .tk-pbtn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
       dailyPeriodKey = b.dataset.period;
-      document.getElementById('dailyCustomRange').style.display = (dailyPeriodKey==='custom') ? 'inline-flex' : 'none';
+      syncUIFromState();
       if (dailyPeriodKey !== 'custom') loadData(false);
     });
   });
@@ -1146,39 +1082,35 @@ function initUI() {
 
   // 日付のデフォルト
   const today = today0();
-  document.getElementById('hourlyDate').value = ymd(today);
+  if (!document.getElementById('hourlyDate').value) {
+    document.getElementById('hourlyDate').value = ymd(today);
+  }
   document.getElementById('hourlyDate').min = DATA_START_DATE;
   document.getElementById('hourlyDate').max = ymd(today);
   const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate()-6);
-  document.getElementById('dateFrom').value = ymd(weekAgo);
-  document.getElementById('dateTo').value   = ymd(today);
+  if (!document.getElementById('dateFrom').value) document.getElementById('dateFrom').value = ymd(weekAgo);
+  if (!document.getElementById('dateTo').value)   document.getElementById('dateTo').value   = ymd(today);
   document.getElementById('dateFrom').min   = DATA_START_DATE;
   document.getElementById('dateTo').min     = DATA_START_DATE;
 
-  // 更新ボタン
+  // 更新
   document.getElementById('reloadBtn').addEventListener('click', () => {
     clearAllCache();
     loadData(true);
   });
 
-  // 系列ON/OFF
+  // 系列
   document.querySelectorAll('#seriesTog button').forEach(b => {
     const k = b.dataset.key;
     b.querySelector('.dot').style.background = COLORS[k];
     b.addEventListener('click', () => {
-      if (k === 'a' && !avgEnabled) {
-        // 無効状態なら何もしない（詳細から有効化が必要）
-        showStatus('「平均レス/ID」は詳細分析セクションから有効化してください', 'warn');
-        setTimeout(hideStatus, 2500);
-        return;
-      }
       seriesOn[k] = !seriesOn[k];
       b.classList.toggle('active', seriesOn[k]);
       rerenderOnly();
     });
   });
 
-  // タイプ切替
+  // タイプ
   document.querySelectorAll('#typeTog button').forEach(b => {
     b.addEventListener('click', () => {
       document.querySelectorAll('#typeTog button').forEach(x => x.classList.remove('active'));
@@ -1188,7 +1120,7 @@ function initUI() {
     });
   });
 
-  // レイアウト切替
+  // レイアウト
   document.querySelectorAll('#layoutTog button').forEach(b => {
     b.addEventListener('click', () => {
       document.querySelectorAll('#layoutTog button').forEach(x => x.classList.remove('active'));
@@ -1202,37 +1134,35 @@ function initUI() {
   // 詳細セクション
   const adv = document.getElementById('advancedSection');
   adv.addEventListener('toggle', () => {
+    advancedOpen = adv.open;
     if (adv.open && lastSeries) {
-      const agg = aggregateAll(lastDays);
-      renderAdvanced(lastSeries, lastDays, agg);
-      setTimeout(() => { Object.values(charts).forEach(c => c.resize()); }, 30);
+      render3DScatter(lastSeries);
     }
-  });
-  // 平均レス/ID 有効化チェック
-  document.getElementById('enableAvg').addEventListener('change', (e) => {
-    avgEnabled = e.target.checked;
-    const aBtn = document.querySelector('#seriesTog button[data-key="a"]');
-    if (avgEnabled) {
-      aBtn.removeAttribute('data-disabled');
-      seriesOn.a = true;
-      aBtn.classList.add('active');
-    } else {
-      aBtn.setAttribute('data-disabled','true');
-      seriesOn.a = false;
-      aBtn.classList.remove('active');
-    }
-    rerenderOnly();
+    history.replaceState(null, '', buildShareURL());
   });
 
-  // データ一覧の折りたたみで再リサイズ（テーブル内には特になし）
-  document.querySelectorAll('details.tk-collapse').forEach(d => {
-    d.addEventListener('toggle', () => {
-      setTimeout(() => { Object.values(charts).forEach(c => c.resize()); }, 30);
-    });
+  // データ一覧
+  const tbl = document.getElementById('tableSection');
+  tbl.addEventListener('toggle', () => {
+    tableOpen = tbl.open;
+    history.replaceState(null, '', buildShareURL());
+  });
+
+  // 共有
+  document.getElementById('shareBtn').addEventListener('click', copyShareURL);
+
+  // ウィンドウリサイズで Plotly を追従
+  window.addEventListener('resize', () => {
+    if (advancedOpen && typeof Plotly !== 'undefined') {
+      Plotly.Plots.resize(document.getElementById('scatter3d'));
+    }
   });
 }
 
+// 起動
+applyURLParams();
 initUI();
+syncUIFromState();
 loadData(false);
 </script>
 </body>
