@@ -127,6 +127,7 @@
 .tk-metric[data-color="orange"] { border-top-color:#f9ab00; }
 .tk-metric[data-color="cyan"]   { border-top-color:#00acc1; }
 .tk-metric[data-color="pink"]   { border-top-color:#e91e63; }
+.tk-metric[data-color="indigo"] { border-top-color:#3f51b5; }
 .tk-metric-icon  { font-size:18px; margin-bottom:2px; }
 .tk-metric-val   { font-size:22px; font-weight:700; color:#202124; line-height:1.2; }
 .tk-metric-label { font-size:10px; color:#70757a; margin-top:2px; }
@@ -420,7 +421,12 @@
       <div class="tk-metric" data-color="purple">
         <div class="tk-metric-icon">📈</div>
         <div class="tk-metric-val" id="mAvgPI">-</div>
-        <div class="tk-metric-label">平均レス/アクティブID</div>
+        <div class="tk-metric-label">平均レス/ID数</div>
+      </div>
+      <div class="tk-metric" data-color="indigo">
+        <div class="tk-metric-icon">🧵</div>
+        <div class="tk-metric-val" id="mAvgTI">-</div>
+        <div class="tk-metric-label">平均スレ立て/ID数</div>
       </div>
       <div class="tk-metric" data-color="teal">
         <div class="tk-metric-icon">🧵</div>
@@ -865,11 +871,6 @@ function renderMainChart(series) {
     opts.scales.yRight.display  = hasRight;
     opts.scales.yRight2.display = hasRight2;
 
-    /* どの右軸がチャートエリア側に来るか調整：
-       両方ある場合 yRight2 を外側にしたいので yRight2 の grid は drawOnChartArea:false のまま、
-       Chart.js は同じ position の軸を並べて配置してくれる */
-
-    /* 左軸が無く右だけの場合、右軸のいずれかでメインのグリッドを描く */
     if (!hasLeft) {
       if (hasRight) {
         opts.scales.yRight.grid = { color: 'rgba(0,0,0,0.06)' };
@@ -878,7 +879,6 @@ function renderMainChart(series) {
       }
     }
 
-    /* パディング調整：右側に軸が増えるほど少し広げる */
     let rightPad = mob ? 4 : 8;
     if (hasRight && hasRight2) rightPad = mob ? 8 : 16;
     opts.layout.padding.right = rightPad;
@@ -987,8 +987,9 @@ function renderMetrics(days, series) {
   document.getElementById('mThreads').textContent = fmtNum(sumT);
   document.getElementById('mIds').textContent     = fmtNum(sumN);
 
-  /* 平均レス/アクティブID, 平均レス/スレ */
-  document.getElementById('mAvgPI').textContent   = sumA>0 ? fmtDec(sumP/sumA, 2) : '-';
+  /* 平均レス/ID数, 平均スレ立て/ID数, 平均レス/スレ */
+  document.getElementById('mAvgPI').textContent   = sumN>0 ? fmtDec(sumP/sumN, 2) : '-';
+  document.getElementById('mAvgTI').textContent   = sumN>0 ? fmtDec(sumT/sumN, 2) : '-';
   document.getElementById('mAvgPT').textContent   = sumT>0 ? fmtDec(sumP/sumT, 2) : '-';
 
   /* アクティブID 平均（時別=1h平均, 日別=1日平均） */
@@ -996,9 +997,7 @@ function renderMetrics(days, series) {
   const unit = (mode === 'hourly') ? '1h平均' : '1日平均';
   document.getElementById('mAvgA').textContent = fmtDec(sumA/n, 1);
   document.getElementById('mAvgALabel').textContent = (mode === 'hourly') ? '平均アクティブID/h' : '平均アクティブID/日';
-  document.getElementById('mAvgASub').textContent  = (mode === 'hourly')
-    ? `最大 ${fmtNum(Math.max(...series.a))}`
-    : `最大 ${fmtNum(Math.max(...series.a))}`;
+  document.getElementById('mAvgASub').textContent  = `最大 ${fmtNum(Math.max(...series.a))}`;
 
   let peak=0, peakV=-1;
   series.p.forEach((v,i)=>{ if (v>peakV){peakV=v;peak=i;} });
