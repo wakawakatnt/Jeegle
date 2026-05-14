@@ -301,3 +301,17 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   background: #e8f0fe;
   border-color: #1a73e8;
 }
+/* ===== 統計リンク ===== */
+.ranking-link-wrap {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.toukei-link-btn {
+  background: linear-gradient(135deg, #fbbc05, #ea4335) !important;
+  box-shadow: 0 2px 8px rgba(234, 67, 53, 0.25) !important;
+}
+.toukei-link-btn:hover {
+  box-shadow: 0 4px 14px rgba(234, 67, 53, 0.35) !important;
+}
