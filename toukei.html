@@ -417,12 +417,6 @@
         <div class="tk-metric-label">新規ID数</div>
         <div class="tk-metric-sub" id="mIdsSub"></div>
       </div>
-      <div class="tk-metric" data-color="green">
-        <div class="tk-metric-icon">👥</div>
-        <div class="tk-metric-val" id="mActive">-</div>
-        <div class="tk-metric-label" id="mActiveLabel">アクティブID</div>
-        <div class="tk-metric-sub" id="mActiveSub"></div>
-      </div>
       <div class="tk-metric" data-color="purple">
         <div class="tk-metric-icon">📈</div>
         <div class="tk-metric-val" id="mAvgPI">-</div>
@@ -432,6 +426,12 @@
         <div class="tk-metric-icon">🧵</div>
         <div class="tk-metric-val" id="mAvgPT">-</div>
         <div class="tk-metric-label">平均レス/スレ</div>
+      </div>
+      <div class="tk-metric" data-color="green">
+        <div class="tk-metric-icon">👥</div>
+        <div class="tk-metric-val" id="mAvgA">-</div>
+        <div class="tk-metric-label" id="mAvgALabel">平均アクティブID</div>
+        <div class="tk-metric-sub" id="mAvgASub"></div>
       </div>
       <div class="tk-metric" data-color="orange">
         <div class="tk-metric-icon">🔥</div>
@@ -549,7 +549,7 @@
 const FIREBASE_PROJECT_ID = 'itiran-be2af';
 const FIREBASE_API_KEY    = 'AIzaSyCasS3f9WJ26Dkk1B8_NrMFI2S-rahwMiM';
 const DATA_START_DATE     = '2026-05-14';
-const CACHE_VER           = 'v2';   /* a フィールド対応で v2 にバンプ */
+const CACHE_VER           = 'v2';
 const CACHE_KEY_PREFIX    = `jeegle_stats_${CACHE_VER}_`;
 const CURRENT_MONTH_TTL   = 5 * 60 * 1000;
 const PAST_MONTH_TTL      = 7 * 24 * 60 * 60 * 1000;
@@ -770,7 +770,7 @@ function baseOpts(opts={}) {
   const mob = isMobile();
   return Object.assign({
     responsive:true, maintainAspectRatio:false,
-    layout: { padding: { top: 4, right: mob ? 4 : 60, bottom: 4, left: 0 } },
+    layout: { padding: { top: 4, right: mob ? 4 : 8, bottom: 4, left: 0 } },
     plugins: {
       legend: { position:'top', align:'end',
         labels:{ boxWidth:10, padding: mob ? 6 : 10, font:{size: mob ? 10 : 11} } },
@@ -778,19 +778,38 @@ function baseOpts(opts={}) {
     },
     interaction: { mode:'index', intersect:false },
     scales: {
+      /* レス数（大きい値） */
       yLeft: {
         type: 'linear', position: 'left', beginAtZero: true,
-        ticks: { precision:0, font:{ size: mob ? 9 : 11 }, maxTicksLimit: mob ? 6 : 11 },
+        ticks: {
+          precision:0, font:{ size: mob ? 9 : 11 }, maxTicksLimit: mob ? 6 : 11,
+          color: COLORS.p
+        },
         grid: { color: 'rgba(0,0,0,0.06)' },
         title: { display: false },
-        afterFit: function(scale){ if (mob) scale.width = 32; }
+        afterFit: function(scale){ if (mob) scale.width = 38; }
       },
+      /* スレ立て・新規ID（中ぐらい） */
       yRight: {
         type: 'linear', position: 'right', beginAtZero: true,
-        ticks: { precision:0, font:{ size: mob ? 9 : 11 }, maxTicksLimit: mob ? 6 : 11 },
+        ticks: {
+          precision:0, font:{ size: mob ? 9 : 11 }, maxTicksLimit: mob ? 6 : 11,
+          color: COLORS.t
+        },
         grid: { drawOnChartArea: false },
         title: { display: false },
-        afterFit: function(scale){ if (mob) scale.width = 28; }
+        afterFit: function(scale){ if (mob) scale.width = 30; }
+      },
+      /* アクティブID（独立軸） */
+      yRight2: {
+        type: 'linear', position: 'right', beginAtZero: true,
+        ticks: {
+          precision:0, font:{ size: mob ? 9 : 11 }, maxTicksLimit: mob ? 6 : 11,
+          color: COLORS.a
+        },
+        grid: { drawOnChartArea: false },
+        title: { display: false },
+        afterFit: function(scale){ if (mob) scale.width = 30; }
       },
       x: {
         ticks: { font:{ size: mob ? 9 : 11 }, autoSkip:true, maxRotation: mob ? 0 : 50, minRotation: 0 }
@@ -803,8 +822,10 @@ function makeDataset(key, data, type) {
   const mob = isMobile();
   const color = COLORS[key];
   const base = { label: LABELS[key], data, borderColor: color };
-  /* p, a → 左軸（数値スケールが大きい）  t, n → 右軸 */
-  const yAxisID = (key === 'p' || key === 'a') ? 'yLeft' : 'yRight';
+  /* 軸の割り当て: p=左, t/n=右, a=右2 */
+  let yAxisID = 'yRight';
+  if (key === 'p') yAxisID = 'yLeft';
+  else if (key === 'a') yAxisID = 'yRight2';
   if (type === 'line') {
     return Object.assign(base, {
       type:'line', backgroundColor: color+'33', fill:false,
@@ -834,20 +855,33 @@ function renderMainChart(series) {
     const ctx = document.getElementById('mainChart');
     if (!ctx) return;
 
-    const hasLeft  = keys.includes('p') || keys.includes('a');
-    const hasRight = keys.includes('t') || keys.includes('n');
     const mob = isMobile();
+    const hasLeft   = keys.includes('p');
+    const hasRight  = keys.includes('t') || keys.includes('n');
+    const hasRight2 = keys.includes('a');
 
     const opts = baseOpts();
-    opts.scales.yLeft.display  = hasLeft;
-    opts.scales.yRight.display = hasRight;
-    if (!hasLeft && hasRight) {
-      opts.scales.yRight.grid = { color: 'rgba(0,0,0,0.06)' };
-      opts.layout.padding.right = mob ? 4 : 4;
+    opts.scales.yLeft.display   = hasLeft;
+    opts.scales.yRight.display  = hasRight;
+    opts.scales.yRight2.display = hasRight2;
+
+    /* どの右軸がチャートエリア側に来るか調整：
+       両方ある場合 yRight2 を外側にしたいので yRight2 の grid は drawOnChartArea:false のまま、
+       Chart.js は同じ position の軸を並べて配置してくれる */
+
+    /* 左軸が無く右だけの場合、右軸のいずれかでメインのグリッドを描く */
+    if (!hasLeft) {
+      if (hasRight) {
+        opts.scales.yRight.grid = { color: 'rgba(0,0,0,0.06)' };
+      } else if (hasRight2) {
+        opts.scales.yRight2.grid = { color: 'rgba(0,0,0,0.06)' };
+      }
     }
-    if (!hasRight) {
-      opts.layout.padding.right = mob ? 4 : 4;
-    }
+
+    /* パディング調整：右側に軸が増えるほど少し広げる */
+    let rightPad = mob ? 4 : 8;
+    if (hasRight && hasRight2) rightPad = mob ? 8 : 16;
+    opts.layout.padding.right = rightPad;
 
     charts['mainChart'] = new Chart(ctx.getContext('2d'), {
       data: { labels: series.labels, datasets },
@@ -895,7 +929,6 @@ function render3DScatter(series) {
   if (!target || typeof Plotly === 'undefined') return;
 
   const labels = series.labels;
-  /* X=アクティブID(a)、Y=スレ立て(t)、Z=レス(p)。新規IDはホバーに含める */
   const xs = series.a;
   const ys = series.t;
   const zs = series.p;
@@ -953,10 +986,19 @@ function renderMetrics(days, series) {
   document.getElementById('mPosts').textContent   = fmtNum(sumP);
   document.getElementById('mThreads').textContent = fmtNum(sumT);
   document.getElementById('mIds').textContent     = fmtNum(sumN);
-  document.getElementById('mActive').textContent  = fmtNum(sumA);
-  /* 平均レス/アクティブID（より意味のある指標） */
+
+  /* 平均レス/アクティブID, 平均レス/スレ */
   document.getElementById('mAvgPI').textContent   = sumA>0 ? fmtDec(sumP/sumA, 2) : '-';
   document.getElementById('mAvgPT').textContent   = sumT>0 ? fmtDec(sumP/sumT, 2) : '-';
+
+  /* アクティブID 平均（時別=1h平均, 日別=1日平均） */
+  const n = (mode === 'hourly') ? 24 : (days.length || 1);
+  const unit = (mode === 'hourly') ? '1h平均' : '1日平均';
+  document.getElementById('mAvgA').textContent = fmtDec(sumA/n, 1);
+  document.getElementById('mAvgALabel').textContent = (mode === 'hourly') ? '平均アクティブID/h' : '平均アクティブID/日';
+  document.getElementById('mAvgASub').textContent  = (mode === 'hourly')
+    ? `最大 ${fmtNum(Math.max(...series.a))}`
+    : `最大 ${fmtNum(Math.max(...series.a))}`;
 
   let peak=0, peakV=-1;
   series.p.forEach((v,i)=>{ if (v>peakV){peakV=v;peak=i;} });
@@ -982,12 +1024,9 @@ function renderMetrics(days, series) {
       days.length>0 ? `${days[0].date}〜${days[days.length-1].date}` : '';
   }
 
-  const n = (mode === 'hourly') ? 24 : (days.length || 1);
-  const unit = (mode === 'hourly') ? '1h平均' : '1日平均';
   document.getElementById('mPostsSub').textContent   = `${unit} ${fmtDec(sumP/n,1)}`;
   document.getElementById('mThreadsSub').textContent = `${unit} ${fmtDec(sumT/n,1)}`;
   document.getElementById('mIdsSub').textContent     = `${unit} ${fmtDec(sumN/n,1)}`;
-  document.getElementById('mActiveSub').textContent  = `${unit} ${fmtDec(sumA/n,1)}`;
 }
 
 function renderTable(series) {
@@ -1007,11 +1046,13 @@ function renderTable(series) {
   const sumP = series.p.reduce((a,b)=>a+b,0);
   const sumT = series.t.reduce((a,b)=>a+b,0);
   const sumN = series.n.reduce((a,b)=>a+b,0);
-  const sumA = series.a.reduce((a,b)=>a+b,0);
   document.getElementById('ftPosts').textContent   = fmtNum(sumP);
   document.getElementById('ftThreads').textContent = fmtNum(sumT);
   document.getElementById('ftIds').textContent     = fmtNum(sumN);
-  document.getElementById('ftActive').textContent  = fmtNum(sumA);
+  /* アクティブIDは合計に意味がないので、平均を表示 */
+  const nN = series.a.length || 1;
+  const avgA = series.a.reduce((a,b)=>a+b,0) / nN;
+  document.getElementById('ftActive').textContent  = `平均 ${fmtDec(avgA,1)}`;
 }
 
 function updateChartTitle(range) {
