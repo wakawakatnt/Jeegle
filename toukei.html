@@ -260,7 +260,8 @@
   .tk-header-actions { gap:6px; }
   .rk-share-btn, .tk-header-link { padding:3px 9px; font-size:11px; }
 
-  .tk-body { padding:10px 8px 40px; }
+  /* 本文の左右余白を極小化してグラフを画面いっぱいに */
+  .tk-body { padding:8px 4px 40px; }
 
   /* モード選択：縦並び風コンパクト */
   .tk-modesel { gap:6px; margin-bottom:10px; }
@@ -288,30 +289,40 @@
   .tk-metric-label { font-size:10px; }
   .tk-metric-sub { font-size:9px; }
 
-  /* カード余白を縮める */
-  .tk-card { padding:10px 12px; }
-  .tk-card-head { gap:6px; }
+  /* カード余白を極小化 → グラフ領域を最大化 */
+  .tk-card { padding:10px 6px; border-radius:8px; }
+  .tk-card-head { gap:6px; padding:0 4px; margin-bottom:8px; }
   .tk-card-tools { width:100%; gap:6px; }
   .tk-card-title { font-size:12px; }
   .tk-card-title-sub { font-size:10px; display:block; margin-left:0; margin-top:2px; }
 
-  /* グラフ高さ */
-  .tk-chart-wrap { height:320px; padding:6px 4px 26px; }
-  .tk-chart-wrap > canvas {
-    top:6px; left:4px; right:4px; bottom:26px;
-    width:calc(100% - 8px) !important; height:calc(100% - 32px) !important;
+  /* グラフ：画面の縦をしっかり使う + 左右パディング極小 */
+  .tk-chart-wrap {
+    height:60vh; min-height:380px; max-height:560px;
+    padding:4px 0 24px;
   }
-  .tk-chart-wrap.tall { height:360px; padding-bottom:28px; }
-  .tk-chart-wrap.tall > canvas { bottom:28px; height:calc(100% - 34px) !important; }
-  .tk-split .tk-chart-wrap { height:240px; }
+  .tk-chart-wrap > canvas {
+    top:4px; left:0; right:0; bottom:24px;
+    width:100% !important; height:calc(100% - 28px) !important;
+  }
+  .tk-chart-wrap.tall {
+    height:65vh; min-height:420px; max-height:620px;
+    padding-bottom:26px;
+  }
+  .tk-chart-wrap.tall > canvas {
+    bottom:26px; height:calc(100% - 30px) !important;
+  }
+  .tk-split { gap:8px; }
+  .tk-split .tk-chart-wrap { height:42vh; min-height:260px; max-height:360px; }
+  .tk-split-card { padding:6px 4px; }
 
   /* 3D */
-  .tk-3d-wrap { height:400px; padding:4px; }
+  .tk-3d-wrap { height:55vh; min-height:380px; padding:4px; }
 
   /* テーブル：横スクロール時に詰める */
   .tk-table th, .tk-table td { padding:6px 8px; font-size:11px; }
   .tk-collapse > .tk-collapse-head { padding:12px 12px; }
-  .tk-collapse-body { padding:0 10px 12px; }
+  .tk-collapse-body { padding:0 6px 12px; }
 }
 
 @media (max-width:420px) {
@@ -319,8 +330,19 @@
   .tk-header-title { display:none; }
   .tk-modebtn .sub { display:none; }
   .tk-metric-val { font-size:16px; }
-  .tk-chart-wrap { height:280px; }
-  .tk-chart-wrap.tall { height:320px; }
+  .tk-body { padding:6px 2px 40px; }
+  .tk-card { padding:8px 4px; }
+  .tk-chart-wrap { height:62vh; min-height:360px; padding:2px 0 22px; }
+  .tk-chart-wrap > canvas { bottom:22px; height:calc(100% - 24px) !important; }
+  .tk-chart-wrap.tall { height:68vh; min-height:400px; padding-bottom:24px; }
+  .tk-chart-wrap.tall > canvas { bottom:24px; height:calc(100% - 26px) !important; }
+}
+
+/* 横向き（landscape）スマホでは縦を使えないので少し抑える */
+@media (max-width:900px) and (orientation:landscape) {
+  .tk-chart-wrap { height:80vh; min-height:280px; }
+  .tk-chart-wrap.tall { height:85vh; min-height:300px; }
+  .tk-3d-wrap { height:80vh; min-height:300px; }
 }
 </style>
 </head>
@@ -561,6 +583,9 @@ const COLORS = {
 };
 const LABELS = { p:'レス数', t:'スレ立て数', n:'新規ID数' };
 
+// モバイル判定（描画オプション調整用）
+const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+
 // 状態
 const monthCache = new Map();
 const charts = {};
@@ -770,12 +795,13 @@ function aggregateAll(days) {
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
 function baseOpts(opts={}) {
+  const mob = isMobile();
   return Object.assign({
     responsive:true, maintainAspectRatio:false,
-    layout: { padding: { top: 4, right: 60, bottom: 4, left: 4 } },
+    layout: { padding: { top: 4, right: mob ? 4 : 60, bottom: 4, left: 0 } },
     plugins: {
       legend: { position:'top', align:'end',
-        labels:{ boxWidth:12, padding:10, font:{size:11} } },
+        labels:{ boxWidth:10, padding: mob ? 6 : 10, font:{size: mob ? 10 : 11} } },
       tooltip: { mode:'index', intersect:false, padding:8, cornerRadius:6 }
     },
     interaction: { mode:'index', intersect:false },
@@ -784,24 +810,29 @@ function baseOpts(opts={}) {
         type: 'linear',
         position: 'left',
         beginAtZero: true,
-        ticks: { precision:0 },
+        ticks: { precision:0, font:{ size: mob ? 9 : 11 }, maxTicksLimit: mob ? 6 : 11 },
         grid: { color: 'rgba(0,0,0,0.06)' },
         title: { display: false },
+        afterFit: function(scale){ if (mob) scale.width = 32; }
       },
       yRight: {
         type: 'linear',
         position: 'right',
         beginAtZero: true,
-        ticks: { precision:0 },
+        ticks: { precision:0, font:{ size: mob ? 9 : 11 }, maxTicksLimit: mob ? 6 : 11 },
         grid: { drawOnChartArea: false },
         title: { display: false },
+        afterFit: function(scale){ if (mob) scale.width = 28; }
       },
-      x: {}
+      x: {
+        ticks: { font:{ size: mob ? 9 : 11 }, autoSkip:true, maxRotation: mob ? 0 : 50, minRotation: 0 }
+      }
     }
   }, opts);
 }
 
 function makeDataset(key, data, type) {
+  const mob = isMobile();
   const color = COLORS[key];
   const base = { label: LABELS[key], data, borderColor: color };
   // レス数は左Y軸、スレ立て・新規IDは右Y軸
@@ -809,7 +840,10 @@ function makeDataset(key, data, type) {
   if (type === 'line') {
     return Object.assign(base, {
       type:'line', backgroundColor: color+'33', fill:false,
-      tension:0.3, pointRadius:3, pointHoverRadius:5, borderWidth:2,
+      tension:0.3,
+      pointRadius: mob ? 2 : 3,
+      pointHoverRadius: mob ? 4 : 5,
+      borderWidth:2,
       yAxisID
     });
   } else {
@@ -835,6 +869,7 @@ function renderMainChart(series) {
     // アクティブな系列に応じてY軸表示を制御
     const hasLeft  = keys.includes('p');
     const hasRight = keys.includes('t') || keys.includes('n');
+    const mob = isMobile();
 
     const opts = baseOpts();
     opts.scales.yLeft.display  = hasLeft;
@@ -842,10 +877,10 @@ function renderMainChart(series) {
     // 右軸しかない場合は右軸をチャートエリア内グリッドも描く
     if (!hasLeft && hasRight) {
       opts.scales.yRight.grid = { color: 'rgba(0,0,0,0.06)' };
-      opts.layout.padding.right = 4;
+      opts.layout.padding.right = mob ? 4 : 4;
     }
     if (!hasRight) {
-      opts.layout.padding.right = 4;
+      opts.layout.padding.right = mob ? 4 : 4;
     }
 
     charts['mainChart'] = new Chart(ctx.getContext('2d'), {
@@ -854,6 +889,7 @@ function renderMainChart(series) {
     });
   } else {
     // 分割表示：各グラフは単一系列なのでシンプルなY軸
+    const mob = isMobile();
     ['p','t','n'].forEach(k => {
       const id = 'split' + k.toUpperCase();
       destroyChart(id);
@@ -871,12 +907,19 @@ function renderMainChart(series) {
         data: { labels: series.labels, datasets: [ds] },
         options: {
           responsive:true, maintainAspectRatio:false,
-          layout: { padding: { top:4, right:10, bottom:4, left:4 } },
+          layout: { padding: { top:4, right: mob ? 4 : 10, bottom:4, left:0 } },
           plugins: {
             legend: { display:false },
             tooltip: { mode:'index', intersect:false, padding:8, cornerRadius:6 }
           },
-          scales: { y: { beginAtZero:true, ticks:{ precision:0 } } }
+          scales: {
+            y: {
+              beginAtZero:true,
+              ticks:{ precision:0, font:{size: mob ? 9 : 11}, maxTicksLimit: mob ? 6 : 11 },
+              afterFit: function(scale){ if (mob) scale.width = 32; }
+            },
+            x: { ticks:{ font:{size: mob ? 9 : 11}, autoSkip:true, maxRotation: mob ? 0 : 50 } }
+          }
         }
       });
     });
@@ -1298,11 +1341,17 @@ function initUI() {
   // 共有ボタン（ranking.html と同じ動作）
   document.getElementById('shareBtn').addEventListener('click', copyShareURL);
 
-  // ウィンドウリサイズで Plotly を追従
+  // ウィンドウリサイズで Plotly を追従 & Chart も再描画
+  let resizeTimer;
   window.addEventListener('resize', () => {
-    if (advancedOpen && typeof Plotly !== 'undefined') {
-      Plotly.Plots.resize(document.getElementById('scatter3d'));
-    }
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (advancedOpen && typeof Plotly !== 'undefined') {
+        Plotly.Plots.resize(document.getElementById('scatter3d'));
+      }
+      // 画面サイズが変わったらモバイル⇔PC切り替えの可能性があるので再描画
+      if (lastSeries) rerenderOnly();
+    }, 150);
   });
 }
 
