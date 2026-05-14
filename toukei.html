@@ -29,7 +29,7 @@
 .tk-logo span:nth-child(6){color:#EA4335}
 .tk-logo span:nth-child(7){color:#FBBC05}
 .tk-header-title { font-size:15px; font-weight:700; color:#202124; }
-.tk-header-actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
+.tk-header-actions { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
 
 /* ===== 共有ボタン（ranking.html と統一） ===== */
 .rk-share-btn {
@@ -43,6 +43,7 @@
   font-size:12px; color:#5f6368; text-decoration:none;
   border:1px solid #dadce0; border-radius:16px; padding:4px 12px;
   background:#fff; font-family:inherit; cursor:pointer;
+  white-space:nowrap;
 }
 .tk-header-link:hover { background:#f1f3f4; }
 
@@ -211,7 +212,7 @@
 .tk-split-card .ttl .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
 
 /* テーブル */
-.tk-table-wrap { overflow-x:auto; }
+.tk-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .tk-table { width:100%; border-collapse:collapse; font-size:12px; }
 .tk-table th, .tk-table td {
   padding:7px 10px; text-align:right; border-bottom:1px solid #f1f3f4; white-space:nowrap;
@@ -251,21 +252,75 @@
 
 .tk-last-updated { font-size:11px; color:#9aa0a6; text-align:right; margin-top:8px; }
 
+/* ============== スマホ対応 ============== */
 @media (max-width:768px) {
-  .tk-header { padding:8px 10px; gap:6px; }
+  .tk-header { padding:8px 10px; gap:6px; flex-wrap:wrap; }
   .tk-logo { font-size:20px; }
   .tk-header-title { font-size:12px; }
+  .tk-header-actions { gap:6px; }
+  .rk-share-btn, .tk-header-link { padding:3px 9px; font-size:11px; }
+
   .tk-body { padding:10px 8px 40px; }
-  .tk-metric-val { font-size:18px; }
-  .tk-chart-wrap { height:340px; padding-bottom:28px; }
-  .tk-chart-wrap > canvas { bottom:28px; height:calc(100% - 36px) !important; }
-  .tk-chart-wrap.tall { height:380px; padding-bottom:28px; }
-  .tk-chart-wrap.tall > canvas { bottom:28px; height:calc(100% - 36px) !important; }
-  .tk-3d-wrap { height:420px; }
-  .tk-modebtn { padding:10px 12px; }
+
+  /* モード選択：縦並び風コンパクト */
+  .tk-modesel { gap:6px; margin-bottom:10px; }
+  .tk-modebtn { padding:10px 10px; gap:8px; border-radius:10px; }
   .tk-modebtn .ic { font-size:20px; }
   .tk-modebtn .ttl { font-size:13px; }
   .tk-modebtn .sub { font-size:10px; }
+
+  /* コントロール：縦に積む */
+  .tk-controls { padding:10px; gap:8px; flex-direction:column; align-items:stretch; }
+  .tk-ctrl-group { width:100%; }
+  .tk-ctrl-group[style*="margin-left:auto"],
+  .tk-ctrl-group[style*="margin-left: auto"] { margin-left:0 !important; justify-content:space-between; }
+  .tk-pbtns { flex:1; }
+  .tk-pbtn { padding:6px 10px; font-size:12px; flex:1 1 auto; text-align:center; min-width:60px; }
+  .tk-date-input { flex:1; min-width:0; }
+  #dailyCustomRange { flex-wrap:wrap; width:100%; }
+  #dailyCustomRange .tk-date-input { flex:1 1 40%; }
+
+  /* メトリクス：2列で詰める */
+  .tk-metrics { grid-template-columns:repeat(2, 1fr); gap:6px; }
+  .tk-metric { padding:10px 8px; }
+  .tk-metric-val { font-size:18px; }
+  .tk-metric-icon { font-size:16px; }
+  .tk-metric-label { font-size:10px; }
+  .tk-metric-sub { font-size:9px; }
+
+  /* カード余白を縮める */
+  .tk-card { padding:10px 12px; }
+  .tk-card-head { gap:6px; }
+  .tk-card-tools { width:100%; gap:6px; }
+  .tk-card-title { font-size:12px; }
+  .tk-card-title-sub { font-size:10px; display:block; margin-left:0; margin-top:2px; }
+
+  /* グラフ高さ */
+  .tk-chart-wrap { height:320px; padding:6px 4px 26px; }
+  .tk-chart-wrap > canvas {
+    top:6px; left:4px; right:4px; bottom:26px;
+    width:calc(100% - 8px) !important; height:calc(100% - 32px) !important;
+  }
+  .tk-chart-wrap.tall { height:360px; padding-bottom:28px; }
+  .tk-chart-wrap.tall > canvas { bottom:28px; height:calc(100% - 34px) !important; }
+  .tk-split .tk-chart-wrap { height:240px; }
+
+  /* 3D */
+  .tk-3d-wrap { height:400px; padding:4px; }
+
+  /* テーブル：横スクロール時に詰める */
+  .tk-table th, .tk-table td { padding:6px 8px; font-size:11px; }
+  .tk-collapse > .tk-collapse-head { padding:12px 12px; }
+  .tk-collapse-body { padding:0 10px 12px; }
+}
+
+@media (max-width:420px) {
+  .tk-logo { font-size:18px; }
+  .tk-header-title { display:none; }
+  .tk-modebtn .sub { display:none; }
+  .tk-metric-val { font-size:16px; }
+  .tk-chart-wrap { height:280px; }
+  .tk-chart-wrap.tall { height:320px; }
 }
 </style>
 </head>
@@ -938,13 +993,11 @@ function renderTable(series) {
   body.innerHTML = '';
   for (let i = 0; i < series.labels.length; i++) {
     const tr = document.createElement('tr');
-    const avg = series.n[i] > 0 ? series.p[i]/series.n[i] : null;
     tr.innerHTML = `
       <td>${series.labels[i]}</td>
       <td>${fmtNum(series.p[i])}</td>
       <td>${fmtNum(series.t[i])}</td>
-      <td>${fmtNum(series.n[i])}</td>
-      <td>${avg!=null?fmtDec(avg,2):'-'}</td>`;
+      <td>${fmtNum(series.n[i])}</td>`;
     body.appendChild(tr);
   }
   const sumP = series.p.reduce((a,b)=>a+b,0);
