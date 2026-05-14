@@ -953,7 +953,6 @@ function renderTable(series) {
   document.getElementById('ftPosts').textContent   = fmtNum(sumP);
   document.getElementById('ftThreads').textContent = fmtNum(sumT);
   document.getElementById('ftIds').textContent     = fmtNum(sumN);
-  document.getElementById('ftAvgPI').textContent   = sumN>0 ? fmtDec(sumP/sumN, 2) : '-';
 }
 
 function updateChartTitle(range) {
