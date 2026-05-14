@@ -126,6 +126,7 @@
 .tk-metric[data-color="teal"]   { border-top-color:#00897b; }
 .tk-metric[data-color="orange"] { border-top-color:#f9ab00; }
 .tk-metric[data-color="cyan"]   { border-top-color:#00acc1; }
+.tk-metric[data-color="pink"]   { border-top-color:#e91e63; }
 .tk-metric-icon  { font-size:18px; margin-bottom:2px; }
 .tk-metric-val   { font-size:22px; font-weight:700; color:#202124; line-height:1.2; }
 .tk-metric-label { font-size:10px; color:#70757a; margin-top:2px; }
@@ -155,6 +156,7 @@
 .tk-series button[data-key="p"].active { background:#4285F4; }
 .tk-series button[data-key="t"].active { background:#EA4335; }
 .tk-series button[data-key="n"].active { background:#FBBC05; color:#3c4043; }
+.tk-series button[data-key="a"].active { background:#34A853; }
 
 .tk-tog {
   display:inline-flex; background:#f1f3f4; border-radius:14px; padding:2px; gap:2px;
@@ -278,7 +280,6 @@
   .tk-card-title { font-size:12px; }
   .tk-card-title-sub { font-size:10px; display:block; margin-left:0; margin-top:2px; }
 
-  /* グラフ高さをさらに圧縮 */
   .tk-chart-wrap {
     height:240px;
     padding:4px 0 24px;
@@ -413,18 +414,19 @@
       <div class="tk-metric" data-color="yellow">
         <div class="tk-metric-icon">🆔</div>
         <div class="tk-metric-val" id="mIds">-</div>
-        <div class="tk-metric-label">ID数</div>
+        <div class="tk-metric-label">新規ID数</div>
         <div class="tk-metric-sub" id="mIdsSub"></div>
       </div>
       <div class="tk-metric" data-color="green">
-        <div class="tk-metric-icon">📈</div>
-        <div class="tk-metric-val" id="mAvgPI">-</div>
-        <div class="tk-metric-label">平均レス/ID</div>
+        <div class="tk-metric-icon">👥</div>
+        <div class="tk-metric-val" id="mActive">-</div>
+        <div class="tk-metric-label" id="mActiveLabel">アクティブID</div>
+        <div class="tk-metric-sub" id="mActiveSub"></div>
       </div>
       <div class="tk-metric" data-color="purple">
-        <div class="tk-metric-icon">🌱</div>
-        <div class="tk-metric-val" id="mAvgTI">-</div>
-        <div class="tk-metric-label">平均スレ/ID</div>
+        <div class="tk-metric-icon">📈</div>
+        <div class="tk-metric-val" id="mAvgPI">-</div>
+        <div class="tk-metric-label">平均レス/アクティブID</div>
       </div>
       <div class="tk-metric" data-color="teal">
         <div class="tk-metric-icon">🧵</div>
@@ -456,6 +458,7 @@
             <button class="active" data-key="p"><span class="dot"></span>レス</button>
             <button class="active" data-key="t"><span class="dot"></span>スレ立て</button>
             <button class="active" data-key="n"><span class="dot"></span>新規ID</button>
+            <button class="active" data-key="a"><span class="dot"></span>アクティブID</button>
           </div>
           <div class="tk-tog" id="typeTog">
             <button class="active" data-type="line">折れ線</button>
@@ -485,6 +488,10 @@
           <div class="ttl"><span class="dot" style="background:#FBBC05"></span>新規ID数</div>
           <div class="tk-chart-wrap"><canvas id="splitN"></canvas></div>
         </div>
+        <div class="tk-split-card">
+          <div class="ttl"><span class="dot" style="background:#34A853"></span>アクティブID数</div>
+          <div class="tk-chart-wrap"><canvas id="splitA"></canvas></div>
+        </div>
       </div>
     </div>
 
@@ -502,6 +509,7 @@
                 <th>レス数</th>
                 <th>スレ立て</th>
                 <th>新規ID</th>
+                <th>アクティブID</th>
               </tr>
             </thead>
             <tbody id="statsTableBody"></tbody>
@@ -511,6 +519,7 @@
                 <td id="ftPosts">-</td>
                 <td id="ftThreads">-</td>
                 <td id="ftIds">-</td>
+                <td id="ftActive">-</td>
               </tr>
             </tfoot>
           </table>
@@ -525,7 +534,7 @@
       </summary>
       <div class="tk-collapse-body">
         <div class="tk-card-head">
-          <span class="tk-card-title-sub">X=新規ID数 / Y=スレ立て数 / Z=レス数 — 1点=各区分（時 or 日）</span>
+          <span class="tk-card-title-sub">X=アクティブID数 / Y=スレ立て数 / Z=レス数 — 1点=各区分（時 or 日）</span>
         </div>
         <div class="tk-3d-wrap" id="scatter3d"></div>
         <div class="tk-3d-help">🖱️ ドラッグで回転 / ホイールで拡大 / ダブルクリックでリセット</div>
@@ -540,7 +549,7 @@
 const FIREBASE_PROJECT_ID = 'itiran-be2af';
 const FIREBASE_API_KEY    = 'AIzaSyCasS3f9WJ26Dkk1B8_NrMFI2S-rahwMiM';
 const DATA_START_DATE     = '2026-05-14';
-const CACHE_VER           = 'v1';
+const CACHE_VER           = 'v2';   /* a フィールド対応で v2 にバンプ */
 const CACHE_KEY_PREFIX    = `jeegle_stats_${CACHE_VER}_`;
 const CURRENT_MONTH_TTL   = 5 * 60 * 1000;
 const PAST_MONTH_TTL      = 7 * 24 * 60 * 60 * 1000;
@@ -549,8 +558,8 @@ Chart.defaults.font.family = "'Hiragino Kaku Gothic ProN','ヒラギノ角ゴ Pr
 Chart.defaults.font.size = 11;
 Chart.defaults.color = '#3c4043';
 
-const COLORS = { p: '#4285F4', t: '#EA4335', n: '#FBBC05' };
-const LABELS = { p:'レス数', t:'スレ立て数', n:'新規ID数' };
+const COLORS = { p: '#4285F4', t: '#EA4335', n: '#FBBC05', a: '#34A853' };
+const LABELS = { p:'レス数', t:'スレ立て数', n:'新規ID数', a:'アクティブID数' };
 
 const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
 
@@ -563,7 +572,7 @@ let dailyPeriodKey = '7days';
 let dailyFrom = '', dailyTo = '';
 let chartType = 'line';
 let chartLayout = 'combined';
-let seriesOn = { p:true, t:true, n:true };
+let seriesOn = { p:true, t:true, n:true, a:true };
 let advancedOpen = false;
 let tableOpen = false;
 
@@ -622,7 +631,7 @@ function clearAllCache() {
   try {
     for (let i = localStorage.length-1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(CACHE_KEY_PREFIX)) localStorage.removeItem(k);
+      if (k && (k.startsWith(CACHE_KEY_PREFIX) || k.startsWith('jeegle_stats_'))) localStorage.removeItem(k);
     }
   } catch {}
 }
@@ -678,13 +687,15 @@ async function loadRange(fromDate, toDate, force=false) {
     const p24 = (day && Array.isArray(day.p)) ? day.p.map(x=>Number(x)||0) : new Array(24).fill(0);
     const t24 = (day && Array.isArray(day.t)) ? day.t.map(x=>Number(x)||0) : new Array(24).fill(0);
     const n24 = (day && Array.isArray(day.n)) ? day.n.map(x=>Number(x)||0) : new Array(24).fill(0);
+    const a24 = (day && Array.isArray(day.a)) ? day.a.map(x=>Number(x)||0) : new Array(24).fill(0);
     const h   = (day && day.h != null) ? Number(day.h) : -1;
     days.push({
       date: ymd(d), label: `${d.getMonth()+1}/${d.getDate()}`,
-      p:p24, t:t24, n:n24, h:h,
-      sumP: p24.reduce((a,b)=>a+b,0),
-      sumT: t24.reduce((a,b)=>a+b,0),
-      sumN: n24.reduce((a,b)=>a+b,0),
+      p:p24, t:t24, n:n24, a:a24, h:h,
+      sumP: p24.reduce((x,y)=>x+y,0),
+      sumT: t24.reduce((x,y)=>x+y,0),
+      sumN: n24.reduce((x,y)=>x+y,0),
+      sumA: a24.reduce((x,y)=>x+y,0),
       exists: !!day,
     });
     d.setDate(d.getDate()+1);
@@ -732,24 +743,25 @@ function resolveRange() {
 }
 
 function buildSeries(days) {
-  let labels, p, t, n;
+  let labels, p, t, n, a;
   if (mode === 'hourly') {
     const d = days[0];
     labels = Array.from({length:24}, (_,i)=>`${i}時`);
-    if (d) { p=[...d.p]; t=[...d.t]; n=[...d.n]; }
-    else   { p=new Array(24).fill(0); t=new Array(24).fill(0); n=new Array(24).fill(0); }
+    if (d) { p=[...d.p]; t=[...d.t]; n=[...d.n]; a=[...d.a]; }
+    else   { p=new Array(24).fill(0); t=new Array(24).fill(0); n=new Array(24).fill(0); a=new Array(24).fill(0); }
   } else {
     labels = days.map(d=>d.label);
     p = days.map(d=>d.sumP);
     t = days.map(d=>d.sumT);
     n = days.map(d=>d.sumN);
+    a = days.map(d=>d.sumA);
   }
-  return { labels, p, t, n };
+  return { labels, p, t, n, a };
 }
 function aggregateAll(days) {
-  let sumP=0, sumT=0, sumN=0;
-  for (const d of days) { sumP+=d.sumP; sumT+=d.sumT; sumN+=d.sumN; }
-  return { sumP, sumT, sumN };
+  let sumP=0, sumT=0, sumN=0, sumA=0;
+  for (const d of days) { sumP+=d.sumP; sumT+=d.sumT; sumN+=d.sumN; sumA+=d.sumA; }
+  return { sumP, sumT, sumN, sumA };
 }
 
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
@@ -791,7 +803,8 @@ function makeDataset(key, data, type) {
   const mob = isMobile();
   const color = COLORS[key];
   const base = { label: LABELS[key], data, borderColor: color };
-  const yAxisID = (key === 'p') ? 'yLeft' : 'yRight';
+  /* p, a → 左軸（数値スケールが大きい）  t, n → 右軸 */
+  const yAxisID = (key === 'p' || key === 'a') ? 'yLeft' : 'yRight';
   if (type === 'line') {
     return Object.assign(base, {
       type:'line', backgroundColor: color+'33', fill:false,
@@ -810,7 +823,7 @@ function makeDataset(key, data, type) {
 }
 
 function renderMainChart(series) {
-  const keys = ['p','t','n'].filter(k => seriesOn[k]);
+  const keys = ['p','t','n','a'].filter(k => seriesOn[k]);
   const datasets = keys.map(k => makeDataset(k, series[k], chartType));
 
   document.getElementById('mainChartBox').style.display = (chartLayout==='combined') ? 'block' : 'none';
@@ -821,7 +834,7 @@ function renderMainChart(series) {
     const ctx = document.getElementById('mainChart');
     if (!ctx) return;
 
-    const hasLeft  = keys.includes('p');
+    const hasLeft  = keys.includes('p') || keys.includes('a');
     const hasRight = keys.includes('t') || keys.includes('n');
     const mob = isMobile();
 
@@ -842,7 +855,7 @@ function renderMainChart(series) {
     });
   } else {
     const mob = isMobile();
-    ['p','t','n'].forEach(k => {
+    ['p','t','n','a'].forEach(k => {
       const id = 'split' + k.toUpperCase();
       destroyChart(id);
       const el = document.getElementById(id);
@@ -882,11 +895,13 @@ function render3DScatter(series) {
   if (!target || typeof Plotly === 'undefined') return;
 
   const labels = series.labels;
-  const xs = series.n;
+  /* X=アクティブID(a)、Y=スレ立て(t)、Z=レス(p)。新規IDはホバーに含める */
+  const xs = series.a;
   const ys = series.t;
   const zs = series.p;
+  const ns = series.n;
   const texts = labels.map((lab,i) =>
-    `${lab}<br>新規ID: ${fmtNum(xs[i])}<br>スレ立て: ${fmtNum(ys[i])}<br>レス: ${fmtNum(zs[i])}`
+    `${lab}<br>アクティブID: ${fmtNum(xs[i])}<br>スレ立て: ${fmtNum(ys[i])}<br>レス: ${fmtNum(zs[i])}<br>新規ID: ${fmtNum(ns[i])}`
   );
 
   const trace = {
@@ -914,7 +929,7 @@ function render3DScatter(series) {
     margin: { l:0, r:0, t:8, b:0 },
     paper_bgcolor: '#fafbfc',
     scene: {
-      xaxis: { title: { text:'新規ID数' }, gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
+      xaxis: { title: { text:'アクティブID数' }, gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
       yaxis: { title: { text:'スレ立て数' }, gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
       zaxis: { title: { text:'レス数' },   gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
       camera: { eye: { x:1.6, y:1.6, z:1.0 } },
@@ -934,13 +949,14 @@ function render3DScatter(series) {
 
 function renderMetrics(days, series) {
   const agg = aggregateAll(days);
-  const { sumP, sumT, sumN } = agg;
+  const { sumP, sumT, sumN, sumA } = agg;
   document.getElementById('mPosts').textContent   = fmtNum(sumP);
   document.getElementById('mThreads').textContent = fmtNum(sumT);
   document.getElementById('mIds').textContent     = fmtNum(sumN);
-  document.getElementById('mAvgPI').textContent   = sumN>0 ? fmtDec(sumP/sumN, 2) : '-';
+  document.getElementById('mActive').textContent  = fmtNum(sumA);
+  /* 平均レス/アクティブID（より意味のある指標） */
+  document.getElementById('mAvgPI').textContent   = sumA>0 ? fmtDec(sumP/sumA, 2) : '-';
   document.getElementById('mAvgPT').textContent   = sumT>0 ? fmtDec(sumP/sumT, 2) : '-';
-  document.getElementById('mAvgTI').textContent   = sumN>0 ? fmtDec(sumT/sumN, 3) : '-';
 
   let peak=0, peakV=-1;
   series.p.forEach((v,i)=>{ if (v>peakV){peakV=v;peak=i;} });
@@ -971,6 +987,7 @@ function renderMetrics(days, series) {
   document.getElementById('mPostsSub').textContent   = `${unit} ${fmtDec(sumP/n,1)}`;
   document.getElementById('mThreadsSub').textContent = `${unit} ${fmtDec(sumT/n,1)}`;
   document.getElementById('mIdsSub').textContent     = `${unit} ${fmtDec(sumN/n,1)}`;
+  document.getElementById('mActiveSub').textContent  = `${unit} ${fmtDec(sumA/n,1)}`;
 }
 
 function renderTable(series) {
@@ -983,15 +1000,18 @@ function renderTable(series) {
       <td>${series.labels[i]}</td>
       <td>${fmtNum(series.p[i])}</td>
       <td>${fmtNum(series.t[i])}</td>
-      <td>${fmtNum(series.n[i])}</td>`;
+      <td>${fmtNum(series.n[i])}</td>
+      <td>${fmtNum(series.a[i])}</td>`;
     body.appendChild(tr);
   }
   const sumP = series.p.reduce((a,b)=>a+b,0);
   const sumT = series.t.reduce((a,b)=>a+b,0);
   const sumN = series.n.reduce((a,b)=>a+b,0);
+  const sumA = series.a.reduce((a,b)=>a+b,0);
   document.getElementById('ftPosts').textContent   = fmtNum(sumP);
   document.getElementById('ftThreads').textContent = fmtNum(sumT);
   document.getElementById('ftIds').textContent     = fmtNum(sumN);
+  document.getElementById('ftActive').textContent  = fmtNum(sumA);
 }
 
 function updateChartTitle(range) {
