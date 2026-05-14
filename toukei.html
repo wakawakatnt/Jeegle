@@ -165,21 +165,31 @@
   background:#fff; color:#1a73e8; box-shadow:0 1px 3px rgba(0,0,0,.1);
 }
 
-/* ===== グラフラッパ：下張り付き解消 ===== */
-/* カードのpaddingにグラフを依存させず、ラッパで余白＋十分な高さを確保 */
+/* ===== グラフラッパ ===== */
 .tk-chart-wrap {
   position:relative;
+  width:100%;
   height:420px;
-  padding:8px 6px 28px;
+  padding:8px 6px 32px;
   box-sizing:border-box;
+  overflow:hidden;
 }
-.tk-chart-wrap.tall { height:480px; }
-.tk-chart-wrap.short { height:300px; padding-bottom:24px; }
-.tk-chart-wrap > canvas { display:block; }
+.tk-chart-wrap.tall { height:480px; padding-bottom:36px; }
+.tk-chart-wrap.short { height:300px; padding-bottom:28px; }
+.tk-chart-wrap > canvas {
+  position:absolute;
+  top:8px; left:6px;
+  right:6px; bottom:32px;
+  width:calc(100% - 12px) !important;
+  height:calc(100% - 40px) !important;
+}
+.tk-chart-wrap.tall > canvas { bottom:36px; height:calc(100% - 44px) !important; }
+.tk-chart-wrap.short > canvas { bottom:28px; height:calc(100% - 36px) !important; }
 
 /* 分割表示 */
 .tk-split { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.tk-split .tk-chart-wrap { height:280px; padding-bottom:24px; }
+.tk-split .tk-chart-wrap { height:280px; padding-bottom:28px; }
+.tk-split .tk-chart-wrap > canvas { bottom:28px; height:calc(100% - 36px) !important; }
 @media (max-width:720px) { .tk-split { grid-template-columns:1fr; } }
 .tk-split-card {
   border:1px solid #f1f3f4; border-radius:8px; padding:8px 10px;
@@ -237,8 +247,10 @@
   .tk-header-title { font-size:12px; }
   .tk-body { padding:10px 8px 40px; }
   .tk-metric-val { font-size:18px; }
-  .tk-chart-wrap { height:340px; padding-bottom:24px; }
-  .tk-chart-wrap.tall { height:380px; }
+  .tk-chart-wrap { height:340px; padding-bottom:28px; }
+  .tk-chart-wrap > canvas { bottom:28px; height:calc(100% - 36px) !important; }
+  .tk-chart-wrap.tall { height:380px; padding-bottom:28px; }
+  .tk-chart-wrap.tall > canvas { bottom:28px; height:calc(100% - 36px) !important; }
   .tk-3d-wrap { height:420px; }
   .tk-modebtn { padding:10px 12px; }
   .tk-modebtn .ic { font-size:20px; }
@@ -690,7 +702,7 @@ function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete chart
 function baseOpts(opts={}) {
   return Object.assign({
     responsive:true, maintainAspectRatio:false,
-    layout: { padding: { top: 6, right: 12, bottom: 18, left: 6 } },
+    layout: { padding: { top: 4, right: 10, bottom: 4, left: 4 } },
     plugins: {
       legend: { position:'top', align:'end',
         labels:{ boxWidth:12, padding:10, font:{size:11} } },
@@ -755,14 +767,13 @@ function render3DScatter(series) {
   if (!target || typeof Plotly === 'undefined') return;
 
   const labels = series.labels;
-  const xs = series.n; // 新規ID
-  const ys = series.t; // スレ立て
-  const zs = series.p; // レス
+  const xs = series.n;
+  const ys = series.t;
+  const zs = series.p;
   const texts = labels.map((lab,i) =>
     `${lab}<br>新規ID: ${fmtNum(xs[i])}<br>スレ立て: ${fmtNum(ys[i])}<br>レス: ${fmtNum(zs[i])}`
   );
 
-  // カラースケール（レス数で）
   const trace = {
     type: 'scatter3d',
     mode: 'markers+text',
@@ -890,26 +901,18 @@ function updateChartTitle(range) {
 function buildShareURL() {
   const params = new URLSearchParams();
   params.set('mode', mode);
+  const range = resolveRange();
   if (mode === 'hourly') {
-    params.set('d', hourlyDayKey);
-    if (hourlyDayKey === 'custom') {
-      const v = document.getElementById('hourlyDate').value;
-      if (v) params.set('date', v);
-    }
+    // 常に実日付を付与（today/yesterday などの相対キーは使わない）
+    if (range) params.set('date', ymd(range.from));
   } else {
-    params.set('p', dailyPeriodKey);
-    if (dailyPeriodKey === 'custom') {
-      const a = document.getElementById('dateFrom').value;
-      const b = document.getElementById('dateTo').value;
-      if (a) params.set('from', a);
-      if (b) params.set('to', b);
+    // プリセット・customとも実日付に展開
+    if (range) {
+      params.set('from', ymd(range.from));
+      params.set('to', ymd(range.to));
     }
   }
-  params.set('series', ['p','t','n'].filter(k=>seriesOn[k]).join(''));
-  params.set('type', chartType);
-  params.set('layout', chartLayout);
-  if (advancedOpen) params.set('adv', '1');
-  if (tableOpen)    params.set('tbl', '1');
+  // series/type/layout/adv/tbl は個人の表示状態なので含めない
   return location.origin + location.pathname + '?' + params.toString();
 }
 
@@ -921,29 +924,22 @@ function applyURLParams() {
   if (m === 'hourly' || m === 'daily') mode = m;
 
   if (mode === 'hourly') {
-    const d = p.get('d');
-    if (d === 'today' || d === 'yesterday' || d === 'custom') hourlyDayKey = d;
-    if (hourlyDayKey === 'custom' && p.get('date')) {
-      document.getElementById('hourlyDate').value = p.get('date');
+    // date= があれば日付指定モードで復元
+    const date = p.get('date');
+    if (date) {
+      hourlyDayKey = 'custom';
+      document.getElementById('hourlyDate').value = date;
     }
   } else {
-    const pk = p.get('p');
-    if (pk) dailyPeriodKey = pk;
-    if (dailyPeriodKey === 'custom') {
-      if (p.get('from')) document.getElementById('dateFrom').value = p.get('from');
-      if (p.get('to'))   document.getElementById('dateTo').value   = p.get('to');
+    // from/to があれば日付範囲指定で復元
+    const from = p.get('from');
+    const to   = p.get('to');
+    if (from && to) {
+      dailyPeriodKey = 'custom';
+      document.getElementById('dateFrom').value = from;
+      document.getElementById('dateTo').value   = to;
     }
   }
-
-  const s = p.get('series');
-  if (s !== null) {
-    seriesOn = { p: s.includes('p'), t: s.includes('t'), n: s.includes('n') };
-    if (!seriesOn.p && !seriesOn.t && !seriesOn.n) seriesOn = { p:true, t:true, n:true };
-  }
-  const ty = p.get('type'); if (ty === 'line' || ty === 'bar') chartType = ty;
-  const ly = p.get('layout'); if (ly === 'combined' || ly === 'split') chartLayout = ly;
-  if (p.get('adv') === '1') advancedOpen = true;
-  if (p.get('tbl') === '1') tableOpen = true;
 }
 
 function syncUIFromState() {
@@ -982,10 +978,8 @@ async function copyShareURL() {
     showStatus('🔗 URLをコピーしました', 'ok');
     setTimeout(hideStatus, 2000);
   } catch {
-    // フォールバック：プロンプト
     prompt('このURLをコピーしてください', url);
   }
-  // URLバーも更新（リロードせず）
   history.replaceState(null, '', url);
 }
 
@@ -1021,7 +1015,6 @@ async function loadData(force=false) {
     if (document.getElementById('advancedSection').open) render3DScatter(series);
     renderTable(series);
 
-    // URLを現在の状態に同期（履歴汚さず置換）
     history.replaceState(null, '', buildShareURL());
 
     document.getElementById('cacheInfo').textContent = `📦 取得 ${fetched}月 / キャッシュ ${cached}月`;
@@ -1135,9 +1128,7 @@ function initUI() {
   const adv = document.getElementById('advancedSection');
   adv.addEventListener('toggle', () => {
     advancedOpen = adv.open;
-    if (adv.open && lastSeries) {
-      render3DScatter(lastSeries);
-    }
+    if (adv.open && lastSeries) render3DScatter(lastSeries);
     history.replaceState(null, '', buildShareURL());
   });
 
