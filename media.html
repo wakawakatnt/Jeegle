@@ -417,6 +417,14 @@ function tweetId(url) {
   var m = url.match(/status\/(\d+)/);
   return m ? m[1] : null;
 }
+function tweetUser(url) {
+  /* https://x.com/USERNAME/status/123... または twitter.com/USERNAME/status/... */
+  var m = url.match(/(?:twitter|x)\.com\/([^\/\?#]+)\/status\/\d+/i);
+  if (!m) return null;
+  var u = m[1];
+  if (/^(i|intent|share|home|explore|notifications|messages|search)$/i.test(u)) return null;
+  return u;
+}
 function isImageExt(url) { return /\.(jpe?g|png|gif|webp)(\?|#|$)/i.test(url); }
 function isVideoExt(url) { return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url); }
 
@@ -571,6 +579,10 @@ function onFilterClick(e) {
   applyFilter();
 }
 function applyFilter() {
+  /* twitter サムネ ResizeObserver をクリーンアップ */
+  var olds = $("mdGrid").querySelectorAll(".md-tw-thumb");
+  for (var i = 0; i < olds.length; i++) if (olds[i]._cleanup) olds[i]._cleanup();
+
   filtered = !currentKind ? allItems.slice() : allItems.filter(function(it){ return it._k === currentKind; });
   $("mdGrid").innerHTML = "";
   $("mdEnd").style.display = "none";
@@ -610,6 +622,75 @@ function buildCard(item, idx) {
   var thumb = thumbnailUrl(item, kind);
   var isVid = (kind === "video");
 
+  /* ===== X(Twitter) は iframe サムネ ===== */
+  if (kind === "twitter") {
+    var tid = tweetId(item.url || "");
+    if (tid) {
+      var tw = document.createElement("div");
+      tw.className = "md-tw-thumb";
+
+      var spinner = document.createElement("div");
+      spinner.className = "md-tw-thumb-loading";
+      spinner.innerHTML = '<div>𝕏</div>';
+      var user = tweetUser(item.url || "");
+      if (user) {
+        var sub = document.createElement("div");
+        sub.className = "md-tw-sub";
+        sub.textContent = "@" + user;
+        spinner.appendChild(sub);
+      }
+      tw.appendChild(spinner);
+
+      tw._loadIframe = function(){
+        if (tw._loaded) return;
+        tw._loaded = true;
+        var ifr = document.createElement("iframe");
+        ifr.setAttribute("scrolling", "no");
+        ifr.setAttribute("allowtransparency", "true");
+        ifr.title = "X Post";
+        ifr.src = "https://platform.twitter.com/embed/Tweet.html?id=" + tid +
+                  "&theme=light&lang=ja&dnt=true&hideCard=false&hideThread=true";
+        tw.appendChild(ifr);
+        var fit = function(){
+          var w = tw.clientWidth || 160;
+          var scale = w / 550;
+          ifr.style.transform = "scale(" + scale + ")";
+          ifr.style.height = (tw.clientHeight / scale) + "px";
+        };
+        fit();
+        var ro;
+        if (window.ResizeObserver) {
+          ro = new ResizeObserver(fit);
+          ro.observe(tw);
+          tw._cleanup = function(){ try { ro.disconnect(); } catch(e){} };
+        }
+        ifr.addEventListener("load", function(){
+          if (spinner.parentNode) spinner.parentNode.removeChild(spinner);
+        });
+        setTimeout(function(){
+          if (spinner.parentNode) spinner.parentNode.removeChild(spinner);
+        }, 5000);
+      };
+
+      card.appendChild(tw);
+
+      var clickLayer = document.createElement("div");
+      clickLayer.style.cssText = "position:absolute;inset:0;z-index:5;cursor:pointer;";
+      card.appendChild(clickLayer);
+
+      var badge = document.createElement("span");
+      badge.className = "md-kind-badge";
+      badge.setAttribute("data-k", kind);
+      badge.textContent = labelOf(kind);
+      badge.style.zIndex = "6";
+      card.appendChild(badge);
+
+      twThumbIO.observe(tw);
+      card._twThumb = tw;
+      return card;
+    }
+  }
+
   if (thumb) {
     var img = document.createElement("img");
     img.className = "md-thumb";
@@ -617,7 +698,7 @@ function buildCard(item, idx) {
     img.decoding = "async";
     img.alt = "";
     img.src = thumb;
-    img.onerror = function(){ img.remove(); card.insertBefore(makePlaceholder(kind), card.firstChild); };
+    img.onerror = function(){ img.remove(); card.insertBefore(makePlaceholder(kind, item), card.firstChild); };
     card.appendChild(img);
     if (isVid) {
       var play = document.createElement("div");
@@ -626,7 +707,7 @@ function buildCard(item, idx) {
       card.appendChild(play);
     }
   } else {
-    card.appendChild(makePlaceholder(kind));
+    card.appendChild(makePlaceholder(kind, item));
   }
 
   var kindBadge = document.createElement("span");
@@ -637,14 +718,24 @@ function buildCard(item, idx) {
 
   return card;
 }
-function makePlaceholder(kind) {
+function makePlaceholder(kind, item) {
   var ph = document.createElement("div");
   ph.className = "md-thumb-ph";
   ph.setAttribute("data-k", kind);
   var icon = "🖼";
   if (kind === "video") icon = "▶";
   else if (kind === "twitter") icon = "𝕏";
-  ph.innerHTML = '<div>' + icon + '</div><div class="lbl">' + labelOf(kind).toUpperCase() + '</div>';
+  var inner = '<div>' + icon + '</div><div class="lbl">' + labelOf(kind).toUpperCase() + '</div>';
+  if (kind === "twitter" && item && item.url) {
+    var user = tweetUser(item.url);
+    if (user) {
+      var esc = String(user).replace(/[&<>"']/g, function(c){
+        return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+      });
+      inner += '<div class="md-ph-sub">@' + esc + '</div>';
+    }
+  }
+  ph.innerHTML = inner;
   return ph;
 }
 
@@ -653,6 +744,18 @@ var io = new IntersectionObserver(function(entries){
   for (var i = 0; i < entries.length; i++) if (entries[i].isIntersecting) renderMore();
 }, { rootMargin: "400px 0px" });
 io.observe($("mdSentinel"));
+
+/* X サムネ遅延ロード用 IO */
+var twThumbIO = new IntersectionObserver(function(entries){
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    if (e.isIntersecting && e.target._loadIframe) {
+      e.target._loadIframe();
+      twThumbIO.unobserve(e.target);
+    }
+  }
+}, { rootMargin: "200px 0px" });
+
 
 /* ========== モーダル ========== */
 function openModal(idx) {
