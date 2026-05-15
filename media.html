@@ -7,8 +7,6 @@
 <link rel="stylesheet" href="css/style.css">
 <style>
 .md-page { min-height:100vh; background:#f0f2f5; }
-
-/* ===== ヘッダー ===== */
 .md-header {
   display:flex; align-items:center; padding:10px 20px;
   border-bottom:1px solid #dadce0; background:#fff;
@@ -27,16 +25,10 @@
 .md-header-actions { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
 .md-back { font-size:13px; color:#1a73e8; text-decoration:none; white-space:nowrap; }
 .md-back:hover { text-decoration:underline; }
-.md-share-btn {
-  background:none; border:1px solid #dadce0; border-radius:16px;
-  padding:4px 12px; font-size:12px; color:#5f6368; cursor:pointer;
-  font-family:inherit; white-space:nowrap;
-}
+.md-share-btn { background:none; border:1px solid #dadce0; border-radius:16px; padding:4px 12px; font-size:12px; color:#5f6368; cursor:pointer; font-family:inherit; white-space:nowrap; }
 .md-share-btn:hover { background:#f1f3f4; }
-
 .md-body { max-width:1200px; margin:0 auto; padding:16px 16px 60px; }
 
-/* ===== トップバー ===== */
 .md-topbar {
   background:#fff; border-radius:10px; padding:10px 14px;
   box-shadow:0 1px 3px rgba(0,0,0,0.06);
@@ -63,85 +55,47 @@
 .md-status.err  { background:#fce8e6; color:#c5221f; border-left:3px solid #ea4335; }
 .md-status.ok   { background:#e6f4ea; color:#137333; border-left:3px solid #34a853; }
 
-/* ===== グリッド ===== */
-.md-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
-  gap:12px;
-}
+.md-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:6px; }
 .md-card {
-  background:#fff; border-radius:10px; overflow:hidden;
-  box-shadow:0 1px 3px rgba(0,0,0,0.06);
-  display:flex; flex-direction:column;
+  position:relative; background:#202124; border-radius:6px; overflow:hidden;
+  aspect-ratio:1/1; cursor:pointer;
   transition:transform .12s, box-shadow .12s;
 }
-.md-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
-
-.md-thumb-wrap {
-  position:relative; width:100%; aspect-ratio:1/1;
-  background:#202124; cursor:pointer; overflow:hidden;
-}
-.md-thumb {
-  width:100%; height:100%; object-fit:cover; display:block; background:#f1f3f4;
-}
+.md-card:hover { transform:scale(1.02); box-shadow:0 4px 12px rgba(0,0,0,0.25); z-index:2; }
+.md-thumb { width:100%; height:100%; object-fit:cover; display:block; background:#f1f3f4; }
 .md-thumb-ph {
   width:100%; height:100%;
   display:flex; align-items:center; justify-content:center;
-  font-size:36px; color:#fff; flex-direction:column; gap:6px;
+  font-size:34px; color:#fff; flex-direction:column; gap:4px;
 }
-.md-thumb-ph .lbl { font-size:11px; letter-spacing:1px; }
+.md-thumb-ph .lbl { font-size:10px; letter-spacing:1px; opacity:.9; }
 .md-thumb-ph[data-k="youtube"]  { background:linear-gradient(135deg,#c00,#900); }
 .md-thumb-ph[data-k="twitter"]  { background:linear-gradient(135deg,#1da1f2,#0d8bd9); }
 .md-thumb-ph[data-k="niconico"] { background:linear-gradient(135deg,#252525,#000); }
-.md-thumb-ph[data-k="imgur"]    { background:linear-gradient(135deg,#1bb76e,#0e8a52); }
-.md-thumb-ph[data-k="imgu"]     { background:linear-gradient(135deg,#7048e8,#4c2db5); }
+.md-thumb-ph[data-k="image"]    { background:linear-gradient(135deg,#7048e8,#4c2db5); }
+.md-thumb-ph[data-k="video"]    { background:linear-gradient(135deg,#444,#111); }
+.md-thumb-ph[data-k="other"]    { background:linear-gradient(135deg,#5f6368,#3c4043); }
 .md-thumb-play {
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:46px; height:46px; border-radius:50%;
+  width:42px; height:42px; border-radius:50%;
   background:rgba(0,0,0,0.55); color:#fff;
   display:flex; align-items:center; justify-content:center;
-  font-size:20px; pointer-events:none;
+  font-size:18px; pointer-events:none;
   text-shadow:0 1px 4px rgba(0,0,0,0.5);
 }
-
 .md-kind-badge {
-  position:absolute; top:6px; left:6px;
+  position:absolute; top:4px; left:4px;
   background:rgba(0,0,0,0.65); color:#fff;
-  font-size:10px; font-weight:700;
-  padding:2px 8px; border-radius:10px;
+  font-size:9px; font-weight:700;
+  padding:2px 6px; border-radius:8px;
   letter-spacing:.5px; text-transform:uppercase;
+  pointer-events:none;
 }
 .md-kind-badge[data-k="youtube"]  { background:rgba(204,0,0,0.88); }
 .md-kind-badge[data-k="twitter"]  { background:rgba(29,161,242,0.92); }
 .md-kind-badge[data-k="niconico"] { background:rgba(40,40,40,0.92); }
-.md-kind-badge[data-k="imgur"]    { background:rgba(27,183,110,0.92); }
-.md-kind-badge[data-k="imgu"]     { background:rgba(112,72,232,0.92); }
-
-.md-anchor-badge {
-  position:absolute; top:6px; right:6px;
-  background:rgba(26,115,232,0.92); color:#fff;
-  font-size:11px; font-weight:700;
-  padding:2px 8px; border-radius:10px;
-  font-family:'Courier New',monospace;
-}
-
-.md-card-body { padding:8px 10px; font-size:11px; color:#3c4043; }
-.md-card-row { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
-.md-card-row:last-child { margin-bottom:0; }
-.md-card-id {
-  font-family:'Courier New',monospace; color:#1a73e8;
-  font-weight:700; font-size:11px;
-  cursor:pointer; text-decoration:none;
-}
-.md-card-id:hover { text-decoration:underline; }
-.md-card-time { color:#70757a; font-size:10px; }
-.md-card-thread {
-  color:#5f6368; font-size:10px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  flex:1; min-width:0;
-}
-.md-card-thread a { color:#1a0dab; text-decoration:none; }
-.md-card-thread a:hover { text-decoration:underline; }
+.md-kind-badge[data-k="image"]    { background:rgba(112,72,232,0.92); }
+.md-kind-badge[data-k="video"]    { background:rgba(60,60,60,0.92); }
 
 .md-loading { text-align:center; padding:32px; color:#70757a; font-size:13px; }
 .md-spinner {
@@ -154,59 +108,84 @@
 .md-end { text-align:center; padding:20px; color:#9aa0a6; font-size:12px; }
 .md-empty { text-align:center; padding:48px; color:#70757a; font-size:14px; background:#fff; border-radius:10px; }
 
-/* ===== モーダル ===== */
 .md-modal {
   position:fixed; inset:0; background:rgba(0,0,0,0.88);
   display:none; align-items:center; justify-content:center;
   z-index:1000; padding:20px;
+  cursor:zoom-out;
 }
 .md-modal.open { display:flex; }
 .md-modal-inner {
-  position:relative; width:min(95vw, 960px); max-height:95vh;
-  display:flex; flex-direction:column; gap:10px;
+  position:relative;
+  width:min(95vw, 960px);
+  max-height:95vh;
+  display:flex; flex-direction:column; gap:8px;
+  cursor:default;
 }
 .md-modal-media-wrap {
-  flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
-  max-height:calc(95vh - 130px); position:relative;
+  flex:1 1 auto; min-height:0;
+  display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+  cursor:zoom-out;
 }
+.md-modal-media-wrap > * { cursor:default; }
 .md-modal-media-wrap img,
 .md-modal-media-wrap video {
   max-width:100%; max-height:100%;
+  width:auto; height:auto;
   object-fit:contain; border-radius:6px; display:block; background:#000;
 }
-.md-modal-media-wrap iframe {
-  width:100%; aspect-ratio:16/9; max-height:100%;
+.md-modal-media-wrap iframe.md-iframe-video {
+  width:100%; height:100%;
+  max-height:100%;
+  aspect-ratio:16/9;
   border:none; border-radius:6px; background:#000;
 }
-.md-modal-media-wrap blockquote.twitter-tweet {
-  max-height:calc(95vh - 130px); overflow-y:auto;
-  margin:0; background:#fff; border-radius:6px;
+.md-modal-media-wrap .md-tweet-box {
+  width:100%; max-width:550px; max-height:100%;
+  overflow-y:auto; background:#fff; border-radius:6px;
+  -webkit-overflow-scrolling:touch;
 }
+.md-modal-media-wrap .md-tweet-box iframe {
+  width:100%; border:0; background:#fff; display:block;
+}
+.md-modal-media-wrap .md-tweet-fallback {
+  padding:24px; text-align:center;
+  background:#fff; border-radius:6px;
+  display:flex; flex-direction:column; gap:10px; align-items:center;
+  max-width:480px;
+}
+.md-modal-media-wrap .md-tweet-fallback a {
+  color:#1da1f2; text-decoration:none; font-weight:700; word-break:break-all;
+}
+
 .md-modal-info {
-  background:#fff; border-radius:8px; padding:10px 14px;
-  display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center;
-  font-size:12px; color:#3c4043;
+  flex:0 0 auto;
+  background:#fff; border-radius:8px; padding:8px 14px;
+  display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;
+  font-size:13px; color:#3c4043;
 }
-.md-modal-info-item { display:flex; align-items:center; gap:5px; }
-.md-modal-info-label { color:#70757a; font-weight:600; font-size:11px; }
 .md-modal-anchor, .md-modal-id {
   font-family:'Courier New',monospace; color:#1a73e8;
-  font-weight:700; text-decoration:none; cursor:pointer;
+  font-weight:700; text-decoration:none;
 }
 .md-modal-anchor:hover, .md-modal-id:hover { text-decoration:underline; }
+.md-modal-time { color:#5f6368; font-size:12px; }
 .md-modal-open {
   margin-left:auto;
   background:linear-gradient(135deg,#1a73e8,#34a853); color:#fff;
   border:none; border-radius:16px; padding:5px 14px;
   font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; text-decoration:none;
+  white-space:nowrap;
 }
 .md-modal-open:hover { opacity:.9; }
+
 .md-modal-close {
   position:absolute; top:-40px; right:0;
   background:rgba(255,255,255,0.15); color:#fff;
   border:1px solid rgba(255,255,255,0.3); border-radius:50%;
   width:32px; height:32px; cursor:pointer; font-size:18px; line-height:1;
-  display:flex; align-items:center; justify-content:center;
+  display:flex; align-items:center; justify-content:center; z-index:3;
 }
 .md-modal-close:hover { background:rgba(255,255,255,0.3); }
 .md-modal-nav {
@@ -215,7 +194,7 @@
   border:1px solid rgba(255,255,255,0.3);
   width:44px; height:44px; border-radius:50%;
   cursor:pointer; font-size:22px;
-  display:flex; align-items:center; justify-content:center; z-index:2;
+  display:flex; align-items:center; justify-content:center; z-index:3;
 }
 .md-modal-nav:hover { background:rgba(255,255,255,0.3); }
 .md-modal-nav.prev { left:-60px; }
@@ -226,20 +205,18 @@
   .md-logo { font-size:20px; }
   .md-header-title { font-size:12px; }
   .md-body { padding:10px 8px 60px; }
-  .md-grid { grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; }
+  .md-grid { grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:4px; }
   .md-modal { padding:10px; }
   .md-modal-close { top:-36px; }
   .md-modal-nav { width:36px; height:36px; font-size:18px; }
   .md-modal-nav.prev { left:4px; background:rgba(0,0,0,0.5); border-color:rgba(255,255,255,0.5); }
   .md-modal-nav.next { right:4px; background:rgba(0,0,0,0.5); border-color:rgba(255,255,255,0.5); }
-  .md-modal-info { font-size:11px; padding:8px 10px; gap:8px 12px; }
-  .md-modal-open { width:100%; margin-left:0; margin-top:4px; padding:7px; text-align:center; }
+  .md-modal-info { font-size:12px; padding:8px 10px; gap:6px 10px; }
 }
 </style>
 </head>
 <body>
 <div class="md-page">
-
   <div class="md-header">
     <a class="md-logo" href="index.html">
       <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
@@ -252,7 +229,6 @@
   </div>
 
   <div class="md-body">
-
     <div class="md-topbar">
       <div class="md-info">
         最終更新: <strong id="mdUpdated">読み込み中…</strong>
@@ -262,25 +238,16 @@
         <button class="md-fbtn active" data-kind="">すべて</button>
       </div>
     </div>
-
     <div class="md-status" id="mdStatus"></div>
-
     <div class="md-grid" id="mdGrid"></div>
-
     <div class="md-sentinel" id="mdSentinel"></div>
-
-    <div class="md-loading" id="mdLoading" style="display:none;">
-      読み込み中… <span class="md-spinner"></span>
-    </div>
-
+    <div class="md-loading" id="mdLoading" style="display:none;">読み込み中… <span class="md-spinner"></span></div>
     <div class="md-end" id="mdEnd" style="display:none;">— 末尾まで表示しました —</div>
-
   </div>
 </div>
 
-<!-- 拡大モーダル -->
 <div class="md-modal" id="mdModal">
-  <div class="md-modal-inner">
+  <div class="md-modal-inner" id="mdModalInner">
     <button class="md-modal-close" id="mdModalClose" aria-label="閉じる">✕</button>
     <button class="md-modal-nav prev" id="mdModalPrev" aria-label="前へ">‹</button>
     <button class="md-modal-nav next" id="mdModalNext" aria-label="次へ">›</button>
@@ -289,14 +256,18 @@
   </div>
 </div>
 
-<!-- Firebase (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
 "use strict";
 
-/* ============== Firebase ============== */
+/* ========== Service Worker 登録（画像キャッシュ用） ========== */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("media-sw.js").catch(function(e){ console.warn("SW register failed", e); });
+}
+
+/* ========== Firebase ========== */
 var firebaseConfig = {
   apiKey: "AIzaSyCasS3f9WJ26Dkk1B8_NrMFI2S-rahwMiM",
   authDomain: "itiran-be2af.firebaseapp.com",
@@ -309,65 +280,79 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 
-/* ============== 設定 ============== */
+/* ========== 設定 ========== */
 var BOARD = "livejupiter";
 var THREAD_BASE = "https://hayabusa.open2ch.net/test/read.cgi/" + BOARD + "/";
 var PAGE_SIZE = 30;
-var CACHE_KEY = "jeegle_media_cache_v2";
-var CACHE_TTL_MS = 60 * 1000; /* ★ キャッシュは60秒 ★ */
+var META_CACHE_KEY = "jeegle_media_meta_v3";
+var META_CACHE_TTL_MS = 60 * 1000;
 
-/* ============== 状態 ============== */
-var allItems = [];
-var filtered = [];
-var renderIdx = 0;
-var currentKind = "";
-var modalIdx = -1;
-var twitterScriptLoaded = false;
+/* ========== 状態 ========== */
+var allItems = [], filtered = [], renderIdx = 0;
+var currentKind = "", modalIdx = -1;
 
-/* ============== ユーティリティ ============== */
+/* ========== ヘルパ ========== */
 function $(id) { return document.getElementById(id); }
 function txt(el, s) { el.textContent = (s == null) ? "" : String(s); }
+function pad2(n) { return String(n).padStart(2, "0"); }
 function setStatus(msg, type) {
   var el = $("mdStatus");
   if (!msg) { el.classList.remove("show"); return; }
   el.className = "md-status show " + (type || "info");
   el.textContent = msg;
 }
-function fmtDate(iso) {
-  if (!iso) return "";
-  try {
-    var d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
-    var y = d.getFullYear();
-    var m = String(d.getMonth()+1).padStart(2,"0");
-    var dd = String(d.getDate()).padStart(2,"0");
-    var hh = String(d.getHours()).padStart(2,"0");
-    var mm = String(d.getMinutes()).padStart(2,"0");
-    return y+"/"+m+"/"+dd+" "+hh+":"+mm;
-  } catch(e) { return iso; }
+
+/* 様々な型を Date に変換 */
+function toDate(v) {
+  if (v == null) return null;
+  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+  if (typeof v === "number") return new Date(v < 1e12 ? v*1000 : v);
+  if (typeof v === "string") { var d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+  if (typeof v === "object") {
+    /* Firestore Timestamp (compat / modular) */
+    if (typeof v.toDate === "function") { try { return v.toDate(); } catch(e){} }
+    if (typeof v.seconds === "number") return new Date(v.seconds * 1000 + Math.floor((v.nanoseconds||0)/1e6));
+    if (typeof v._seconds === "number") return new Date(v._seconds * 1000 + Math.floor((v._nanoseconds||0)/1e6));
+  }
+  return null;
 }
-function fmtUpdated(u) {
-  if (u == null) return "—";
-  var d;
-  if (u && typeof u.toDate === "function") d = u.toDate();
-  else if (typeof u === "number") d = new Date(u < 1e12 ? u*1000 : u);
-  else d = new Date(u);
-  if (isNaN(d.getTime())) return String(u);
-  return fmtDate(d.toISOString());
+function fmtDate(v) {
+  var d = toDate(v);
+  if (!d) return "";
+  return d.getFullYear()+"/"+pad2(d.getMonth()+1)+"/"+pad2(d.getDate())+" "+pad2(d.getHours())+":"+pad2(d.getMinutes());
+}
+function fmtUpdated(v) {
+  var d = toDate(v);
+  return d ? fmtDate(d) : "—";
+}
+function dateYYMMDD(v) {
+  var d = toDate(v);
+  if (!d) return "";
+  return String(d.getFullYear()).slice(2) + pad2(d.getMonth()+1) + pad2(d.getDate());
 }
 function threadUrl(t, n) {
   if (!t) return "#";
   var base = THREAD_BASE + t + "/";
   return n ? base + n : base;
 }
+function idAnalysisUrl(id, postedAt) {
+  var u = "id-analysis.html?id=" + encodeURIComponent(id);
+  var d = dateYYMMDD(postedAt);
+  if (d) u += "&d=" + d;
+  return u;
+}
 
-/* ============== URL → 種別判定（サーバ側 PATTERNS と一致） ============== */
-function detectKind(url, hint) {
-  if (hint) return String(hint).toLowerCase();
+/* 種別判定 */
+function detectKindRaw(url, hint) {
+  if (hint) {
+    var h = String(hint).toLowerCase();
+    if (h === "imgu" || h === "imgur") return "image";
+    return h;
+  }
   if (!url) return "other";
   var u = url;
-  if (/^https?:\/\/(?:i\.)?imgur\.com\//i.test(u)) return "imgur";
-  if (/^https?:\/\/imgu\.jp\//i.test(u)) return "imgu";
+  if (/^https?:\/\/(?:i\.)?imgur\.com\//i.test(u)) return "image";
+  if (/^https?:\/\/imgu\.jp\//i.test(u)) return "image";
   if (/^https?:\/\/(?:www\.)?youtube\.com\/(?:watch|shorts)/i.test(u) || /^https?:\/\/youtu\.be\//i.test(u)) return "youtube";
   if (/^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[^\/]+\/status\/\d+/i.test(u)) return "twitter";
   if (/^https?:\/\/(?:www\.)?nicovideo\.jp\/watch\//i.test(u) || /^https?:\/\/nico\.ms\//i.test(u)) return "niconico";
@@ -375,7 +360,7 @@ function detectKind(url, hint) {
   return "other";
 }
 
-/* ============== 各サービス用ヘルパー ============== */
+/* ID抽出 */
 function youtubeId(url) {
   var m = url.match(/(?:youtube\.com\/(?:watch\?(?:[^&]*&)*v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/i);
   return m ? m[1] : null;
@@ -385,70 +370,81 @@ function nicoId(url) {
   return m ? m[1] : null;
 }
 function imgurId(url) {
-  /* https://imgur.com/abc → abc, https://i.imgur.com/abc.jpg → abc */
   var m = url.match(/imgur\.com\/(?:gallery\/|a\/)?([A-Za-z0-9]+)(?:\.[a-z0-9]+)?/i);
+  return m ? m[1] : null;
+}
+function tweetId(url) {
+  var m = url.match(/status\/(\d+)/);
   return m ? m[1] : null;
 }
 function isImageExt(url) { return /\.(jpe?g|png|gif|webp)(\?|#|$)/i.test(url); }
 function isVideoExt(url) { return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url); }
 
-/* サムネURL（カード表示用） */
+/* サムネURL */
 function thumbnailUrl(item, kind) {
   var url = item.url || "";
   if (kind === "youtube") {
     var yid = youtubeId(url);
     return yid ? "https://i.ytimg.com/vi/" + yid + "/hqdefault.jpg" : null;
   }
-  if (kind === "niconico") {
-    var nid = nicoId(url);
-    /* ニコニコのサムネは ID 末尾の数字から推定が必要なので簡易プレースホルダで対応 */
-    return null;
-  }
-  if (kind === "imgur") {
-    if (isImageExt(url)) return url;
-    var iid = imgurId(url);
-    return iid ? "https://i.imgur.com/" + iid + "m.jpg" : null; /* m = medium */
-  }
-  if (kind === "imgu") {
+  if (kind === "niconico") return null;
+  if (kind === "twitter") return null;
+  if (kind === "image") {
+    if (/imgur\.com/i.test(url)) {
+      if (isImageExt(url)) return url;
+      var iid = imgurId(url);
+      return iid ? "https://i.imgur.com/" + iid + "m.jpg" : null;
+    }
     return isImageExt(url) ? url : null;
   }
-  if (kind === "twitter") return null;
   if (isImageExt(url)) return url;
   return null;
 }
 
-/* ============== キャッシュ ============== */
-function loadCache() {
+/* ========== メタ(JSON)キャッシュ：sessionStorage 60秒 ========== */
+function loadMetaCache() {
   try {
-    var raw = sessionStorage.getItem(CACHE_KEY);
+    var raw = sessionStorage.getItem(META_CACHE_KEY);
     if (!raw) return null;
     var obj = JSON.parse(raw);
     if (!obj || !obj.ts || !obj.data) return null;
-    if (Date.now() - obj.ts > CACHE_TTL_MS) return null;
+    if (Date.now() - obj.ts > META_CACHE_TTL_MS) return null;
     return obj.data;
   } catch(e) { return null; }
 }
-function saveCache(data) {
-  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data })); } catch(e) {}
+function saveMetaCache(data) {
+  try { sessionStorage.setItem(META_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data })); } catch(e) {}
 }
 
-/* ============== Firestore 取得 ============== */
+/* ========== Firestore ========== */
 function fetchMedia() {
   setStatus("メディア一覧を読み込み中…", "info");
-
-  var cached = loadCache();
+  var cached = loadMetaCache();
   if (cached) {
     applyData(cached);
     setStatus("キャッシュから表示中（60秒）", "ok");
     setTimeout(function(){ setStatus(""); }, 1500);
     return;
   }
-
   db.collection("stats").doc("media").get()
     .then(function(snap){
       if (!snap.exists) { setStatus("stats/media が存在しません", "err"); return; }
-      var data = snap.data() || {};
-      saveCache(data);
+      var raw = snap.data() || {};
+      /* Firestore Timestamp を扱いやすく正規化 */
+      var data = {
+        u: toDateSafe(raw.u),
+        items: Array.isArray(raw.items) ? raw.items.map(function(it){
+          return {
+            url: it.url || "",
+            k: it.k || "",
+            t: it.t,
+            n: it.n,
+            u: it.u || "",
+            p: toDateSafe(it.p)
+          };
+        }) : []
+      };
+      saveMetaCache(data);
       applyData(data);
       setStatus("");
     })
@@ -457,14 +453,15 @@ function fetchMedia() {
       setStatus("読み込みエラー: " + (err && err.message ? err.message : err), "err");
     });
 }
+function toDateSafe(v) {
+  var d = toDate(v);
+  return d ? d.toISOString() : (typeof v === "string" || typeof v === "number" ? v : null);
+}
 
 function applyData(data) {
   txt($("mdUpdated"), fmtUpdated(data.u));
   var items = Array.isArray(data.items) ? data.items.slice() : [];
-  /* 種別を事前確定 */
-  for (var i = 0; i < items.length; i++) {
-    items[i]._k = detectKind(items[i].url, items[i].k);
-  }
+  for (var i = 0; i < items.length; i++) items[i]._k = detectKindRaw(items[i].url, items[i].k);
   allItems = items;
   buildKindFilters(items);
   applyFilter();
@@ -487,26 +484,30 @@ function buildKindFilters(items) {
     var btn = document.createElement("button");
     btn.className = "md-fbtn";
     btn.setAttribute("data-kind", k2);
-    btn.textContent = k2 + " (" + counts[k2] + ")";
+    btn.textContent = labelOf(k2) + " (" + counts[k2] + ")";
     btn.addEventListener("click", onFilterClick);
     box.appendChild(btn);
   }
   if (all && !all._bound) { all.addEventListener("click", onFilterClick); all._bound = true; }
+}
+function labelOf(k) {
+  if (k === "image") return "画像";
+  if (k === "youtube") return "YouTube";
+  if (k === "twitter") return "X";
+  if (k === "niconico") return "ニコニコ";
+  if (k === "video") return "動画";
+  return k;
 }
 function onFilterClick(e) {
   var k = e.currentTarget.getAttribute("data-kind") || "";
   if (k === currentKind) return;
   currentKind = k;
   var btns = document.querySelectorAll(".md-fbtn");
-  for (var i = 0; i < btns.length; i++) {
-    btns[i].classList.toggle("active", (btns[i].getAttribute("data-kind") || "") === currentKind);
-  }
+  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", (btns[i].getAttribute("data-kind") || "") === currentKind);
   applyFilter();
 }
-
 function applyFilter() {
-  filtered = !currentKind ? allItems.slice()
-    : allItems.filter(function(it){ return it._k === currentKind; });
+  filtered = !currentKind ? allItems.slice() : allItems.filter(function(it){ return it._k === currentKind; });
   $("mdGrid").innerHTML = "";
   $("mdEnd").style.display = "none";
   renderIdx = 0;
@@ -515,7 +516,7 @@ function applyFilter() {
   renderMore();
 }
 
-/* ============== 描画 ============== */
+/* 描画 */
 function renderMore() {
   if (renderIdx >= filtered.length) {
     $("mdEnd").style.display = filtered.length > 0 ? "block" : "none";
@@ -539,10 +540,7 @@ function renderMore() {
 function buildCard(item, idx) {
   var card = document.createElement("div");
   card.className = "md-card";
-
-  var thumbWrap = document.createElement("div");
-  thumbWrap.className = "md-thumb-wrap";
-  thumbWrap.addEventListener("click", function(){ openModal(idx); });
+  card.addEventListener("click", function(){ openModal(idx); });
 
   var kind = item._k;
   var thumb = thumbnailUrl(item, kind);
@@ -555,70 +553,26 @@ function buildCard(item, idx) {
     img.decoding = "async";
     img.alt = "";
     img.src = thumb;
-    img.onerror = function(){
-      img.remove();
-      thumbWrap.insertBefore(makePlaceholder(kind), thumbWrap.firstChild);
-    };
-    thumbWrap.appendChild(img);
+    img.onerror = function(){ img.remove(); card.insertBefore(makePlaceholder(kind), card.firstChild); };
+    card.appendChild(img);
     if (isVid) {
       var play = document.createElement("div");
       play.className = "md-thumb-play";
       play.textContent = "▶";
-      thumbWrap.appendChild(play);
+      card.appendChild(play);
     }
   } else {
-    thumbWrap.appendChild(makePlaceholder(kind));
+    card.appendChild(makePlaceholder(kind));
   }
 
   var kindBadge = document.createElement("span");
   kindBadge.className = "md-kind-badge";
   kindBadge.setAttribute("data-k", kind);
-  kindBadge.textContent = kind;
-  thumbWrap.appendChild(kindBadge);
+  kindBadge.textContent = labelOf(kind);
+  card.appendChild(kindBadge);
 
-  if (item.n != null) {
-    var ab = document.createElement("span");
-    ab.className = "md-anchor-badge";
-    ab.textContent = ">>" + item.n;
-    thumbWrap.appendChild(ab);
-  }
-
-  card.appendChild(thumbWrap);
-
-  var body = document.createElement("div");
-  body.className = "md-card-body";
-
-  var row1 = document.createElement("div");
-  row1.className = "md-card-row";
-  if (item.u) {
-    var idLink = document.createElement("a");
-    idLink.className = "md-card-id";
-    idLink.href = "id-analysis.html?id=" + encodeURIComponent(item.u);
-    idLink.textContent = "ID:" + item.u;
-    idLink.title = "ID分析を開く";
-    row1.appendChild(idLink);
-  }
-  var time = document.createElement("span");
-  time.className = "md-card-time";
-  time.textContent = fmtDate(item.p);
-  time.style.marginLeft = "auto";
-  row1.appendChild(time);
-  body.appendChild(row1);
-
-  var row2 = document.createElement("div");
-  row2.className = "md-card-row md-card-thread";
-  var ta = document.createElement("a");
-  ta.href = threadUrl(item.t, item.n);
-  ta.target = "_blank";
-  ta.rel = "noopener";
-  ta.textContent = "スレ " + (item.t || "?") + (item.n != null ? " (>>" + item.n + ")" : "");
-  row2.appendChild(ta);
-  body.appendChild(row2);
-
-  card.appendChild(body);
   return card;
 }
-
 function makePlaceholder(kind) {
   var ph = document.createElement("div");
   ph.className = "md-thumb-ph";
@@ -627,20 +581,18 @@ function makePlaceholder(kind) {
   if (kind === "youtube") icon = "▶";
   else if (kind === "twitter") icon = "𝕏";
   else if (kind === "niconico") icon = "🎬";
-  else if (kind === "imgur") icon = "📷";
-  else if (kind === "imgu") icon = "🖼";
   else if (kind === "video") icon = "▶";
-  ph.innerHTML = '<div>' + icon + '</div><div class="lbl">' + kind.toUpperCase() + '</div>';
+  ph.innerHTML = '<div>' + icon + '</div><div class="lbl">' + labelOf(kind).toUpperCase() + '</div>';
   return ph;
 }
 
-/* ============== 無限スクロール ============== */
+/* 無限スクロール */
 var io = new IntersectionObserver(function(entries){
   for (var i = 0; i < entries.length; i++) if (entries[i].isIntersecting) renderMore();
 }, { rootMargin: "400px 0px" });
 io.observe($("mdSentinel"));
 
-/* ============== モーダル ============== */
+/* ========== モーダル ========== */
 function openModal(idx) {
   if (idx < 0 || idx >= filtered.length) return;
   modalIdx = idx;
@@ -655,51 +607,66 @@ function openModal(idx) {
     var yid = youtubeId(url);
     if (yid) {
       var ifr = document.createElement("iframe");
+      ifr.className = "md-iframe-video";
       ifr.src = "https://www.youtube.com/embed/" + yid + "?autoplay=1";
       ifr.allow = "autoplay; encrypted-media; picture-in-picture";
       ifr.allowFullscreen = true;
       wrap.appendChild(ifr);
-    } else { wrap.appendChild(makePlaceholder(kind)); }
+    } else wrap.appendChild(makePlaceholder(kind));
   } else if (kind === "niconico") {
     var nid = nicoId(url);
     if (nid) {
       var ifr2 = document.createElement("iframe");
+      ifr2.className = "md-iframe-video";
       ifr2.src = "https://embed.nicovideo.jp/watch/" + nid;
-      ifr2.allow = "autoplay; encrypted-media";
       ifr2.allowFullscreen = true;
       wrap.appendChild(ifr2);
-    } else { wrap.appendChild(makePlaceholder(kind)); }
+    } else wrap.appendChild(makePlaceholder(kind));
   } else if (kind === "twitter") {
-    /* X/Twitter は widgets.js で埋め込み */
-    var bq = document.createElement("blockquote");
-    bq.className = "twitter-tweet";
-    bq.setAttribute("data-theme", "light");
-    var a = document.createElement("a");
-    a.href = url.replace(/^https?:\/\/(www\.)?x\.com\//i, "https://twitter.com/");
-    bq.appendChild(a);
-    wrap.appendChild(bq);
-    loadTwitterWidgets(function(){
-      if (window.twttr && window.twttr.widgets) window.twttr.widgets.load(wrap);
-    });
-  } else if (kind === "imgur") {
-    if (isImageExt(url)) {
-      var im = document.createElement("img"); im.src = url; wrap.appendChild(im);
-    } else if (/\.mp4(\?|#|$)/i.test(url)) {
+    var tid = tweetId(url);
+    if (tid) {
+      var box = document.createElement("div");
+      box.className = "md-tweet-box";
+      var tifr = document.createElement("iframe");
+      tifr.src = "https://platform.twitter.com/embed/Tweet.html?id=" + tid + "&theme=light&lang=ja&dnt=true";
+      tifr.title = "X Post";
+      tifr.scrolling = "no";
+      tifr.allowFullscreen = true;
+      tifr.setAttribute("allowtransparency", "true");
+      tifr.style.height = "600px";
+      box.appendChild(tifr);
+      wrap.appendChild(box);
+      /* postMessage で高さを受け取って調整 */
+      var resizeHandler = function(ev){
+        if (!ev || !ev.data) return;
+        var d = ev.data;
+        if (typeof d === "string") { try { d = JSON.parse(d); } catch(e){ return; } }
+        if (d && d["twttr.embed"] && d["twttr.embed"].method === "twttr.private.resize") {
+          var params = d["twttr.embed"].params && d["twttr.embed"].params[0];
+          if (params && params.height) tifr.style.height = (params.height + 10) + "px";
+        }
+      };
+      window.addEventListener("message", resizeHandler);
+      tifr._cleanup = function(){ window.removeEventListener("message", resizeHandler); };
+    } else {
+      var fb = document.createElement("div");
+      fb.className = "md-tweet-fallback";
+      fb.innerHTML = '<div>X のツイートを表示できませんでした</div>';
+      var a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener"; a.textContent = url;
+      fb.appendChild(a);
+      wrap.appendChild(fb);
+    }
+  } else if (kind === "image") {
+    if (/\.mp4(\?|#|$)/i.test(url)) {
       var v = document.createElement("video"); v.src = url; v.controls = true; v.autoplay = true; v.playsInline = true; wrap.appendChild(v);
-    } else {
+    } else if (isImageExt(url) || /imgu\.jp/i.test(url)) {
+      var im = document.createElement("img"); im.src = url; wrap.appendChild(im);
+    } else if (/imgur\.com/i.test(url)) {
       var iid = imgurId(url);
-      var ifr3 = document.createElement("iframe");
-      ifr3.src = "https://imgur.com/" + (iid || "") + "/embed";
-      wrap.appendChild(ifr3);
-    }
-  } else if (kind === "imgu") {
-    if (isImageExt(url)) {
-      var im2 = document.createElement("img"); im2.src = url; wrap.appendChild(im2);
-    } else if (/\.mp4(\?|#|$)/i.test(url)) {
-      var v2 = document.createElement("video"); v2.src = url; v2.controls = true; v2.autoplay = true; v2.playsInline = true; wrap.appendChild(v2);
-    } else {
-      var im3 = document.createElement("img"); im3.src = url; wrap.appendChild(im3);
-    }
+      if (iid) {
+        var im2 = document.createElement("img"); im2.src = "https://i.imgur.com/" + iid + ".jpg"; wrap.appendChild(im2);
+      } else { wrap.appendChild(makePlaceholder(kind)); }
+    } else { wrap.appendChild(makePlaceholder(kind)); }
   } else if (kind === "video" || isVideoExt(url)) {
     var v3 = document.createElement("video"); v3.src = url; v3.controls = true; v3.autoplay = true; v3.playsInline = true; wrap.appendChild(v3);
   } else if (isImageExt(url)) {
@@ -708,63 +675,70 @@ function openModal(idx) {
     wrap.appendChild(makePlaceholder(kind));
   }
 
-  /* info パネル */
+  /* 情報パネル：>>n  ID:xxx  日付  [元URL] */
   var info = $("mdModalInfo");
   info.innerHTML = "";
-
   if (item.n != null && item.t) {
-    info.appendChild(infoItem("アンカー", anchorLink(">>" + item.n, threadUrl(item.t, item.n), "md-modal-anchor")));
+    var a1 = document.createElement("a");
+    a1.className = "md-modal-anchor";
+    a1.href = threadUrl(item.t, item.n);
+    a1.target = "_blank"; a1.rel = "noopener";
+    a1.textContent = ">>" + item.n;
+    info.appendChild(a1);
   }
   if (item.u) {
-    info.appendChild(infoItem("ID", anchorLink(item.u, "id-analysis.html?id=" + encodeURIComponent(item.u), "md-modal-id", false)));
-  }
-  if (item.t) {
-    info.appendChild(infoItem("スレ", anchorLink(item.t, threadUrl(item.t), "md-modal-anchor")));
+    var a2 = document.createElement("a");
+    a2.className = "md-modal-id";
+    a2.href = idAnalysisUrl(item.u, item.p);
+    a2.textContent = "ID:" + item.u;
+    info.appendChild(a2);
   }
   if (item.p) {
-    var span = document.createElement("span"); span.textContent = fmtDate(item.p);
-    info.appendChild(infoItem("投稿", span));
+    var ts = document.createElement("span");
+    ts.className = "md-modal-time";
+    ts.textContent = fmtDate(item.p);
+    info.appendChild(ts);
   }
   var openA = document.createElement("a");
-  openA.className = "md-modal-open"; openA.href = url; openA.target = "_blank"; openA.rel = "noopener";
+  openA.className = "md-modal-open";
+  openA.href = url; openA.target = "_blank"; openA.rel = "noopener";
   openA.textContent = "🔗 元URL";
   info.appendChild(openA);
 
   $("mdModal").classList.add("open");
   document.body.style.overflow = "hidden";
 }
-function infoItem(label, child) {
-  var w = document.createElement("div"); w.className = "md-modal-info-item";
-  var l = document.createElement("span"); l.className = "md-modal-info-label"; l.textContent = label;
-  w.appendChild(l); w.appendChild(child); return w;
-}
-function anchorLink(text, href, cls, blank) {
-  var a = document.createElement("a"); a.className = cls; a.href = href; a.textContent = text;
-  if (blank !== false) { a.target = "_blank"; a.rel = "noopener"; }
-  return a;
-}
-function loadTwitterWidgets(cb) {
-  if (twitterScriptLoaded) { cb && cb(); return; }
-  var s = document.createElement("script");
-  s.src = "https://platform.twitter.com/widgets.js";
-  s.async = true; s.charset = "utf-8";
-  s.onload = function(){ twitterScriptLoaded = true; cb && cb(); };
-  document.head.appendChild(s);
-}
 
 function closeModal() {
+  var wrap = $("mdModalMedia");
+  /* twitter iframe の cleanup */
+  var ifrs = wrap.querySelectorAll("iframe");
+  for (var i = 0; i < ifrs.length; i++) if (ifrs[i]._cleanup) ifrs[i]._cleanup();
   $("mdModal").classList.remove("open");
-  $("mdModalMedia").innerHTML = "";
+  wrap.innerHTML = "";
   document.body.style.overflow = "";
   modalIdx = -1;
 }
 function nextModal() { if (modalIdx >= 0 && modalIdx + 1 < filtered.length) openModal(modalIdx + 1); }
 function prevModal() { if (modalIdx > 0) openModal(modalIdx - 1); }
 
-$("mdModalClose").addEventListener("click", closeModal);
-$("mdModalNext").addEventListener("click", nextModal);
-$("mdModalPrev").addEventListener("click", prevModal);
-$("mdModal").addEventListener("click", function(e){ if (e.target === $("mdModal")) closeModal(); });
+$("mdModalClose").addEventListener("click", function(e){ e.stopPropagation(); closeModal(); });
+$("mdModalNext").addEventListener("click", function(e){ e.stopPropagation(); nextModal(); });
+$("mdModalPrev").addEventListener("click", function(e){ e.stopPropagation(); prevModal(); });
+
+/* オーバーレイ全体クリックで閉じる（コンテンツ自体を除く） */
+$("mdModal").addEventListener("click", function(e){
+  /* inner 内側で stopPropagation していないので、ここでターゲットを判定 */
+  var t = e.target;
+  /* 閉じない要素：img/video/iframe/blockquote/buttons/info内のリンクなど */
+  var closeable = (t.id === "mdModal") || (t.id === "mdModalMedia") || (t.id === "mdModalInner");
+  if (closeable) closeModal();
+});
+/* メディアラップの余白部分もクリックで閉じる（中身要素はバブリングするが、画像/動画は object-fit:contain で透明部分があるため div 自身を狙う） */
+$("mdModalMedia").addEventListener("click", function(e){
+  if (e.target === this) closeModal();
+});
+
 document.addEventListener("keydown", function(e){
   if (!$("mdModal").classList.contains("open")) return;
   if (e.key === "Escape") closeModal();
@@ -772,7 +746,7 @@ document.addEventListener("keydown", function(e){
   else if (e.key === "ArrowLeft") prevModal();
 });
 
-/* ============== 共有 ============== */
+/* 共有 */
 $("mdShareBtn").addEventListener("click", function(){
   var url = location.href;
   if (navigator.share) navigator.share({ title: "Jeegle! メディア一覧", url: url }).catch(function(){});
@@ -781,9 +755,7 @@ $("mdShareBtn").addEventListener("click", function(){
   });
 });
 
-/* ============== 起動 ============== */
 fetchMedia();
 </script>
-
 </body>
 </html>
