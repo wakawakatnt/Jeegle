@@ -233,7 +233,7 @@ function txt(el, s) { el.textContent = (s == null) ? "" : String(s); }
  * 入力欄の値は一切変更しない。マッチング時のみ使用。
  */
 function getSearchKey(raw) {
-  return raw.replace(/^id\s*:\s*/i, "").replace(/[主🔍]/g, "").replace(/\s/g, "").trim().toLowerCase();
+  return raw.replace(/^id\s*:\s*/i, "").replace(/[主🔍\s]/g, "").toLowerCase();
 }
 
 /* ===== 日付表示更新 ===== */
