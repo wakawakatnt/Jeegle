@@ -340,3 +340,10 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   position:absolute; bottom:8px; left:0; right:0;
   text-align:center; font-size:10px; font-weight:600; opacity:.9;
 }
+.media-link-btn {
+  background: linear-gradient(135deg, #7048e8, #4c2db5) !important;
+  color: #fff !important;
+}
+.media-link-btn:hover {
+  opacity: 0.9;
+}
