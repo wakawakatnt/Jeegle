@@ -116,7 +116,7 @@
 .tk-status.ok   { background:#e6f4ea; color:#137333; border-left:3px solid #34a853; }
 
 .tk-metrics {
-  display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));
   gap:8px; margin-bottom:12px;
 }
 .tk-metric {
@@ -274,7 +274,7 @@
   #dailyCustomRange { flex-wrap:wrap; width:100%; }
   #dailyCustomRange .tk-date-input { flex:1 1 40%; }
 
-  .tk-metrics { grid-template-columns:repeat(2, 1fr); gap:6px; }
+  .tk-metrics { grid-template-columns:repeat(3, 1fr); gap:6px; }
   .tk-metric { padding:10px 8px; }
   .tk-metric-val { font-size:18px; }
   .tk-metric-icon { font-size:16px; }
@@ -318,6 +318,7 @@
   .tk-header-title { display:none; }
   .tk-modebtn .sub { display:none; }
   .tk-metric-val { font-size:16px; }
+  .tk-metrics { grid-template-columns: repeat(3, 1fr); }
   .tk-body { padding:6px 2px 40px; }
   .tk-card { padding:8px 4px; }
 
@@ -790,7 +791,6 @@ function baseOpts(opts={}) {
     },
     interaction: { mode:'index', intersect:false },
     scales: {
-      /* レス数（大きい値） */
       yLeft: {
         type: 'linear', position: 'left', beginAtZero: true,
         ticks: {
@@ -801,7 +801,6 @@ function baseOpts(opts={}) {
         title: { display: false },
         afterFit: function(scale){ if (mob) scale.width = 38; }
       },
-      /* スレ立て・新規ID（中ぐらい） */
       yRight: {
         type: 'linear', position: 'right', beginAtZero: true,
         ticks: {
@@ -812,7 +811,6 @@ function baseOpts(opts={}) {
         title: { display: false },
         afterFit: function(scale){ if (mob) scale.width = 30; }
       },
-      /* アクティブID（独立軸） */
       yRight2: {
         type: 'linear', position: 'right', beginAtZero: true,
         ticks: {
@@ -834,7 +832,6 @@ function makeDataset(key, data, type) {
   const mob = isMobile();
   const color = COLORS[key];
   const base = { label: LABELS[key], data, borderColor: color };
-  /* 軸の割り当て: p=左, t/n=右, a=右2 */
   let yAxisID = 'yRight';
   if (key === 'p') yAxisID = 'yLeft';
   else if (key === 'a') yAxisID = 'yRight2';
@@ -993,12 +990,10 @@ function renderMetrics(days, series) {
   document.getElementById('mThreads').textContent = fmtNum(sumT);
   document.getElementById('mIds').textContent     = fmtNum(sumN);
 
-  /* 平均レス/ID数, 平均スレ立て/ID数, 平均レス/スレ */
   document.getElementById('mAvgPI').textContent   = sumN>0 ? fmtDec(sumP/sumN, 2) : '-';
   document.getElementById('mAvgTI').textContent   = sumN>0 ? fmtDec(sumT/sumN, 2) : '-';
   document.getElementById('mAvgPT').textContent   = sumT>0 ? fmtDec(sumP/sumT, 2) : '-';
 
-  /* アクティブID 平均（時別=1h平均, 日別=1日平均） */
   const n = (mode === 'hourly') ? 24 : (days.length || 1);
   const unit = (mode === 'hourly') ? '1h平均' : '1日平均';
   document.getElementById('mAvgA').textContent = fmtDec(sumA/n, 1);
@@ -1054,7 +1049,6 @@ function renderTable(series) {
   document.getElementById('ftPosts').textContent   = fmtNum(sumP);
   document.getElementById('ftThreads').textContent = fmtNum(sumT);
   document.getElementById('ftIds').textContent     = fmtNum(sumN);
-  /* アクティブIDは合計に意味がないので、平均を表示 */
   const nN = series.a.length || 1;
   const avgA = series.a.reduce((a,b)=>a+b,0) / nN;
   document.getElementById('ftActive').textContent  = `平均 ${fmtDec(avgA,1)}`;
