@@ -754,74 +754,149 @@ function openModal(idx) {
 }
 
 /* ===== X(Twitter) 埋め込み =====
-   1) widgets.js を使って createTweet で確実に描画
-   2) ダメならフォールバック表示
+   方針:
+   - 公式 widgets.js による「blockquote パース方式」を使用
+     （createTweet より広告ブロッカー耐性がややマシ＆フォールバック表示が残る）
+   - widgets.js の読み込みに失敗（ブロッカー等で ERR_BLOCKED_BY_CLIENT）したら
+     即フォールバック表示
 */
 var _twttrLoading = null;
+var _twttrFailed = false;
 function loadTwitterWidgets() {
+  if (_twttrFailed) return Promise.reject(new Error("twttr blocked"));
   if (window.twttr && window.twttr.widgets) return Promise.resolve(window.twttr);
   if (_twttrLoading) return _twttrLoading;
   _twttrLoading = new Promise(function(resolve, reject){
+    /* タイムアウト：6秒以内に load イベントが来なければ失敗扱い */
+    var done = false;
+    var timer = setTimeout(function(){
+      if (done) return;
+      done = true;
+      _twttrFailed = true;
+      reject(new Error("twttr load timeout"));
+    }, 6000);
+
     var s = document.createElement("script");
     s.src = "https://platform.twitter.com/widgets.js";
     s.async = true;
     s.charset = "utf-8";
     s.onload = function(){
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
       if (window.twttr && window.twttr.widgets) resolve(window.twttr);
-      else reject(new Error("twttr not ready"));
+      else { _twttrFailed = true; reject(new Error("twttr not ready")); }
     };
-    s.onerror = function(){ reject(new Error("twttr load failed")); };
+    s.onerror = function(){
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      _twttrFailed = true;
+      reject(new Error("twttr load failed (blocked?)"));
+    };
     document.head.appendChild(s);
   });
   return _twttrLoading;
 }
+
 function renderTweet(wrap, url) {
   var tid = tweetId(url);
   if (!tid) {
     appendTweetFallback(wrap, url, "X のツイートIDを取得できませんでした");
     return;
   }
+
+  /* スクロール可能なボックス */
   var box = document.createElement("div");
   box.className = "md-tweet-box";
-  /* 読み込み中表示 */
+
+  /* 公式 blockquote(div) を設置：widgets.js が iframe に差し替える
+     差し替え失敗時もリンクが残るので UX が良い */
+  var bq = document.createElement("blockquote");
+  bq.className = "twitter-tweet";
+  bq.setAttribute("data-lang", "ja");
+  bq.setAttribute("data-dnt", "true");
+  bq.setAttribute("data-conversation", "none");
+  bq.style.cssText = "margin:0 auto;";
+  var a = document.createElement("a");
+  a.href = "https://twitter.com/i/status/" + tid;
+  a.textContent = "X のツイートを表示";
+  bq.appendChild(a);
+  box.appendChild(bq);
+
+  /* 読み込み中インジケータ（パース完了後に消す） */
   var loading = document.createElement("div");
-  loading.style.cssText = "padding:40px;text-align:center;color:#5f6368;font-size:13px;";
+  loading.style.cssText = "padding:24px;text-align:center;color:#5f6368;font-size:13px;";
   loading.innerHTML = 'X のツイートを読み込み中… <span class="md-spinner"></span>';
   box.appendChild(loading);
+
   wrap.appendChild(box);
 
-  loadTwitterWidgets().then(function(twttr){
-    /* createTweet(tweetId, container, options) */
-    twttr.widgets.createTweet(tid, box, {
-      theme: "light",
-      lang: "ja",
-      dnt: true,
-      conversation: "none"
-    }).then(function(el){
+  /* このボックスへの widgets.js 由来のパースを監視するためのフラグ */
+  var settled = false;
+  var safetyTimer = setTimeout(function(){
+    /* 8秒経っても iframe に差し替わらなければフォールバック */
+    if (settled) return;
+    var hasIframe = !!box.querySelector("iframe");
+    if (!hasIframe) {
+      settled = true;
       if (loading.parentNode) loading.parentNode.removeChild(loading);
-      if (!el) {
-        appendTweetFallback(wrap, url, "X のツイートを表示できませんでした（削除/非公開の可能性）");
-        if (box.parentNode) box.parentNode.removeChild(box);
+      /* blockquote は残しておく（リンクが見える）。フォールバック文も追加 */
+      var note = document.createElement("div");
+      note.style.cssText = "padding:12px 16px;text-align:center;color:#c5221f;font-size:12px;border-top:1px solid #eee;";
+      note.textContent = "X 埋め込みを読み込めませんでした（広告ブロッカー等でブロックされている可能性があります）";
+      box.appendChild(note);
+      /* リンクも追加 */
+      appendTweetFallback(wrap, url, "");
+    }
+  }, 8000);
+
+  loadTwitterWidgets().then(function(twttr){
+    twttr.widgets.load(box).then(function(){
+      if (settled) return;
+      settled = true;
+      clearTimeout(safetyTimer);
+      if (loading.parentNode) loading.parentNode.removeChild(loading);
+      /* iframe が無ければ削除/失効ツイート */
+      if (!box.querySelector("iframe")) {
+        var note2 = document.createElement("div");
+        note2.style.cssText = "padding:12px 16px;text-align:center;color:#5f6368;font-size:12px;border-top:1px solid #eee;";
+        note2.textContent = "このツイートは削除されたか、非公開の可能性があります";
+        box.appendChild(note2);
       }
     }).catch(function(){
+      if (settled) return;
+      settled = true;
+      clearTimeout(safetyTimer);
       if (loading.parentNode) loading.parentNode.removeChild(loading);
       appendTweetFallback(wrap, url, "X のツイート読み込みに失敗しました");
-      if (box.parentNode) box.parentNode.removeChild(box);
     });
   }).catch(function(){
+    if (settled) return;
+    settled = true;
+    clearTimeout(safetyTimer);
     if (loading.parentNode) loading.parentNode.removeChild(loading);
-    appendTweetFallback(wrap, url, "X の埋め込みスクリプトを読み込めませんでした");
-    if (box.parentNode) box.parentNode.removeChild(box);
+    /* widgets.js 自体がブロックされている */
+    var note3 = document.createElement("div");
+    note3.style.cssText = "padding:12px 16px;text-align:center;color:#c5221f;font-size:12px;border-top:1px solid #eee;";
+    note3.textContent = "X 埋め込みスクリプトが読み込めません（広告ブロッカーが platform.twitter.com をブロックしています）";
+    box.appendChild(note3);
+    /* リンクは blockquote 内にあるのでそのまま見える */
   });
 }
+
 function appendTweetFallback(wrap, url, msg) {
   var fb = document.createElement("div");
   fb.className = "md-tweet-fallback";
-  var m = document.createElement("div"); m.textContent = msg || "X のツイートを表示できませんでした";
-  fb.appendChild(m);
-  var a = document.createElement("a");
-  a.href = url; a.target = "_blank"; a.rel = "noopener"; a.textContent = url;
-  fb.appendChild(a);
+  if (msg) {
+    var m = document.createElement("div"); m.textContent = msg;
+    fb.appendChild(m);
+  }
+  var open = document.createElement("a");
+  open.href = url; open.target = "_blank"; open.rel = "noopener";
+  open.textContent = "🔗 X で開く";
+  open.style.cssText = "display:inline-block;margin-top:6px;padding:8px 16px;background:#1da1f2;color:#fff;border-radius:20px;text-decoration:none;font-weight:700;font-size:13px;";
+  fb.appendChild(open);
   wrap.appendChild(fb);
 }
 
