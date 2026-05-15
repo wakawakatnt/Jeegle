@@ -608,7 +608,7 @@ function renderMore() {
     }
   });
 }
-  function buildCard(item, idx) {
+function buildCard(item, idx) {
   var card = document.createElement("div");
   card.className = "md-card";
   card.addEventListener("click", function(){ openModal(idx); });
@@ -684,8 +684,7 @@ function renderMore() {
       return card;
     }
   }
-
-  if (thumb) {
+    if (thumb) {
     var img = document.createElement("img");
     img.className = "md-thumb";
     img.loading = "lazy";
@@ -704,7 +703,8 @@ function renderMore() {
   } else {
     card.appendChild(makePlaceholder(kind, item));
   }
-var kindBadge = document.createElement("span");
+
+  var kindBadge = document.createElement("span");
   kindBadge.className = "md-kind-badge";
   kindBadge.setAttribute("data-k", kind);
   kindBadge.textContent = labelOf(kind);
@@ -803,7 +803,13 @@ function openModal(idx) {
       } else wrap.appendChild(makePlaceholder(kind));
     } else if (prov === "file" || isVideoExt(url)) {
       var v = document.createElement("video");
-        } else if (kind === "twitter") {
+      v.referrerPolicy = "no-referrer";   /* ★修正⑤a */
+      v.src = url; v.controls = true; v.autoplay = true; v.playsInline = true;
+      wrap.appendChild(v);
+    } else {
+      wrap.appendChild(makePlaceholder(kind));
+    }
+  } else if (kind === "twitter") {
     renderTweet(wrap, url);
   } else if (kind === "image") {
     if (isVideoExt(url)) {
@@ -859,7 +865,7 @@ function openModal(idx) {
     ts.textContent = fmtDate(item.p);
     info.appendChild(ts);
   }
-  var openA = document.createElement("a");
+    var openA = document.createElement("a");
   openA.className = "md-modal-open";
   openA.href = url; openA.target = "_blank"; openA.rel = "noopener";
   openA.textContent = "🔗 元URL";
@@ -913,13 +919,112 @@ function renderTweet(wrap, url) {
     appendTweetFallback(wrap, url, "X のツイートIDを取得できませんでした");
     return;
   }
-      v.referrerPolicy = "no-referrer";   /* ★修正⑤a */
-      v.src = url; v.controls = true; v.autoplay = true; v.playsInline = true;
-      wrap.appendChild(v);
-    } else {
-      wrap.appendChild(makePlaceholder(kind));
+
+var box = document.createElement("div");
+  box.className = "md-tweet-box";
+
+  var bq = document.createElement("blockquote");
+  bq.className = "twitter-tweet";
+  bq.setAttribute("data-lang", "ja");
+  bq.setAttribute("data-dnt", "true");
+  bq.setAttribute("data-conversation", "none");
+  bq.style.cssText = "margin:0 auto;";
+  var a = document.createElement("a");
+  a.href = "https://twitter.com/i/status/" + tid;
+  a.textContent = "X のツイートを表示";
+  bq.appendChild(a);
+  box.appendChild(bq);
+
+  var loading = document.createElement("div");
+  loading.style.cssText = "padding:24px;text-align:center;color:#5f6368;font-size:13px;";
+  loading.innerHTML = 'X のツイートを読み込み中… <span class="md-spinner"></span>';
+  box.appendChild(loading);
+
+  wrap.appendChild(box);
+
+  var settled = false;
+  var safetyTimer = setTimeout(function(){
+    if (settled) return;
+    var hasIframe = !!box.querySelector("iframe");
+    if (!hasIframe) {
+      settled = true;
+      if (loading.parentNode) loading.parentNode.removeChild(loading);
+      var note = document.createElement("div");
+      note.style.cssText = "padding:12px 16px;text-align:center;color:#c5221f;font-size:12px;border-top:1px solid #eee;";
+      note.textContent = "X 埋め込みを読み込めませんでした（広告ブロッカー等でブロックされている可能性があります）";
+      box.appendChild(note);
+      appendTweetFallback(wrap, url, "");
     }
-  
+  }, 8000);
+
+  loadTwitterWidgets().then(function(twttr){
+    twttr.widgets.load(box).then(function(){
+      if (settled) return;
+      settled = true;
+      clearTimeout(safetyTimer);
+      if (loading.parentNode) loading.parentNode.removeChild(loading);
+      if (!box.querySelector("iframe")) {
+        var note2 = document.createElement("div");
+        note2.style.cssText = "padding:12px 16px;text-align:center;color:#5f6368;font-size:12px;border-top:1px solid #eee;";
+        note2.textContent = "このツイートは削除されたか、非公開の可能性があります";
+        box.appendChild(note2);
+      }
+    }).catch(function(){
+      if (settled) return;
+      settled = true;
+      clearTimeout(safetyTimer);
+      if (loading.parentNode) loading.parentNode.removeChild(loading);
+      appendTweetFallback(wrap, url, "X のツイート読み込みに失敗しました");
+    });
+  }).catch(function(){
+    if (settled) return;
+    settled = true;
+    clearTimeout(safetyTimer);
+    if (loading.parentNode) loading.parentNode.removeChild(loading);
+    var note3 = document.createElement("div");
+    note3.style.cssText = "padding:12px 16px;text-align:center;color:#c5221f;font-size:12px;border-top:1px solid #eee;";
+    note3.textContent = "X 埋め込みスクリプトが読み込めません（広告ブロッカーが platform.twitter.com をブロックしています）";
+    box.appendChild(note3);
+  });
+}
+
+function appendTweetFallback(wrap, url, msg) {
+  var fb = document.createElement("div");
+  fb.className = "md-tweet-fallback";
+  if (msg) {
+    var m = document.createElement("div"); m.textContent = msg;
+    fb.appendChild(m);
+  }
+  var open = document.createElement("a");
+  open.href = url; open.target = "_blank"; open.rel = "noopener";
+  open.textContent = "🔗 X で開く";
+  open.style.cssText = "display:inline-block;margin-top:6px;padding:8px 16px;background:#1da1f2;color:#fff;border-radius:20px;text-decoration:none;font-weight:700;font-size:13px;";
+  fb.appendChild(open);
+  wrap.appendChild(fb);
+}
+  function cleanupModalMedia() {
+  var wrap = $("mdModalMedia");
+  if (!wrap) return;
+  var ifrs = wrap.querySelectorAll("iframe");
+  for (var i = 0; i < ifrs.length; i++) if (ifrs[i]._cleanup) ifrs[i]._cleanup();
+  var vids = wrap.querySelectorAll("video");
+  for (var j = 0; j < vids.length; j++) { try { vids[j].pause(); vids[j].src = ""; vids[j].load(); } catch(e){} }
+}
+
+function closeModal() {
+  cleanupModalMedia();
+  $("mdModal").classList.remove("open");
+  $("mdModalMedia").innerHTML = "";
+  document.body.style.overflow = "";
+  modalIdx = -1;
+}
+function nextModal() { if (modalIdx >= 0 && modalIdx + 1 < filtered.length) openModal(modalIdx + 1); }
+function prevModal() { if (modalIdx > 0) openModal(modalIdx - 1); }
+
+$("mdModalClose").addEventListener("click", function(e){ e.stopPropagation(); closeModal(); });
+$("mdModalNext").addEventListener("click", function(e){ e.stopPropagation(); nextModal(); });
+$("mdModalPrev").addEventListener("click", function(e){ e.stopPropagation(); prevModal(); });
+
 $("mdModal").addEventListener("click", function(e){
   var t = e.target;
   var closeable = (t.id === "mdModal") || (t.id === "mdModalMedia") || (t.id === "mdModalInner");
