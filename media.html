@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta name="referrer" content="no-referrer">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>貼られた画像一覧 - Jeegle!</title>
@@ -295,12 +294,6 @@ var META_CACHE_TTL_MS = 60 * 1000;
 var allItems = [], filtered = [], renderIdx = 0;
 var currentKind = "", modalIdx = -1;
 
-/* URL クエリから初期フィルタを取得
-   対応:
-     ?kind=video   ?kind=image  ?kind=x  ?kind=other
-     ?video        ?img         ?image   ?x  ?twitter
-     ?youtube      ?nico        ?niconico
-*/
 (function initFilterFromUrl(){
   try {
     var p = new URLSearchParams(location.search);
@@ -335,7 +328,6 @@ function setStatus(msg, type) {
   el.textContent = msg;
 }
 
-/* 様々な型を Date に変換 */
 function toDate(v) {
   if (v == null) return null;
   if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
@@ -374,10 +366,6 @@ function idAnalysisUrl(id, postedAt) {
   return u;
 }
 
-/* ========== 種別判定 ==========
-   メインカテゴリ: image / video / twitter / other
-   YouTube・ニコニコ・mp4 など → video に統合
-*/
 function detectKindRaw(url, hint) {
   if (hint) {
     var h = String(hint).toLowerCase();
@@ -399,7 +387,6 @@ function detectKindRaw(url, hint) {
   return "other";
 }
 
-/* 動画プロバイダ判別（モーダル/サムネ用） */
 function detectVideoProvider(url) {
   if (!url) return "";
   if (/^https?:\/\/(?:www\.)?youtube\.com\/(?:watch|shorts)/i.test(url) || /^https?:\/\/youtu\.be\//i.test(url)) return "youtube";
@@ -408,7 +395,6 @@ function detectVideoProvider(url) {
   return "";
 }
 
-/* ID抽出 */
 function youtubeId(url) {
   var m = url.match(/(?:youtube\.com\/(?:watch\?(?:[^&]*&)*v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/i);
   return m ? m[1] : null;
@@ -426,7 +412,6 @@ function tweetId(url) {
   return m ? m[1] : null;
 }
 function tweetUser(url) {
-  /* https://x.com/USERNAME/status/123... または twitter.com/USERNAME/status/... */
   var m = url.match(/(?:twitter|x)\.com\/([^\/\?#]+)\/status\/\d+/i);
   if (!m) return null;
   var u = m[1];
@@ -436,7 +421,6 @@ function tweetUser(url) {
 function isImageExt(url) { return /\.(jpe?g|png|gif|webp)(\?|#|$)/i.test(url); }
 function isVideoExt(url) { return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url); }
 
-/* サムネURL */
 function thumbnailUrl(item, kind) {
   var url = item.url || "";
   if (kind === "video") {
@@ -459,7 +443,6 @@ function thumbnailUrl(item, kind) {
   return null;
 }
 
-/* ========== メタ(JSON)キャッシュ：sessionStorage 60秒 ========== */
 function loadMetaCache() {
   try {
     var raw = sessionStorage.getItem(META_CACHE_KEY);
@@ -474,7 +457,6 @@ function saveMetaCache(data) {
   try { sessionStorage.setItem(META_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data })); } catch(e) {}
 }
 
-/* ========== Firestore ========== */
 function fetchMedia() {
   setStatus("貼られた画像一覧を読み込み中…", "info");
   var cached = loadMetaCache();
@@ -530,7 +512,6 @@ function buildKindFilters(items) {
     var k = items[i]._k || "other";
     counts[k] = (counts[k] || 0) + 1;
   }
-  /* 表示順を固定（video → image → twitter → other） */
   var orderPref = ["video","image","twitter","other"];
   var keys = Object.keys(counts).sort(function(a,b){
     var ia = orderPref.indexOf(a), ib = orderPref.indexOf(b);
@@ -554,7 +535,6 @@ function buildKindFilters(items) {
     box.appendChild(btn);
   }
   if (all && !all._bound) { all.addEventListener("click", onFilterClick); all._bound = true; }
-  /* 現在のフィルタに合わせて active を反映 */
   var btns = document.querySelectorAll(".md-fbtn");
   for (var b = 0; b < btns.length; b++) {
     btns[b].classList.toggle("active", (btns[b].getAttribute("data-kind") || "") === currentKind);
@@ -573,12 +553,10 @@ function onFilterClick(e) {
   currentKind = k;
   var btns = document.querySelectorAll(".md-fbtn");
   for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", (btns[i].getAttribute("data-kind") || "") === currentKind);
-  /* URL も更新（履歴は積まない） */
   try {
     var url = new URL(location.href);
     if (currentKind) url.searchParams.set("kind", currentKind);
     else url.searchParams.delete("kind");
-    /* レガシーパラメータは消す */
     ["x","twitter","img","image","video","youtube","nico","niconico","other"].forEach(function(p){
       url.searchParams.delete(p);
     });
@@ -587,7 +565,6 @@ function onFilterClick(e) {
   applyFilter();
 }
 function applyFilter() {
-  /* twitter サムネ ResizeObserver をクリーンアップ */
   var olds = $("mdGrid").querySelectorAll(".md-tw-thumb");
   for (var i = 0; i < olds.length; i++) if (olds[i]._cleanup) olds[i]._cleanup();
 
@@ -600,7 +577,6 @@ function applyFilter() {
   renderMore();
 }
 
-/* 描画 */
 function renderMore() {
   if (renderIdx >= filtered.length) {
     $("mdEnd").style.display = filtered.length > 0 ? "block" : "none";
@@ -622,21 +598,17 @@ function renderMore() {
     $("mdEnd").style.display = "block";
     return;
   }
-  /* sentinel がまだ可視範囲内（または近傍）にあれば追加描画 */
-  /* IO が「変化」しか拾わない問題への対策 */
   requestAnimationFrame(function(){
     var sen = $("mdSentinel");
     if (!sen) return;
     var rect = sen.getBoundingClientRect();
     var vh = window.innerHeight || document.documentElement.clientHeight;
-    /* 画面下から 400px 以内に sentinel が来ていればさらに読む */
     if (rect.top < vh + 400) {
       renderMore();
     }
   });
 }
-
-function buildCard(item, idx) {
+  function buildCard(item, idx) {
   var card = document.createElement("div");
   card.className = "md-card";
   card.addEventListener("click", function(){ openModal(idx); });
@@ -645,7 +617,6 @@ function buildCard(item, idx) {
   var thumb = thumbnailUrl(item, kind);
   var isVid = (kind === "video");
 
-  /* ===== X(Twitter) は iframe サムネ ===== */
   if (kind === "twitter") {
     var tid = tweetId(item.url || "");
     if (tid) {
@@ -720,6 +691,7 @@ function buildCard(item, idx) {
     img.loading = "lazy";
     img.decoding = "async";
     img.alt = "";
+    img.referrerPolicy = "no-referrer";   /* ★修正① */
     img.src = thumb;
     img.onerror = function(){ img.remove(); card.insertBefore(makePlaceholder(kind, item), card.firstChild); };
     card.appendChild(img);
@@ -732,8 +704,7 @@ function buildCard(item, idx) {
   } else {
     card.appendChild(makePlaceholder(kind, item));
   }
-
-  var kindBadge = document.createElement("span");
+var kindBadge = document.createElement("span");
   kindBadge.className = "md-kind-badge";
   kindBadge.setAttribute("data-k", kind);
   kindBadge.textContent = labelOf(kind);
@@ -762,7 +733,6 @@ function makePlaceholder(kind, item) {
   return ph;
 }
 
-/* 無限スクロール（複数 entries・連続発火に対応） */
 var io = new IntersectionObserver(function(entries){
   var hit = false;
   for (var i = 0; i < entries.length; i++) {
@@ -772,7 +742,6 @@ var io = new IntersectionObserver(function(entries){
 }, { rootMargin: "600px 0px", threshold: 0 });
 io.observe($("mdSentinel"));
 
-/* スクロールイベントでも保険的にチェック（IO がサボった時用） */
 var _scrollTimer = null;
 window.addEventListener("scroll", function(){
   if (_scrollTimer) return;
@@ -788,7 +757,6 @@ window.addEventListener("scroll", function(){
   }, 150);
 }, { passive: true });
 
-/* X サムネ遅延ロード用 IO */
 var twThumbIO = new IntersectionObserver(function(entries){
   for (var i = 0; i < entries.length; i++) {
     var e = entries[i];
@@ -803,7 +771,6 @@ var twThumbIO = new IntersectionObserver(function(entries){
 /* ========== モーダル ========== */
 function openModal(idx) {
   if (idx < 0 || idx >= filtered.length) return;
-  /* 直前のものがあれば cleanup */
   cleanupModalMedia();
   modalIdx = idx;
   var item = filtered[idx];
@@ -836,36 +803,39 @@ function openModal(idx) {
       } else wrap.appendChild(makePlaceholder(kind));
     } else if (prov === "file" || isVideoExt(url)) {
       var v = document.createElement("video");
-      v.src = url; v.controls = true; v.autoplay = true; v.playsInline = true;
-      wrap.appendChild(v);
-    } else {
-      wrap.appendChild(makePlaceholder(kind));
-    }
-  } else if (kind === "twitter") {
+        } else if (kind === "twitter") {
     renderTweet(wrap, url);
   } else if (kind === "image") {
     if (isVideoExt(url)) {
-      var vv = document.createElement("video"); vv.src = url; vv.controls = true; vv.autoplay = true; vv.playsInline = true; wrap.appendChild(vv);
+      var vv = document.createElement("video");
+      vv.referrerPolicy = "no-referrer";   /* ★修正⑤b */
+      vv.src = url; vv.controls = true; vv.autoplay = true; vv.playsInline = true; wrap.appendChild(vv);
     } else if (isImageExt(url) || /imgu\.jp/i.test(url)) {
-      var im = document.createElement("img"); im.src = url; wrap.appendChild(im);
+      var im = document.createElement("img");
+      im.referrerPolicy = "no-referrer";   /* ★修正② */
+      im.src = url; wrap.appendChild(im);
     } else if (/imgur\.com/i.test(url)) {
       var iid = imgurId(url);
       if (iid) {
-        var im2 = document.createElement("img"); im2.src = "https://i.imgur.com/" + iid + ".jpg"; wrap.appendChild(im2);
+        var im2 = document.createElement("img");
+        im2.referrerPolicy = "no-referrer";   /* ★修正③ */
+        im2.src = "https://i.imgur.com/" + iid + ".jpg"; wrap.appendChild(im2);
       } else { wrap.appendChild(makePlaceholder(kind)); }
     } else { wrap.appendChild(makePlaceholder(kind)); }
   } else {
-    /* other */
     if (isImageExt(url)) {
-      var im4 = document.createElement("img"); im4.src = url; wrap.appendChild(im4);
+      var im4 = document.createElement("img");
+      im4.referrerPolicy = "no-referrer";   /* ★修正④ */
+      im4.src = url; wrap.appendChild(im4);
     } else if (isVideoExt(url)) {
-      var v4 = document.createElement("video"); v4.src = url; v4.controls = true; v4.autoplay = true; v4.playsInline = true; wrap.appendChild(v4);
+      var v4 = document.createElement("video");
+      v4.referrerPolicy = "no-referrer";   /* ★修正⑤c */
+      v4.src = url; v4.controls = true; v4.autoplay = true; v4.playsInline = true; wrap.appendChild(v4);
     } else {
       wrap.appendChild(makePlaceholder(kind));
     }
   }
 
-  /* 情報パネル */
   var info = $("mdModalInfo");
   info.innerHTML = "";
   if (item.n != null && item.t) {
@@ -899,13 +869,6 @@ function openModal(idx) {
   document.body.style.overflow = "hidden";
 }
 
-/* ===== X(Twitter) 埋め込み =====
-   方針:
-   - 公式 widgets.js による「blockquote パース方式」を使用
-     （createTweet より広告ブロッカー耐性がややマシ＆フォールバック表示が残る）
-   - widgets.js の読み込みに失敗（ブロッカー等で ERR_BLOCKED_BY_CLIENT）したら
-     即フォールバック表示
-*/
 var _twttrLoading = null;
 var _twttrFailed = false;
 function loadTwitterWidgets() {
@@ -913,7 +876,6 @@ function loadTwitterWidgets() {
   if (window.twttr && window.twttr.widgets) return Promise.resolve(window.twttr);
   if (_twttrLoading) return _twttrLoading;
   _twttrLoading = new Promise(function(resolve, reject){
-    /* タイムアウト：6秒以内に load イベントが来なければ失敗扱い */
     var done = false;
     var timer = setTimeout(function(){
       if (done) return;
@@ -951,126 +913,13 @@ function renderTweet(wrap, url) {
     appendTweetFallback(wrap, url, "X のツイートIDを取得できませんでした");
     return;
   }
-
-  /* スクロール可能なボックス */
-  var box = document.createElement("div");
-  box.className = "md-tweet-box";
-
-  /* 公式 blockquote(div) を設置：widgets.js が iframe に差し替える
-     差し替え失敗時もリンクが残るので UX が良い */
-  var bq = document.createElement("blockquote");
-  bq.className = "twitter-tweet";
-  bq.setAttribute("data-lang", "ja");
-  bq.setAttribute("data-dnt", "true");
-  bq.setAttribute("data-conversation", "none");
-  bq.style.cssText = "margin:0 auto;";
-  var a = document.createElement("a");
-  a.href = "https://twitter.com/i/status/" + tid;
-  a.textContent = "X のツイートを表示";
-  bq.appendChild(a);
-  box.appendChild(bq);
-
-  /* 読み込み中インジケータ（パース完了後に消す） */
-  var loading = document.createElement("div");
-  loading.style.cssText = "padding:24px;text-align:center;color:#5f6368;font-size:13px;";
-  loading.innerHTML = 'X のツイートを読み込み中… <span class="md-spinner"></span>';
-  box.appendChild(loading);
-
-  wrap.appendChild(box);
-
-  /* このボックスへの widgets.js 由来のパースを監視するためのフラグ */
-  var settled = false;
-  var safetyTimer = setTimeout(function(){
-    /* 8秒経っても iframe に差し替わらなければフォールバック */
-    if (settled) return;
-    var hasIframe = !!box.querySelector("iframe");
-    if (!hasIframe) {
-      settled = true;
-      if (loading.parentNode) loading.parentNode.removeChild(loading);
-      /* blockquote は残しておく（リンクが見える）。フォールバック文も追加 */
-      var note = document.createElement("div");
-      note.style.cssText = "padding:12px 16px;text-align:center;color:#c5221f;font-size:12px;border-top:1px solid #eee;";
-      note.textContent = "X 埋め込みを読み込めませんでした（広告ブロッカー等でブロックされている可能性があります）";
-      box.appendChild(note);
-      /* リンクも追加 */
-      appendTweetFallback(wrap, url, "");
+      v.referrerPolicy = "no-referrer";   /* ★修正⑤a */
+      v.src = url; v.controls = true; v.autoplay = true; v.playsInline = true;
+      wrap.appendChild(v);
+    } else {
+      wrap.appendChild(makePlaceholder(kind));
     }
-  }, 8000);
-
-  loadTwitterWidgets().then(function(twttr){
-    twttr.widgets.load(box).then(function(){
-      if (settled) return;
-      settled = true;
-      clearTimeout(safetyTimer);
-      if (loading.parentNode) loading.parentNode.removeChild(loading);
-      /* iframe が無ければ削除/失効ツイート */
-      if (!box.querySelector("iframe")) {
-        var note2 = document.createElement("div");
-        note2.style.cssText = "padding:12px 16px;text-align:center;color:#5f6368;font-size:12px;border-top:1px solid #eee;";
-        note2.textContent = "このツイートは削除されたか、非公開の可能性があります";
-        box.appendChild(note2);
-      }
-    }).catch(function(){
-      if (settled) return;
-      settled = true;
-      clearTimeout(safetyTimer);
-      if (loading.parentNode) loading.parentNode.removeChild(loading);
-      appendTweetFallback(wrap, url, "X のツイート読み込みに失敗しました");
-    });
-  }).catch(function(){
-    if (settled) return;
-    settled = true;
-    clearTimeout(safetyTimer);
-    if (loading.parentNode) loading.parentNode.removeChild(loading);
-    /* widgets.js 自体がブロックされている */
-    var note3 = document.createElement("div");
-    note3.style.cssText = "padding:12px 16px;text-align:center;color:#c5221f;font-size:12px;border-top:1px solid #eee;";
-    note3.textContent = "X 埋め込みスクリプトが読み込めません（広告ブロッカーが platform.twitter.com をブロックしています）";
-    box.appendChild(note3);
-    /* リンクは blockquote 内にあるのでそのまま見える */
-  });
-}
-
-function appendTweetFallback(wrap, url, msg) {
-  var fb = document.createElement("div");
-  fb.className = "md-tweet-fallback";
-  if (msg) {
-    var m = document.createElement("div"); m.textContent = msg;
-    fb.appendChild(m);
-  }
-  var open = document.createElement("a");
-  open.href = url; open.target = "_blank"; open.rel = "noopener";
-  open.textContent = "🔗 X で開く";
-  open.style.cssText = "display:inline-block;margin-top:6px;padding:8px 16px;background:#1da1f2;color:#fff;border-radius:20px;text-decoration:none;font-weight:700;font-size:13px;";
-  fb.appendChild(open);
-  wrap.appendChild(fb);
-}
-
-function cleanupModalMedia() {
-  var wrap = $("mdModalMedia");
-  if (!wrap) return;
-  /* iframe の cleanup（旧 postMessage ハンドラ等が残っていれば） */
-  var ifrs = wrap.querySelectorAll("iframe");
-  for (var i = 0; i < ifrs.length; i++) if (ifrs[i]._cleanup) ifrs[i]._cleanup();
-  /* video を止める */
-  var vids = wrap.querySelectorAll("video");
-  for (var j = 0; j < vids.length; j++) { try { vids[j].pause(); vids[j].src = ""; vids[j].load(); } catch(e){} }
-}
-
-function closeModal() {
-  cleanupModalMedia();
-  $("mdModal").classList.remove("open");
-  $("mdModalMedia").innerHTML = "";
-  document.body.style.overflow = "";
-  modalIdx = -1;
-}
-function nextModal() { if (modalIdx >= 0 && modalIdx + 1 < filtered.length) openModal(modalIdx + 1); }
-function prevModal() { if (modalIdx > 0) openModal(modalIdx - 1); }
-
-$("mdModalClose").addEventListener("click", function(e){ e.stopPropagation(); closeModal(); });
-$("mdModalNext").addEventListener("click", function(e){ e.stopPropagation(); nextModal(); });
-$("mdModalPrev").addEventListener("click", function(e){ e.stopPropagation(); prevModal(); });
-
+  
 $("mdModal").addEventListener("click", function(e){
   var t = e.target;
   var closeable = (t.id === "mdModal") || (t.id === "mdModalMedia") || (t.id === "mdModalInner");
@@ -1087,7 +936,6 @@ document.addEventListener("keydown", function(e){
   else if (e.key === "ArrowLeft") prevModal();
 });
 
-/* 共有 */
 $("mdShareBtn").addEventListener("click", function(){
   var url = location.href;
   if (navigator.share) navigator.share({ title: "Jeegle! 貼られた画像一覧", url: url }).catch(function(){});
