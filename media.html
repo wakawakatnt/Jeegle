@@ -610,7 +610,22 @@ function renderMore() {
   renderIdx = end;
   txt($("mdCount"), String(renderIdx));
   $("mdLoading").style.display = "none";
-  if (renderIdx >= filtered.length) $("mdEnd").style.display = "block";
+  if (renderIdx >= filtered.length) {
+    $("mdEnd").style.display = "block";
+    return;
+  }
+  /* sentinel がまだ可視範囲内（または近傍）にあれば追加描画 */
+  /* IO が「変化」しか拾わない問題への対策 */
+  requestAnimationFrame(function(){
+    var sen = $("mdSentinel");
+    if (!sen) return;
+    var rect = sen.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    /* 画面下から 400px 以内に sentinel が来ていればさらに読む */
+    if (rect.top < vh + 400) {
+      renderMore();
+    }
+  });
 }
 
 function buildCard(item, idx) {
@@ -739,11 +754,31 @@ function makePlaceholder(kind, item) {
   return ph;
 }
 
-/* 無限スクロール */
+/* 無限スクロール（複数 entries・連続発火に対応） */
 var io = new IntersectionObserver(function(entries){
-  for (var i = 0; i < entries.length; i++) if (entries[i].isIntersecting) renderMore();
-}, { rootMargin: "400px 0px" });
+  var hit = false;
+  for (var i = 0; i < entries.length; i++) {
+    if (entries[i].isIntersecting) { hit = true; break; }
+  }
+  if (hit) renderMore();
+}, { rootMargin: "600px 0px", threshold: 0 });
 io.observe($("mdSentinel"));
+
+/* スクロールイベントでも保険的にチェック（IO がサボった時用） */
+var _scrollTimer = null;
+window.addEventListener("scroll", function(){
+  if (_scrollTimer) return;
+  _scrollTimer = setTimeout(function(){
+    _scrollTimer = null;
+    if (renderIdx < filtered.length) {
+      var sen = $("mdSentinel");
+      if (!sen) return;
+      var rect = sen.getBoundingClientRect();
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      if (rect.top < vh + 600) renderMore();
+    }
+  }, 150);
+}, { passive: true });
 
 /* X サムネ遅延ロード用 IO */
 var twThumbIO = new IntersectionObserver(function(entries){
