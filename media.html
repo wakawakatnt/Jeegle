@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>メディア一覧 - Jeegle!</title>
+<title>貼られた画像一覧 - Jeegle!</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
 .md-page { min-height:100vh; background:#f0f2f5; }
@@ -217,7 +217,7 @@
     <a class="md-logo" href="index.html">
       <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
     </a>
-    <div class="md-header-title">🖼️ メディア一覧</div>
+    <div class="md-header-title">🖼️ 貼られた画像一覧</div>
     <div class="md-header-actions">
       <button class="md-share-btn" id="mdShareBtn">🔗 URL共有</button>
       <a class="md-back" href="index.html">← 検索に戻る</a>
@@ -468,7 +468,7 @@ function saveMetaCache(data) {
 
 /* ========== Firestore ========== */
 function fetchMedia() {
-  setStatus("メディア一覧を読み込み中…", "info");
+  setStatus("貼られた画像一覧を読み込み中…", "info");
   var cached = loadMetaCache();
   if (cached) {
     applyData(cached);
@@ -1082,7 +1082,7 @@ document.addEventListener("keydown", function(e){
 /* 共有 */
 $("mdShareBtn").addEventListener("click", function(){
   var url = location.href;
-  if (navigator.share) navigator.share({ title: "Jeegle! メディア一覧", url: url }).catch(function(){});
+  if (navigator.share) navigator.share({ title: "Jeegle! 貼られた画像一覧", url: url }).catch(function(){});
   else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function(){
     setStatus("URLをコピーしました", "ok"); setTimeout(function(){ setStatus(""); }, 1500);
   });
