@@ -4,8 +4,8 @@
    ID分析ページ — js/id-analysis.js
    ================================================================ */
 
-var SB_URL2 = "https://magmwtxzsbguzpoosjof.supabase.co";
-var SB_KEY2 = "sb_publishable_OyXecLIdNaCUJo2Mry2WOQ_wXt20zTm";
+var SB_URL2 = "https://fdwceaeqrscbwcwsqrff.supabase.co";
+var SB_KEY2 = "sb_publishable_oEIPHntQ7TjrZTybZEjXtQ_Ojd8PrTO";
 var DAYS_IDA = ["日","月","火","水","木","金","土"];
 
 /* ================================================================
