@@ -1,10 +1,8 @@
 /* Jeegle! メディアキャッシュ用 Service Worker */
 "use strict";
-
 var CACHE_NAME    = "jeegle-media-v1";
 var MAX_ENTRIES   = 500;                    /* 最大500件 */
 var MAX_AGE_MS    = 7 * 24 * 60 * 60 * 1000; /* 7日 */
-
 /* キャッシュ対象のホスト */
 var CACHE_HOSTS = [
   "i.imgur.com",
@@ -12,7 +10,6 @@ var CACHE_HOSTS = [
   "imgu.jp",
   "i.ytimg.com"   /* YouTube サムネ */
 ];
-
 self.addEventListener("install", function(e){ self.skipWaiting(); });
 self.addEventListener("activate", function(e){
   e.waitUntil((async function(){
@@ -24,28 +21,22 @@ self.addEventListener("activate", function(e){
     }));
   })());
 });
-
 self.addEventListener("fetch", function(event){
   var req = event.request;
   if (req.method !== "GET") return;
   var url;
   try { url = new URL(req.url); } catch(e){ return; }
-
   /* 対象ホストのみ */
   if (CACHE_HOSTS.indexOf(url.hostname) === -1) return;
-
   /* 画像/動画のみ */
   var isMedia = /\.(jpe?g|png|gif|webp|mp4)(\?|$)/i.test(url.pathname) ||
                 url.hostname === "i.ytimg.com";
   if (!isMedia) return;
-
   event.respondWith(handleMedia(req));
 });
-
 async function handleMedia(req) {
   var cache = await caches.open(CACHE_NAME);
   var cached = await cache.match(req);
-
   if (cached) {
     var dateHdr = cached.headers.get("x-jeegle-cached-at");
     var age = dateHdr ? (Date.now() - Number(dateHdr)) : 0;
@@ -57,7 +48,6 @@ async function handleMedia(req) {
       await cache.delete(req);
     }
   }
-
   try {
     var res = await fetch(req);
     if (res && (res.status === 200 || res.type === "opaque")) {
@@ -67,8 +57,8 @@ async function handleMedia(req) {
       headers.set("x-jeegle-cached-at", String(Date.now()));
       var body = await cloned.blob();
       var stored = new Response(body, {
-        status: cloned.status,
-        statusText: cloned.statusText,
+        status: (cloned.type === "opaque" || cloned.status === 0) ? 200 : cloned.status,
+        statusText: (cloned.type === "opaque" || cloned.status === 0) ? "OK" : (cloned.statusText || "OK"),
         headers: headers
       });
       await cache.put(req, stored);
@@ -82,7 +72,6 @@ async function handleMedia(req) {
     throw err;
   }
 }
-
 async function trimCache(cache) {
   var keys = await cache.keys();
   if (keys.length <= MAX_ENTRIES) return;
