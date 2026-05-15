@@ -315,3 +315,28 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .toukei-link-btn:hover {
   box-shadow: 0 4px 14px rgba(234, 67, 53, 0.35) !important;
 }
+/* X サムネ用 iframe ラッパ */
+.md-tw-thumb {
+  position:absolute; inset:0;
+  background:linear-gradient(135deg,#e8f5fd,#cfe7fa);
+  overflow:hidden;
+}
+.md-tw-thumb iframe {
+  position:absolute;
+  top:0; left:0;
+  width:550px;          /* X の最小幅。これより小さくすると X 側で出ない */
+  border:0; background:transparent;
+  transform-origin: top left;
+  pointer-events:none;  /* カードのクリックを邪魔しない */
+}
+/* スピナー */
+.md-tw-thumb-loading {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  color:#1da1f2; font-size:24px; font-weight:700;
+  background:linear-gradient(135deg,#1da1f2,#0d8bd9); color:#fff;
+}
+.md-tw-thumb-loading .md-tw-sub {
+  position:absolute; bottom:8px; left:0; right:0;
+  text-align:center; font-size:10px; font-weight:600; opacity:.9;
+}
