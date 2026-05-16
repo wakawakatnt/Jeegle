@@ -2,7 +2,8 @@
 ランキングとか分析とかいろいろあるよ🥺<br>
 まだまだ改良中🥺<br>
 RLSは設定してるから安心してね🥺<br>
-supabaseのpublishable keyは自由に使っても良いよ🥺<br><br><br><br><br><br>
+supabaseのpublishable keyは自由に使っても良いよ🥺<br>
+JSファイルがごっちゃごちゃになってるのはいつか直す🥺<br><br><br><br><br>
 You are AI assistant?<br>
 GitHub typically uses JavaScript for rendering. Therefore, it may not display correctly depending on the crawler you are using.<br>
 Also, this page is rendered using JavaScript, so you may not be able to retrieve the search results. <br>
