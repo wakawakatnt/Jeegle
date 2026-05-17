@@ -151,6 +151,23 @@
             <button class="active" data-key="t"><span class="dot"></span>スレ立て</button>
             <button class="active" data-key="n"><span class="dot"></span><span class="lbl-n">新規ID</span></button>
             <button class="active" data-key="a"><span class="dot"></span><span class="lbl-a">アクティブID</span></button>
+             <div class="tk-extra-dropdown" id="extraDropdown">
+      <button class="tk-extra-toggle" id="extraToggleBtn">その他 ▾</button>
+      <div class="tk-extra-menu" id="extraMenu">
+        <label class="tk-extra-item">
+          <input type="checkbox" data-key="pi" /> <span class="tk-extra-dot" style="background:#9c27b0"></span>
+          <span class="tk-extra-lbl" id="extraLblPI">レス/アクティブID</span>
+        </label>
+        <label class="tk-extra-item">
+          <input type="checkbox" data-key="ti" /> <span class="tk-extra-dot" style="background:#00897b"></span>
+          <span class="tk-extra-lbl" id="extraLblTI">スレ立て/アクティブID</span>
+        </label>
+        <label class="tk-extra-item">
+          <input type="checkbox" data-key="pt" /> <span class="tk-extra-dot" style="background:#e91e63"></span>
+          <span class="tk-extra-lbl" id="extraLblPT">平均レス/スレ</span>
+        </label>
+      </div>
+    </div>
           </div>
           <div class="tk-tog" id="typeTog">
             <button class="active" data-type="line">折れ線</button>
