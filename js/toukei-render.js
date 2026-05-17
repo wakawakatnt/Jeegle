@@ -40,6 +40,17 @@
           title: { display: false },
           afterFit: function(scale){ if (mob) scale.width = 30; }
         },
+        yExtra: {
+          type: 'linear', position: 'right', beginAtZero: true,
+          ticks: {
+            font:{ size: mob ? 9 : 11 }, maxTicksLimit: mob ? 5 : 8,
+            color: '#9c27b0',
+            callback: function(v){ return v.toFixed(1); }
+          },
+          grid: { drawOnChartArea: false },
+          title: { display: false },
+          afterFit: function(scale){ if (mob) scale.width = 30; }
+        },
         x: {
           ticks: { font:{ size: mob ? 9 : 11 }, autoSkip:true, maxRotation: mob ? 0 : 50, minRotation: 0 }
         }
@@ -51,18 +62,25 @@
     const mob = TK.isMobile();
     const mode = TK.state.mode;
     const labels = TK.labelsFor(mode);
+    const extraLabels = TK.extraLabelsFor(mode);
     const color = TK.COLORS[key];
-    const base = { label: labels[key], data, borderColor: color };
+    const isExtra = ['pi','ti','pt'].includes(key);
+    const label = isExtra ? extraLabels[key] : labels[key];
+    const base = { label, data, borderColor: color };
+
     let yAxisID = 'yRight';
     if (key === 'p') yAxisID = 'yLeft';
     else if (key === 'a') yAxisID = 'yRight2';
+    else if (isExtra) yAxisID = 'yExtra';
+
     if (type === 'line') {
       return Object.assign(base, {
         type:'line', backgroundColor: color+'33', fill:false,
         tension:0.3,
         pointRadius: mob ? 2 : 3,
         pointHoverRadius: mob ? 4 : 5,
-        borderWidth:2,
+        borderWidth: isExtra ? 1.5 : 2,
+        borderDash: isExtra ? [5,3] : [],
         yAxisID
       });
     } else {
@@ -73,20 +91,25 @@
     }
   }
 
-  /* daily モードのとき 'a' は小数（時間）になるのでツールチップ用にフォーマッタを差し替える */
   function tooltipLabelCallback(ctx) {
     const ds = ctx.dataset;
     const v = ctx.parsed.y;
-    // ラベル名で判定（「平均滞在時間」なら時間として表示）
     if (ds.label === '平均滞在時間') {
       return `${ds.label}: ${TK.fmtDec(v, 2)} h`;
+    }
+    // 派生指標は小数表示
+    const extraKeys = Object.values(TK.EXTRA_LABELS_HOURLY).concat(Object.values(TK.EXTRA_LABELS_DAILY));
+    if (extraKeys.includes(ds.label)) {
+      return `${ds.label}: ${TK.fmtDec(v, 2)}`;
     }
     return `${ds.label}: ${TK.fmtNum(v)}`;
   }
 
   TK.renderMainChart = function(series) {
     const s = TK.state;
-    const keys = ['p','t','n','a'].filter(k => s.seriesOn[k]);
+    const mainKeys = ['p','t','n','a'].filter(k => s.seriesOn[k]);
+    const extraKeys = ['pi','ti','pt'].filter(k => s.extraOn[k]);
+    const keys = mainKeys.concat(extraKeys);
     const datasets = keys.map(k => makeDataset(k, series[k], s.chartType));
 
     document.getElementById('mainChartBox').style.display = (s.chartLayout==='combined') ? 'block' : 'none';
@@ -97,17 +120,17 @@
       const ctx = document.getElementById('mainChart');
       if (!ctx) return;
 
-      const mob = TK.isMobile();
       const hasLeft   = keys.includes('p');
       const hasRight  = keys.includes('t') || keys.includes('n');
       const hasRight2 = keys.includes('a');
+      const hasExtra  = extraKeys.length > 0;
 
       const opts = baseOpts();
       opts.scales.yLeft.display   = hasLeft;
       opts.scales.yRight.display  = hasRight;
       opts.scales.yRight2.display = hasRight2;
+      opts.scales.yExtra.display  = hasExtra;
 
-      // 'a' が平均滞在時間（小数h）の場合は右軸2の precision を解除して小数表示
       if (s.mode === 'daily') {
         opts.scales.yRight2.ticks.precision = 1;
         opts.scales.yRight2.ticks.callback = function(v){ return v.toFixed(1); };
@@ -116,10 +139,14 @@
       if (!hasLeft) {
         if (hasRight)        opts.scales.yRight.grid  = { color: 'rgba(0,0,0,0.06)' };
         else if (hasRight2)  opts.scales.yRight2.grid = { color: 'rgba(0,0,0,0.06)' };
+        else if (hasExtra)   opts.scales.yExtra.grid  = { color: 'rgba(0,0,0,0.06)' };
       }
 
+      const mob = TK.isMobile();
       let rightPad = mob ? 4 : 8;
-      if (hasRight && hasRight2) rightPad = mob ? 8 : 16;
+      const rightAxes = [hasRight, hasRight2, hasExtra].filter(Boolean).length;
+      if (rightAxes >= 2) rightPad = mob ? 8 : 16;
+      if (rightAxes >= 3) rightPad = mob ? 12 : 24;
       opts.layout.padding.right = rightPad;
 
       opts.plugins.tooltip.callbacks = { label: tooltipLabelCallback };
@@ -172,24 +199,27 @@
     }
   };
 
+  /* ★ 3D散布図: 日別モードのX軸を「総ID数」に変更 */
   TK.render3DScatter = function(series) {
     const target = document.getElementById('scatter3d');
     if (!target || typeof Plotly === 'undefined') return;
 
     const mode = TK.state.mode;
     const labels = series.labels;
-    const xs = series.a;       // アクティブID または 平均滞在時間
+
+    // ★ 日別でもX軸は総ID数（series.n）に統一
+    const xs = series.n;
     const ys = series.t;
     const zs = series.p;
-    const ns = series.n;
+    const as = series.a; // ホバー情報用
 
-    const xTitle = (mode === 'daily') ? '平均滞在時間 (h)' : 'アクティブID数';
-    const nLabel = (mode === 'daily') ? '総ID数' : '新規ID';
+    const xTitle = (mode === 'daily') ? '総ID数' : '新規ID数';
     const aLabel = (mode === 'daily') ? '平均滞在時間' : 'アクティブID';
+    const nLabel = (mode === 'daily') ? '総ID数' : '新規ID';
     const aFmt   = (mode === 'daily') ? (v => TK.fmtDec(v,2) + ' h') : (v => TK.fmtNum(v));
 
     const texts = labels.map((lab,i) =>
-      `${lab}<br>${aLabel}: ${aFmt(xs[i])}<br>スレ立て: ${TK.fmtNum(ys[i])}<br>レス: ${TK.fmtNum(zs[i])}<br>${nLabel}: ${TK.fmtNum(ns[i])}`
+      `${lab}<br>${nLabel}: ${TK.fmtNum(xs[i])}<br>スレ立て: ${TK.fmtNum(ys[i])}<br>レス: ${TK.fmtNum(zs[i])}<br>${aLabel}: ${aFmt(as[i])}<br>レス/ID: ${TK.fmtDec(xs[i]>0?zs[i]/xs[i]:0,2)}`
     );
 
     const trace = {
@@ -229,7 +259,6 @@
       }
     };
 
-    // 説明文も更新
     const sub = document.getElementById('scatter3dSub');
     if (sub) sub.textContent = `X=${xTitle} / Y=スレ立て数 / Z=レス数 — 1点=各区分（${mode==='hourly'?'時':'日'}）`;
 
@@ -239,6 +268,7 @@
     });
   };
 
+  /* ★ メトリクス: 平均をデータ存在区間のみで計算 */
   TK.renderMetrics = function(days, series) {
     const s = TK.state;
     const mode = s.mode;
@@ -249,7 +279,6 @@
     document.getElementById('mThreads').textContent = TK.fmtNum(sumT);
     document.getElementById('mIds').textContent     = TK.fmtNum(sumN);
 
-    // ID数ラベル: 時別=「ID数」/ 日別=「総ID数」
     document.getElementById('mIdsLabel').textContent = (mode === 'daily') ? '総ID数' : 'ID数';
 
     document.getElementById('mAvgPI').textContent   = sumN>0 ? TK.fmtDec(sumP/sumN, 2) : '-';
@@ -257,17 +286,16 @@
     document.getElementById('mAvgPT').textContent   = sumT>0 ? TK.fmtDec(sumP/sumT, 2) : '-';
 
     if (mode === 'hourly') {
-      // 平均アクティブID/h
-      const n = 24;
+      // ★ データが存在する時間帯数で割る（0でない時間帯のみカウント）
+      const activeHours = series.p.filter((v,i) => v > 0 || series.a[i] > 0).length;
+      const n = activeHours > 0 ? activeHours : 1;
       document.getElementById('mAvgA').textContent      = TK.fmtDec(sumA/n, 1);
       document.getElementById('mAvgALabel').textContent = '平均アクティブID/h';
-      document.getElementById('mAvgASub').textContent   = `最大 ${TK.fmtNum(Math.max(...series.a))}`;
+      document.getElementById('mAvgASub').textContent   = `最大 ${TK.fmtNum(Math.max(...series.a))}（${n}h集計済）`;
     } else {
-      // 平均滞在時間 = sumA / sumN（期間全体）
       const stay = sumN > 0 ? sumA / sumN : 0;
       document.getElementById('mAvgA').textContent      = (sumN > 0) ? (TK.fmtDec(stay, 2) + ' h') : '-';
       document.getElementById('mAvgALabel').textContent = '平均滞在時間';
-      // series.a は日毎の平均滞在時間
       const maxStay = series.a.length ? Math.max(...series.a) : 0;
       document.getElementById('mAvgASub').textContent   = (maxStay > 0) ? `最大 ${TK.fmtDec(maxStay,2)} h/日` : '';
     }
@@ -297,11 +325,22 @@
         days.length>0 ? `${days[0].date}〜${days[days.length-1].date}` : '';
     }
 
-    const n = (mode === 'hourly') ? 24 : (days.length || 1);
-    const unit = (mode === 'hourly') ? '1h平均' : '1日平均';
-    document.getElementById('mPostsSub').textContent   = `${unit} ${TK.fmtDec(sumP/n,1)}`;
-    document.getElementById('mThreadsSub').textContent = `${unit} ${TK.fmtDec(sumT/n,1)}`;
-    document.getElementById('mIdsSub').textContent     = `${unit} ${TK.fmtDec(sumN/n,1)}`;
+    // ★ 平均値: データが存在する区間のみで計算
+    if (mode === 'hourly') {
+      const activeHours = series.p.filter((v,i) => v > 0 || series.a[i] > 0).length;
+      const n = activeHours > 0 ? activeHours : 1;
+      const unit = `${n}h平均`;
+      document.getElementById('mPostsSub').textContent   = `${unit} ${TK.fmtDec(sumP/n,1)}`;
+      document.getElementById('mThreadsSub').textContent = `${unit} ${TK.fmtDec(sumT/n,1)}`;
+      document.getElementById('mIdsSub').textContent     = `${unit} ${TK.fmtDec(sumN/n,1)}`;
+    } else {
+      const activeDays = days.filter(d => d.exists && d.sumP > 0).length;
+      const n = activeDays > 0 ? activeDays : 1;
+      const unit = `${n}日平均`;
+      document.getElementById('mPostsSub').textContent   = `${unit} ${TK.fmtDec(sumP/n,1)}`;
+      document.getElementById('mThreadsSub').textContent = `${unit} ${TK.fmtDec(sumT/n,1)}`;
+      document.getElementById('mIdsSub').textContent     = `${unit} ${TK.fmtDec(sumN/n,1)}`;
+    }
   };
 
   TK.renderTable = function(series) {
@@ -333,15 +372,14 @@
     document.getElementById('ftThreads').textContent = TK.fmtNum(sumT);
     document.getElementById('ftIds').textContent     = TK.fmtNum(sumN);
     if (aIsHours) {
-      // 期間全体の平均滞在時間
       const days = TK.state.lastDays || [];
       let totSumA = 0, totSumN = 0;
       for (const d of days) { totSumA += d.sumA; totSumN += d.sumN; }
       const stay = totSumN > 0 ? (totSumA / totSumN) : 0;
       document.getElementById('ftActive').textContent = totSumN > 0 ? `平均 ${TK.fmtDec(stay,2)} h` : '-';
     } else {
-      const nN = series.a.length || 1;
-      const avgA = series.a.reduce((a,b)=>a+b,0) / nN;
+      const activeHours = series.a.filter(v => v > 0).length || 1;
+      const avgA = series.a.reduce((a,b)=>a+b,0) / activeHours;
       document.getElementById('ftActive').textContent = `平均 ${TK.fmtDec(avgA,1)}`;
     }
   };
@@ -359,10 +397,10 @@
     }
   };
 
-  /* 系列ボタン・スプリットカード見出しのラベル文字列を mode に応じて差し替え */
   TK.updateSeriesLabels = function() {
     const mode = TK.state.mode;
     const L = TK.labelsFor(mode);
+    const EL = TK.extraLabelsFor(mode);
     const nBtn = document.querySelector('#seriesTog .lbl-n');
     const aBtn = document.querySelector('#seriesTog .lbl-a');
     if (nBtn) nBtn.textContent = (mode === 'daily') ? '総ID' : '新規ID';
@@ -372,5 +410,13 @@
     const splA = document.querySelector('.split-lbl-a');
     if (splN) splN.textContent = L.n;
     if (splA) splA.textContent = L.a;
+
+    // その他ドロップダウンのラベル更新
+    const lblPI = document.getElementById('extraLblPI');
+    const lblTI = document.getElementById('extraLblTI');
+    const lblPT = document.getElementById('extraLblPT');
+    if (lblPI) lblPI.textContent = EL.pi;
+    if (lblTI) lblTI.textContent = EL.ti;
+    if (lblPT) lblPT.textContent = EL.pt;
   };
 })();
