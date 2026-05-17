@@ -276,7 +276,11 @@
 
     var axisBase = {
       gridcolor: '#e0e0e0',
-      zeroline: false
+      zeroline: false,
+      zerolinewidth: 0,
+      zerolinecolor: 'rgba(0,0,0,0)',
+      showspikes: false,
+      rangemode: 'tozero'
     };
 
     var layout = {
