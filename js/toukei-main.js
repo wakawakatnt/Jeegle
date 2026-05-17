@@ -1,12 +1,14 @@
 /* UI制御・初期化・エントリポイント */
 (function(){
 
-  /* ---- 主要4系列のボタンだけを安全に取得するセレクタ ---- */
   var MAIN_SERIES_SEL = '#seriesTog > button[data-key]';
 
+  /* ★ URL にグラフ表示状態を含める */
   function buildShareURL() {
     var s = TK.state;
     var params = new URLSearchParams();
+
+    /* モード・日付範囲 */
     params.set('mode', s.mode);
     var range = TK.resolveRange();
     if (s.mode === 'hourly') {
@@ -17,17 +19,39 @@
         params.set('to', TK.ymd(range.to));
       }
     }
+
+    /* 系列ON/OFF (p,t,n,a) — デフォルト全ON なので OFF のものだけ記録 */
+    var offKeys = ['p','t','n','a'].filter(function(k){ return !s.seriesOn[k]; });
+    if (offKeys.length > 0) params.set('off', offKeys.join(''));
+
+    /* その他系列 (pi,ti,pt) — デフォルト全OFF なので ON のものだけ記録 */
+    var extraOnKeys = ['pi','ti','pt'].filter(function(k){ return s.extraOn[k]; });
+    if (extraOnKeys.length > 0) params.set('extra', extraOnKeys.join(','));
+
+    /* チャートタイプ — デフォルト line */
+    if (s.chartType !== 'line') params.set('chart', s.chartType);
+
+    /* レイアウト — デフォルト combined */
+    if (s.chartLayout !== 'combined') params.set('layout', s.chartLayout);
+
+    /* 詳細分析・テーブル展開状態 */
+    if (s.advancedOpen) params.set('adv', '1');
+    if (s.tableOpen) params.set('tbl', '1');
+
     return location.origin + location.pathname + '?' + params.toString();
   }
 
+  /* ★ URL パラメータからグラフ表示状態を復元 */
   function applyURLParams() {
     var p = new URLSearchParams(location.search);
     if (!p.toString()) return;
     var s = TK.state;
 
+    /* モード */
     var m = p.get('mode');
     if (m === 'hourly' || m === 'daily') s.mode = m;
 
+    /* 日付 */
     var today = TK.today0();
     var yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
     var strToday = TK.ymd(today);
@@ -69,6 +93,36 @@
         document.getElementById('dateTo').value   = to;
       }
     }
+
+    /* ★ 系列ON/OFF復元 */
+    var offParam = p.get('off');
+    if (offParam) {
+      /* off=pt なら p と t を OFF */
+      ['p','t','n','a'].forEach(function(k) {
+        s.seriesOn[k] = (offParam.indexOf(k) === -1);
+      });
+    }
+
+    /* ★ その他系列復元 */
+    var extraParam = p.get('extra');
+    if (extraParam) {
+      var extraList = extraParam.split(',');
+      ['pi','ti','pt'].forEach(function(k) {
+        s.extraOn[k] = (extraList.indexOf(k) !== -1);
+      });
+    }
+
+    /* ★ チャートタイプ復元 */
+    var chartParam = p.get('chart');
+    if (chartParam === 'bar' || chartParam === 'line') s.chartType = chartParam;
+
+    /* ★ レイアウト復元 */
+    var layoutParam = p.get('layout');
+    if (layoutParam === 'split' || layoutParam === 'combined') s.chartLayout = layoutParam;
+
+    /* ★ 詳細・テーブル展開復元 */
+    if (p.get('adv') === '1') s.advancedOpen = true;
+    if (p.get('tbl') === '1') s.tableOpen = true;
   }
 
   function updateExtraToggleStyle() {
@@ -94,7 +148,6 @@
     });
     document.getElementById('dailyCustomRange').style.display = (s.dailyPeriodKey==='custom') ? 'inline-flex' : 'none';
 
-    /* ★ 主要4系列ボタンのみ対象（extraToggleBtn を除外） */
     document.querySelectorAll(MAIN_SERIES_SEL).forEach(function(b) {
       b.classList.toggle('active', !!s.seriesOn[b.dataset.key]);
     });
@@ -104,7 +157,6 @@
     document.getElementById('advancedSection').open = s.advancedOpen;
     document.getElementById('tableSection').open = s.tableOpen;
 
-    /* その他チェックボックスの状態同期 */
     document.querySelectorAll('#extraMenu input[type="checkbox"]').forEach(function(cb) {
       cb.checked = !!s.extraOn[cb.dataset.key];
     });
@@ -237,7 +289,6 @@
       loadData(true);
     });
 
-    /* ★ 主要4系列ボタンのみ（直接の子 button[data-key]） */
     document.querySelectorAll(MAIN_SERIES_SEL).forEach(function(b) {
       var k = b.dataset.key;
       var dot = b.querySelector('.dot');
@@ -249,7 +300,6 @@
       });
     });
 
-    /* ★ その他ドロップダウン */
     var extraToggle = document.getElementById('extraToggleBtn');
     var extraMenu   = document.getElementById('extraMenu');
     if (extraToggle && extraMenu) {
