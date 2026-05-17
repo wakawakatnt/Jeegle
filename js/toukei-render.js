@@ -235,20 +235,23 @@
 
     var mode = TK.state.mode;
     var labels = series.labels;
-    var xs = series.n;
+    var xs = (mode === 'hourly') ? series.a : series.n;
     var ys = series.t;
     var zs = series.p;
-    var as = series.a;
+    var extraData  = (mode === 'hourly') ? series.n : series.a;
+    var extraLabel = (mode === 'hourly') ? '新規ID' : '平均滞在時間';
+    var extraFmt   = (mode === 'hourly')
+      ? function(v){ return TK.fmtNum(v); }
+      : function(v){ return TK.fmtDec(v,2) + ' h'; };
 
-    var xTitle = (mode === 'daily') ? '総ID数' : '新規ID数';
-    var aLabel = (mode === 'daily') ? '平均滞在時間' : 'アクティブID';
-    var nLabel = (mode === 'daily') ? '総ID数' : '新規ID';
-    var aFmt   = (mode === 'daily')
-      ? function(v){ return TK.fmtDec(v,2) + ' h'; }
-      : function(v){ return TK.fmtNum(v); };
-
+    var xTitle = (mode === 'hourly') ? 'アクティブID数' : '総ID数';
     var texts = labels.map(function(lab,i) {
-      return lab+'<br>'+nLabel+': '+TK.fmtNum(xs[i])+'<br>スレ立て: '+TK.fmtNum(ys[i])+'<br>レス: '+TK.fmtNum(zs[i])+'<br>'+aLabel+': '+aFmt(as[i])+'<br>レス/ID: '+TK.fmtDec(xs[i]>0?zs[i]/xs[i]:0,2);
+      return lab
+        + '<br>' + xTitle + ': ' + TK.fmtNum(xs[i])
+        + '<br>スレ立て: ' + TK.fmtNum(ys[i])
+        + '<br>レス: ' + TK.fmtNum(zs[i])
+        + '<br>' + extraLabel + ': ' + extraFmt(extraData[i])
+        + '<br>レス/ID: ' + TK.fmtDec(xs[i]>0 ? zs[i]/xs[i] : 0, 2);
     });
 
     var trace = {
