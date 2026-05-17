@@ -274,15 +274,20 @@
       }
     };
 
+    var axisBase = {
+      gridcolor: '#e0e0e0',
+      zeroline: false
+    };
+
     var layout = {
       autosize: true,
       margin: { l:0, r:0, t:8, b:0 },
       paper_bgcolor: '#fafbfc',
       scene: {
-        xaxis: { title: { text: xTitle }, gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
-        yaxis: { title: { text:'スレ立て数' }, gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
-        zaxis: { title: { text:'レス数' },   gridcolor:'#e0e0e0', zerolinecolor:'#bdbdbd' },
-        camera: { eye: { x:1.6, y:1.6, z:1.0 } },
+        xaxis: Object.assign({ title: { text: xTitle } }, axisBase),
+        yaxis: Object.assign({ title: { text:'スレ立て数' } }, axisBase),
+        zaxis: Object.assign({ title: { text:'レス数' } },   axisBase),
+        camera: { eye: { x: 0.3, y: 2.2, z: 1.8 } },
         aspectmode: 'cube'
       },
       font: {
