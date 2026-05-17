@@ -3,62 +3,90 @@
 
   var MAIN_SERIES_SEL = '#seriesTog > button[data-key]';
 
-  /* ★ URL にグラフ表示状態を含める */
+  /* ========== 日付の短縮表現 ========== */
+  /* YYYY-MM-DD → YYMMDD */
+  function dateToShort(ymd) {
+    return ymd.replace(/-/g, '').slice(2); // "2026-05-15" → "260515"
+  }
+  /* YYMMDD → YYYY-MM-DD */
+  function shortToDate(s) {
+    if (!s || s.length !== 6) return s;
+    var yy = s.slice(0,2), mm = s.slice(2,4), dd = s.slice(4,6);
+    return '20' + yy + '-' + mm + '-' + dd;
+  }
+
+  /* ========== URL生成（短縮版） ========== */
   function buildShareURL() {
     var s = TK.state;
     var params = new URLSearchParams();
-
-    /* モード・日付範囲 */
-    params.set('mode', s.mode);
     var range = TK.resolveRange();
+
+    /* m=h or m=d */
+    params.set('m', s.mode === 'hourly' ? 'h' : 'd');
+
+    /* 日付 */
     if (s.mode === 'hourly') {
-      if (range) params.set('date', TK.ymd(range.from));
+      if (range) params.set('d', dateToShort(TK.ymd(range.from)));
     } else {
       if (range) {
-        params.set('from', TK.ymd(range.from));
-        params.set('to', TK.ymd(range.to));
+        params.set('f', dateToShort(TK.ymd(range.from)));
+        params.set('t', dateToShort(TK.ymd(range.to)));
       }
     }
 
-    /* 系列ON/OFF (p,t,n,a) — デフォルト全ON なので OFF のものだけ記録 */
+    /* 系列OFF (デフォルト全ON → OFF のみ記録) */
     var offKeys = ['p','t','n','a'].filter(function(k){ return !s.seriesOn[k]; });
-    if (offKeys.length > 0) params.set('off', offKeys.join(''));
+    if (offKeys.length > 0) params.set('o', offKeys.join(''));
 
-    /* その他系列 (pi,ti,pt) — デフォルト全OFF なので ON のものだけ記録 */
+    /* その他系列ON (デフォルト全OFF → ON のみ記録) */
     var extraOnKeys = ['pi','ti','pt'].filter(function(k){ return s.extraOn[k]; });
-    if (extraOnKeys.length > 0) params.set('extra', extraOnKeys.join(','));
+    if (extraOnKeys.length > 0) params.set('e', extraOnKeys.join(''));
 
-    /* チャートタイプ — デフォルト line */
-    if (s.chartType !== 'line') params.set('chart', s.chartType);
+    /* チャートタイプ (デフォルト line=l) */
+    if (s.chartType !== 'line') params.set('c', 'b');
 
-    /* レイアウト — デフォルト combined */
-    if (s.chartLayout !== 'combined') params.set('layout', s.chartLayout);
+    /* レイアウト (デフォルト combined=c) */
+    if (s.chartLayout !== 'combined') params.set('l', 's');
 
-    /* 詳細分析・テーブル展開状態 */
-    if (s.advancedOpen) params.set('adv', '1');
-    if (s.tableOpen) params.set('tbl', '1');
+    /* 詳細・テーブル展開 */
+    if (s.advancedOpen) params.set('a', '1');
+    if (s.tableOpen) params.set('tb', '1');
 
     return location.origin + location.pathname + '?' + params.toString();
   }
 
-  /* ★ URL パラメータからグラフ表示状態を復元 */
+  /* ========== URLパラメータ読み取り（新旧両対応） ========== */
   function applyURLParams() {
     var p = new URLSearchParams(location.search);
     if (!p.toString()) return;
     var s = TK.state;
 
-    /* モード */
-    var m = p.get('mode');
-    if (m === 'hourly' || m === 'daily') s.mode = m;
-
-    /* 日付 */
     var today = TK.today0();
     var yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
     var strToday = TK.ymd(today);
     var strYesterday = TK.ymd(yesterday);
 
+    var isLegacy = p.has('mode');  /* 旧フォーマット判定 */
+
+    /* --- モード --- */
+    if (isLegacy) {
+      var mOld = p.get('mode');
+      if (mOld === 'hourly' || mOld === 'daily') s.mode = mOld;
+    } else {
+      var mNew = p.get('m');
+      if (mNew === 'h') s.mode = 'hourly';
+      else if (mNew === 'd') s.mode = 'daily';
+    }
+
+    /* --- 日付 --- */
     if (s.mode === 'hourly') {
-      var date = p.get('date');
+      var date;
+      if (isLegacy) {
+        date = p.get('date');
+      } else {
+        var dShort = p.get('d');
+        date = dShort ? shortToDate(dShort) : null;
+      }
       if (date) {
         if (date === strToday) s.hourlyDayKey = 'today';
         else if (date === strYesterday) s.hourlyDayKey = 'yesterday';
@@ -66,8 +94,16 @@
         document.getElementById('hourlyDate').value = date;
       }
     } else {
-      var from = p.get('from');
-      var to   = p.get('to');
+      var from, to;
+      if (isLegacy) {
+        from = p.get('from');
+        to   = p.get('to');
+      } else {
+        var fShort = p.get('f');
+        var tShort = p.get('t');
+        from = fShort ? shortToDate(fShort) : null;
+        to   = tShort ? shortToDate(tShort) : null;
+      }
       if (from && to) {
         var matchedPreset = 'custom';
         var presets = ['7days', '14days', '30days', 'month', 'lastmonth'];
@@ -94,35 +130,70 @@
       }
     }
 
-    /* ★ 系列ON/OFF復元 */
-    var offParam = p.get('off');
+    /* --- 系列ON/OFF --- */
+    var offParam = isLegacy ? p.get('off') : p.get('o');
     if (offParam) {
-      /* off=pt なら p と t を OFF */
       ['p','t','n','a'].forEach(function(k) {
         s.seriesOn[k] = (offParam.indexOf(k) === -1);
       });
     }
 
-    /* ★ その他系列復元 */
-    var extraParam = p.get('extra');
+    /* --- その他系列 --- */
+    var extraParam = isLegacy ? p.get('extra') : p.get('e');
     if (extraParam) {
-      var extraList = extraParam.split(',');
+      /* 新: "pipt" (カンマなし連結) / 旧: "pi,pt" (カンマ区切り) */
+      var extraList;
+      if (extraParam.indexOf(',') !== -1) {
+        extraList = extraParam.split(',');
+      } else {
+        /* "pipt" → ["pi","pt"] / "ti" → ["ti"] */
+        extraList = [];
+        var tmp = extraParam;
+        ['pi','ti','pt'].forEach(function(k) {
+          if (tmp.indexOf(k) !== -1) { extraList.push(k); tmp = tmp.replace(k, ''); }
+        });
+      }
       ['pi','ti','pt'].forEach(function(k) {
         s.extraOn[k] = (extraList.indexOf(k) !== -1);
       });
     }
 
-    /* ★ チャートタイプ復元 */
-    var chartParam = p.get('chart');
-    if (chartParam === 'bar' || chartParam === 'line') s.chartType = chartParam;
+    /* --- チャートタイプ --- */
+    if (isLegacy) {
+      var chartOld = p.get('chart');
+      if (chartOld === 'bar') s.chartType = 'bar';
+      else if (chartOld === 'line') s.chartType = 'line';
+    } else {
+      var cNew = p.get('c');
+      if (cNew === 'b') s.chartType = 'bar';
+      /* 省略 = line (デフォルト) */
+    }
 
-    /* ★ レイアウト復元 */
-    var layoutParam = p.get('layout');
-    if (layoutParam === 'split' || layoutParam === 'combined') s.chartLayout = layoutParam;
+    /* --- レイアウト --- */
+    if (isLegacy) {
+      var layoutOld = p.get('layout');
+      if (layoutOld === 'split') s.chartLayout = 'split';
+      else if (layoutOld === 'combined') s.chartLayout = 'combined';
+    } else {
+      var lNew = p.get('l');
+      if (lNew === 's') s.chartLayout = 'split';
+      /* 省略 = combined (デフォルト) */
+    }
 
-    /* ★ 詳細・テーブル展開復元 */
-    if (p.get('adv') === '1') s.advancedOpen = true;
-    if (p.get('tbl') === '1') s.tableOpen = true;
+    /* --- 詳細・テーブル --- */
+    if (isLegacy) {
+      if (p.get('adv') === '1') s.advancedOpen = true;
+      if (p.get('tbl') === '1') s.tableOpen = true;
+    } else {
+      if (p.get('a') === '1') s.advancedOpen = true;
+      if (p.get('tb') === '1') s.tableOpen = true;
+    }
+
+    /* ★ 旧フォーマットなら新フォーマットに自動リダイレクト */
+    if (isLegacy) {
+      /* state は復元済みなので、新URLに置換（データ読込後に行うと上書きされるのでここでフラグだけ立てる） */
+      TK._needURLRewrite = true;
+    }
   }
 
   function updateExtraToggleStyle() {
@@ -371,5 +442,12 @@
   applyURLParams();
   initUI();
   syncUIFromState();
+
+  /* ★ 旧URL→新URLへ即座に書き換え */
+  if (TK._needURLRewrite) {
+    history.replaceState(null, '', buildShareURL());
+    delete TK._needURLRewrite;
+  }
+
   loadData(false);
 })();
