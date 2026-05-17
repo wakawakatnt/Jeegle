@@ -158,9 +158,8 @@
   };
 
   /* シリーズ構築
-     - hourly: 24時間値そのまま
-     - daily : 各指標は1日合計。ただし 'a' は (sumA / sumN) すなわち
-               「1人あたり平均滞在時間（h）」に変換して表示する */
+     - hourly: 24時間値そのまま + 派生指標
+     - daily : 各指標は1日合計。'a' は平均滞在時間 + 派生指標 */
   TK.buildSeries = function(days) {
     const mode = TK.state.mode;
     let labels, p, t, n, a;
@@ -174,10 +173,16 @@
       p = days.map(d=>d.sumP);
       t = days.map(d=>d.sumT);
       n = days.map(d=>d.sumN);
-      // 平均滞在時間（h/人） = アクティブID合計 ÷ 総ID数。総ID = sumN
       a = days.map(d => (d.sumN > 0) ? (d.sumA / d.sumN) : 0);
     }
-    return { labels, p, t, n, a };
+
+    // ★ 派生指標を計算
+    const denomKey = (mode === 'hourly') ? a : n; // 時別: アクティブID, 日別: 総ID数
+    const pi = p.map((v,i) => (denomKey[i] > 0) ? (v / denomKey[i]) : 0);
+    const ti = t.map((v,i) => (denomKey[i] > 0) ? (v / denomKey[i]) : 0);
+    const pt = p.map((v,i) => (t[i] > 0) ? (v / t[i]) : 0);
+
+    return { labels, p, t, n, a, pi, ti, pt };
   };
 
   TK.aggregateAll = function(days) {
