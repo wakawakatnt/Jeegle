@@ -82,15 +82,30 @@
       b.classList.toggle('active', b.dataset.period === s.dailyPeriodKey);
     });
     document.getElementById('dailyCustomRange').style.display = (s.dailyPeriodKey==='custom') ? 'inline-flex' : 'none';
-    document.querySelectorAll('#seriesTog button').forEach(b => {
-      b.classList.toggle('active', !!s.seriesOn[b.dataset.key]);
+    document.querySelectorAll('#seriesTog button[data-key]').forEach(b => {
+      if (['p','t','n','a'].includes(b.dataset.key)) {
+        b.classList.toggle('active', !!s.seriesOn[b.dataset.key]);
+      }
     });
     document.querySelectorAll('#typeTog button').forEach(b => b.classList.toggle('active', b.dataset.type === s.chartType));
     document.querySelectorAll('#layoutTog button').forEach(b => b.classList.toggle('active', b.dataset.layout === s.chartLayout));
     document.getElementById('advancedSection').open = s.advancedOpen;
     document.getElementById('tableSection').open = s.tableOpen;
 
+    // その他チェックボックスの状態同期
+    document.querySelectorAll('#extraMenu input[type="checkbox"]').forEach(cb => {
+      cb.checked = !!s.extraOn[cb.dataset.key];
+    });
+    updateExtraToggleStyle();
+
     TK.updateSeriesLabels();
+  }
+
+  function updateExtraToggleStyle() {
+    const btn = document.getElementById('extraToggleBtn');
+    if (!btn) return;
+    const anyOn = Object.values(TK.state.extraOn).some(v => v);
+    btn.classList.toggle('has-active', anyOn);
   }
 
   function copyShareURL() {
@@ -215,7 +230,7 @@
       loadData(true);
     });
 
-    document.querySelectorAll('#seriesTog button').forEach(b => {
+    document.querySelectorAll('#seriesTog > button[data-key]').forEach(b => {
       const k = b.dataset.key;
       b.querySelector('.dot').style.background = TK.COLORS[k];
       b.addEventListener('click', () => {
@@ -224,6 +239,32 @@
         rerenderOnly();
       });
     });
+
+    // ★ その他ドロップダウンのイベント
+    const extraToggle = document.getElementById('extraToggleBtn');
+    const extraMenu = document.getElementById('extraMenu');
+    if (extraToggle && extraMenu) {
+      extraToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        extraMenu.classList.toggle('open');
+      });
+      // メニュー内クリックはメニューを閉じない
+      extraMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      // チェックボックス変更
+      extraMenu.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          s.extraOn[cb.dataset.key] = cb.checked;
+          updateExtraToggleStyle();
+          rerenderOnly();
+        });
+      });
+      // 外側クリックでメニューを閉じる
+      document.addEventListener('click', () => {
+        extraMenu.classList.remove('open');
+      });
+    }
 
     document.querySelectorAll('#typeTog button').forEach(b => {
       b.addEventListener('click', () => {
