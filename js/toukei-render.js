@@ -291,7 +291,7 @@
         xaxis: Object.assign({ title: { text: xTitle } }, axisBase),
         yaxis: Object.assign({ title: { text:'スレ立て数' } }, axisBase),
         zaxis: Object.assign({ title: { text:'レス数' } },   axisBase),
-        camera: { eye: { x: -1.5, y: 1.9, z: -1.5 } },
+        camera: { eye: { x: -1.5, y: 1.9, z: 1.5 } },
         aspectmode: 'cube'
       },
       font: {
