@@ -181,10 +181,16 @@ async function countAres(tid, pnum) {
    ================================================================ */
 async function getAresPosts(tid, pnum) {
   const allPosts = await fetchAllPosts(tid);
-  const target = ">>" + pnum;
+  const re = /&gt;&gt;(\d+)|>>(\d+)/g;  // HTMLエンティティ化されてる可能性も両対応
   return allPosts.filter(p => {
     const body = p.body || "";
-    return body.includes(target);
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(body)) !== null) {
+      const n = parseInt(m[1] || m[2], 10);
+      if (n === pnum) return true;
+    }
+    return false;
   });
 }
 
