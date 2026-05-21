@@ -66,8 +66,6 @@ async function anchorClick(pnum, tid, scope, fromPost) {
   if (!p) return;
 
 const el = mkPost(p, tid, currentKeyword, false);
-el.classList.add("post-anchor-expanded");
-el.dataset.expanded = "1";
 
 if (fromPost && fromPost.parentNode === scope) {
     const fromNum = parseInt(fromPost.dataset.postNum, 10);
