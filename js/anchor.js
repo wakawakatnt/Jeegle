@@ -65,9 +65,11 @@ async function anchorClick(pnum, tid, scope, fromPost) {
   const p  = ps.find(x => x.post_num === pnum);
   if (!p) return;
 
-  const el = mkPost(p, tid, currentKeyword, false);
+const el = mkPost(p, tid, currentKeyword, false);
+el.classList.add("post-anchor-expanded");
+el.dataset.expanded = "1";
 
-  if (fromPost && fromPost.parentNode === scope) {
+if (fromPost && fromPost.parentNode === scope) {
     const fromNum = parseInt(fromPost.dataset.postNum, 10);
     if (pnum < fromNum) {
       scope.insertBefore(el, fromPost);
