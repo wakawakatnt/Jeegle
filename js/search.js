@@ -4,12 +4,30 @@ let currentResults = [];
 let currentKeyword = "";
 let lastSegmentTimings = [];
 
+/* ===== id:プレフィックス解析 ===== */
+/** "id: xxx" なら {isId:true, value:"xxx"}、そうでなければ {isId:false, value:q} */
+function parseIdPrefix(q) {
+  const m = String(q).match(/^id:\s*(.+)/i);
+  if (m) return { isId: true, value: m[1].trim() };
+  return { isId: false, value: String(q).trim() };
+}
+
 /* ===== メイン検索 ===== */
 async function doSearch(q) {
   if (q === undefined) q = document.getElementById("topInput").value.trim();
   q = String(q).trim();
   if (!q) return;
   currentKeyword = q;
+
+  /* id:プレフィックスならデフォルトで検索範囲ラジオを id に切り替える。
+     （あくまでデフォルト。ユーザーは後から自由に変更でき、その場合は
+       app.js の change ハンドラ経由で再検索される） */
+  const idp = parseIdPrefix(q);
+  if (idp.isId) {
+    const idRadio = document.querySelector('input[name="searchType"][value="id"]');
+    if (idRadio && !idRadio.checked) idRadio.checked = true;
+  }
+
   pushUrl(q);
 
   document.getElementById("topPage").classList.add("hidden");
@@ -35,10 +53,12 @@ async function doSearch(q) {
     let results;
     if (stype === "title") {
       results = await searchTitle(q, smode, dr);
-    } else if (stype === "body") {
-      results = await searchBody(q, smode, dr);
-    } else {
-      const [tr, br] = await Promise.all([searchTitle(q, smode, dr), searchBody(q, smode, dr)]);
+    } else if (stype === "all") {
+      // タイトル + 本文（body/name/user_id）をマージ
+      const [tr, br] = await Promise.all([
+        searchTitle(q, smode, dr),
+        searchPosts(q, smode, dr, "all")
+      ]);
       const map = new Map();
       tr.forEach(r => map.set(r.thread_id, r));
       br.forEach(r => {
@@ -50,6 +70,9 @@ async function doSearch(q) {
         } else { map.set(r.thread_id, r); }
       });
       results = Array.from(map.values());
+    } else {
+      // body / name / id はそれぞれ単一カラム検索
+      results = await searchPosts(q, smode, dr, stype);
     }
     currentResults = results;
     renderAll(q, ((performance.now() - t0) / 1000).toFixed(2));
@@ -71,6 +94,19 @@ async function doSearch(q) {
 /** 日付フィルター文字列生成（Supabase用） */
 function dateFilter(dr, col) {
   return `&${col}=gte.${dr.from}&${col}=lt.${dr.to}`;
+}
+
+/* ================================================================
+   検索範囲(searchType) → 投げるカラム配列
+   ================================================================ */
+function colsForType(stype) {
+  switch (stype) {
+    case "body": return ["body"];
+    case "name": return ["name"];
+    case "id":   return ["user_id"];
+    case "all":
+    default:     return ["body", "name", "user_id"];
+  }
 }
 
 /* ================================================================
@@ -119,7 +155,7 @@ async function runAllSegments(segs, kind, runner) {
 }
 
 /* ================================================================
-   公開API: 日ごとに分割して並列実行 → マージ
+   公開API: タイトル検索（日ごとに分割して並列実行 → マージ）
    ================================================================ */
 async function searchTitle(q, mode, dr) {
   const segs = splitDateRangeByDay(dr);
@@ -138,9 +174,13 @@ async function searchTitle(q, mode, dr) {
   return Array.from(map.values());
 }
 
-async function searchBody(q, mode, dr) {
+/* ================================================================
+   公開API: レス検索（body/name/id/all を日ごとに分割して並列実行 → マージ）
+   stype: "all" | "body" | "name" | "id"
+   ================================================================ */
+async function searchPosts(q, mode, dr, stype) {
   const segs = splitDateRangeByDay(dr);
-  const parts = await runAllSegments(segs, "body", seg => searchBodyOneDay(q, mode, seg));
+  const parts = await runAllSegments(segs, "posts", seg => searchPostsOneDay(q, mode, seg, stype));
 
   const tmap = new Map();
   parts.flat().forEach(r => {
@@ -166,10 +206,11 @@ async function searchBody(q, mode, dr) {
 }
 
 /* ================================================================
-   内部実装: 1セグメント（デュアルDB対応）
+   内部実装: タイトル1セグメント（デュアルDB対応）
    ================================================================ */
 async function searchTitleOneDay(q, mode, dr) {
-  const ws = words(q);
+  // タイトル検索では id:プレフィックスは無意味なので素のクエリを使う
+  const ws = words(parseIdPrefix(q).value);
   const { needSupabase, needTurso, boundary } = classifyDateRange(dr.from, dr.to);
 
   const promises = [];
@@ -252,76 +293,54 @@ async function searchTitleOneDay(q, mode, dr) {
   }));
 }
 
-async function searchBodyOneDay(q, mode, dr) {
-  const ws  = words(q);
-  const idm = q.match(/^id:\s*(.+)/i);
-  const { needSupabase, needTurso, boundary } = classifyDateRange(dr.from, dr.to);
+/* ================================================================
+   内部実装: レス1セグメント（デュアルDB対応）
+   stype: "all" | "body" | "name" | "id"
+   ================================================================ */
+async function searchPostsOneDay(q, mode, dr, stype) {
+  const idp = parseIdPrefix(q);
 
+  // id:プレフィックスが付いていれば、検索範囲に関わらず値はプレフィックス除去後を使う。
+  // searchType が "id" の場合も user_id のみを対象にする。
+  const searchValue = idp.value;
+  const ws  = words(searchValue);
+
+  // 投げるカラムを決定。
+  // ・id:プレフィックスがあり、かつ現在の範囲が "id"（=デフォルト選択）の場合は user_id のみ。
+  // ・ユーザーが明示的に他の範囲へ変えていれば、その範囲のカラムを使う。
+  const cols = colsForType(stype);
+
+  const { needSupabase, needTurso, boundary } = classifyDateRange(dr.from, dr.to);
   const SB_SELECT = "thread_id,post_num,user_id,name,posted_at,body,is_nusi,ares_count";
 
-  /* ---------- ID検索 ---------- */
-  if (idm) {
-    const idVal = idm[1].trim();
-    const promises = [];
-
-    if (needSupabase) {
-      const sbFrom = (dr.from < boundary) ? boundary : dr.from;
-      promises.push(
-        sbFetch(
-          `posts?select=${encodeURIComponent(SB_SELECT)}&limit=500`
-          + `&user_id=ilike.${enc(idVal)}&order=posted_at.desc`
-          + `&posted_at=gte.${sbFrom}&posted_at=lt.${dr.to}`
-        )
-      );
-    }
-    if (needTurso) {
-      const tursoTo = (dr.to > boundary) ? boundary : dr.to;
-      promises.push(
-        tursoQuery(
-          `SELECT ${TURSO_POSTS_COLS} FROM posts WHERE user_id LIKE ? AND posted_at >= ? AND posted_at < ? ORDER BY posted_at DESC LIMIT 500`,
-          ["%" + idVal + "%", dr.from, tursoTo]
-        ).then(rows => rows.map(normalizePost)).catch(() => [])
-      );
-    }
-
-    const arrays = await Promise.all(promises);
-    const seen = new Map();
-    arrays.flat().forEach(p => {
-      const k = p.thread_id + "_" + p.post_num;
-      if (!seen.has(k)) seen.set(k, p);
-    });
-    return groupPosts(Array.from(seen.values()));
-  }
-
-  /* ---------- 通常の本文検索 ---------- */
   const promises = [];
 
+  /* ---------- Supabase ---------- */
   if (needSupabase) {
     const sbFrom = (dr.from < boundary) ? boundary : dr.from;
     const df = `&posted_at=gte.${sbFrom}&posted_at=lt.${dr.to}`;
 
     if (mode === "or" && ws.length > 1) {
       promises.push((async () => {
-        const fetches = ws.flatMap(w => [
-          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&body=ilike.${enc(w)}&order=posted_at.desc${df}`),
-          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&name=ilike.${enc(w)}&order=posted_at.desc${df}`),
-          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&user_id=ilike.${enc(w)}&order=posted_at.desc${df}`),
-        ]);
+        const fetches = ws.flatMap(w =>
+          cols.map(col =>
+            sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&${col}=ilike.${enc(w)}&order=posted_at.desc${df}`)
+          )
+        );
         return (await Promise.all(fetches)).flat();
       })());
     } else {
       promises.push((async () => {
         const w0 = ws[0];
-        const [bp, np, ip] = await Promise.all([
-          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&body=ilike.${enc(w0)}&order=posted_at.desc${df}`),
-          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&name=ilike.${enc(w0)}&order=posted_at.desc${df}`),
-          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&user_id=ilike.${enc(w0)}&order=posted_at.desc${df}`),
-        ]);
-        return [...bp, ...np, ...ip];
+        const fetches = cols.map(col =>
+          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&${col}=ilike.${enc(w0)}&order=posted_at.desc${df}`)
+        );
+        return (await Promise.all(fetches)).flat();
       })());
     }
   }
 
+  /* ---------- Turso ---------- */
   if (needTurso) {
     const tursoTo = (dr.to > boundary) ? boundary : dr.to;
     const tFrom   = dr.from;
@@ -329,14 +348,12 @@ async function searchBodyOneDay(q, mode, dr) {
     if (mode === "or" && ws.length > 1) {
       promises.push((async () => {
         try {
-          const fetches = ws.flatMap(w => [
-            tursoSearchPosts("body",    w, tFrom, tursoTo, 300),
-            tursoSearchPosts("name",    w, tFrom, tursoTo, 300),
-            tursoSearchPosts("user_id", w, tFrom, tursoTo, 300),
-          ]);
+          const fetches = ws.flatMap(w =>
+            cols.map(col => tursoSearchPosts(col, w, tFrom, tursoTo, 300))
+          );
           return (await Promise.all(fetches)).flat().map(normalizePost);
         } catch (e) {
-          console.warn("[Jeegle] Turso body OR error:", e);
+          console.warn("[Jeegle] Turso posts OR error:", e);
           return [];
         }
       })());
@@ -344,14 +361,10 @@ async function searchBodyOneDay(q, mode, dr) {
       promises.push((async () => {
         try {
           const w0 = ws[0];
-          const [tbp, tnp, tip] = await Promise.all([
-            tursoSearchPosts("body",    w0, tFrom, tursoTo, 300),
-            tursoSearchPosts("name",    w0, tFrom, tursoTo, 300),
-            tursoSearchPosts("user_id", w0, tFrom, tursoTo, 300),
-          ]);
-          return [...tbp, ...tnp, ...tip].map(normalizePost);
+          const fetches = cols.map(col => tursoSearchPosts(col, w0, tFrom, tursoTo, 300));
+          return (await Promise.all(fetches)).flat().map(normalizePost);
         } catch (e) {
-          console.warn("[Jeegle] Turso body error:", e);
+          console.warn("[Jeegle] Turso posts error:", e);
           return [];
         }
       })());
@@ -363,11 +376,19 @@ async function searchBodyOneDay(q, mode, dr) {
   arrays.flat().forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
   let all = Array.from(map.values());
 
-  if (mode === "and" && ws.length > 1)
+  /* AND絞り込み: 対象カラムを連結して全語含むか判定 */
+  if (mode === "and" && ws.length > 1) {
     all = all.filter(p => {
-      const t = ((p.body || "") + " " + (p.name || "") + " " + (p.user_id || "")).toLowerCase();
+      const parts = cols.map(col => {
+        if (col === "body")    return p.body || "";
+        if (col === "name")    return p.name || "";
+        if (col === "user_id") return p.user_id || "";
+        return "";
+      });
+      const t = parts.join(" ").toLowerCase();
       return ws.every(w => t.includes(w.toLowerCase()));
     });
+  }
 
   return groupPosts(all);
 }
