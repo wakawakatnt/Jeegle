@@ -165,31 +165,30 @@ var MediaGrid = (function(){
     if (thumb) {
       var img = document.createElement("img");
       img.className = "md-thumb";
-      img.loading = "lazy";
+    img.loading = "lazy";
       img.decoding = "async";
       img.alt = "";
       img.referrerPolicy = "no-referrer";
-      img.src = thumb;
-// リトライ間隔: 1回目=即時, 2回目=5秒後, 3回目=10秒後
-var retryDelays = [0, 5000, 10000];
-img._retry = 0;
-img.onerror = function(){
-  // まだリトライ回数が残っているか
-  if (img._retry < retryDelays.length) {
-    var delay = retryDelays[img._retry];
-    img._retry++;
-    setTimeout(function(){
-      // カードが既に DOM から外れていたら何もしない
-      if (!img.isConnected) return;
-      var sep = (thumb.indexOf("?") === -1) ? "?" : "&";
-      img.src = thumb + sep + "cb=" + Date.now();
-    }, delay);
-    return;
-  }
-  // 全リトライ失敗 → プレースホルダーに置換
-  img.remove();
-  card.insertBefore(makePlaceholder(kind, item), card.firstChild);
-};
+
+      // リトライ間隔: 1回目=即時, 2回目=5秒後, 3回目=10秒後
+      var retryDelays = [0, 5000, 10000];
+      img._retry = 0;
+      img.onerror = function(){
+        if (img._retry < retryDelays.length) {
+          var delay = retryDelays[img._retry];
+          img._retry++;
+          setTimeout(function(){
+            if (!img.isConnected) return;
+            var sep = (thumb.indexOf("?") === -1) ? "?" : "&";
+            img.src = thumb + sep + "cb=" + Date.now();
+          }, delay);
+          return;
+        }
+        img.remove();
+        card.insertBefore(makePlaceholder(kind, item), card.firstChild);
+      };
+
+      img.src = thumb;   // ← onerror を設定した後に src を入れる
 
       card.appendChild(img);
       if (isVid) {
