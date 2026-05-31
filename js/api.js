@@ -135,6 +135,13 @@ async function tursoSearchPosts(col, word, fromISO, toISO, limit) {
   return tursoQuery(sql, ["%" + word + "%", fromISO, toISO, limit || 300]);
 }
 
+async function tursoSearchPostsExact(col, word, fromISO, toISO, limit) {
+  const sql = `SELECT ${TURSO_POSTS_COLS} FROM posts`
+    + ` WHERE ${col} = ? AND posted_at >= ? AND posted_at < ?`
+    + ` ORDER BY posted_at DESC LIMIT ?`;
+  return tursoQuery(sql, [word, fromISO, toISO, limit || 300]);
+}
+
 async function tursoFetchThreadsByIds(ids) {
   if (!ids.length) return [];
   const ph = ids.map(() => "?").join(",");
@@ -142,6 +149,7 @@ async function tursoFetchThreadsByIds(ids) {
     `SELECT thread_id, title FROM threads WHERE thread_id IN (${ph})`, ids
   );
 }
+
 
 /* ================================================================
    安価カウント（ares_countカラムを読む。RPCは使わない）
