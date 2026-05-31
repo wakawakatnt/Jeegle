@@ -170,19 +170,27 @@ var MediaGrid = (function(){
       img.alt = "";
       img.referrerPolicy = "no-referrer";
       img.src = thumb;
-      img.onerror = function(){
-        // キャッシュ汚染で失敗した場合、キャッシュ回避クエリを付けて
-        // 一度だけ取り直す（バグってる所だけ再取得）。
-        if (!img._retried) {
-          img._retried = true;
-          var sep = (thumb.indexOf("?") === -1) ? "?" : "&";
-          img.src = thumb + sep + "cb=" + Date.now();
-          return;
-        }
-        // リトライしても失敗ならプレースホルダー
-        img.remove();
-        card.insertBefore(makePlaceholder(kind, item), card.firstChild);
-      };
+// リトライ間隔: 1回目=即時, 2回目=5秒後, 3回目=10秒後
+var retryDelays = [0, 5000, 10000];
+img._retry = 0;
+img.onerror = function(){
+  // まだリトライ回数が残っているか
+  if (img._retry < retryDelays.length) {
+    var delay = retryDelays[img._retry];
+    img._retry++;
+    setTimeout(function(){
+      // カードが既に DOM から外れていたら何もしない
+      if (!img.isConnected) return;
+      var sep = (thumb.indexOf("?") === -1) ? "?" : "&";
+      img.src = thumb + sep + "cb=" + Date.now();
+    }, delay);
+    return;
+  }
+  // 全リトライ失敗 → プレースホルダーに置換
+  img.remove();
+  card.insertBefore(makePlaceholder(kind, item), card.firstChild);
+};
+
       card.appendChild(img);
       if (isVid) {
         var play = document.createElement("div");
