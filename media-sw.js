@@ -1,15 +1,15 @@
-/* Jeegle! メディアキャッシュ用 Service Worker (v4 – referrer修正版)
+/* Jeegle! メディアキャッシュ用 Service Worker (v5 – キャッシュ汚染修正版)
  *
- * ★ 変更点 (v3 → v4):
- *   キャッシュ対象ホストへのリクエストを new Request() で作り直し、
- *   referrer: "" を明示することで、ページ側の <meta referrer> なしでも
- *   imgur / imgu.jp 等のホットリンク保護による 403 を回避する。
- *   これにより GA の referrer 情報が正しく送信される。
+ * ★ 変更点 (v4 → v5):
+ *   - キャッシュバージョンを v5 に更新し、古いキャッシュを確実に破棄。
+ *   - ok でないレスポンス(403 等)は返さず・キャッシュしないよう徹底し、
+ *     壊れた画像がキャッシュに居座る問題を解消。
+ *   - ニコニコのサムネホスト(nimg.jp / smilevideo.jp)をキャッシュ対象に追加。
  */
 "use strict";
 
-var CACHE_NAME    = "jeegle-media-v4";
-var META_CACHE    = "jeegle-media-meta-v4";
+var CACHE_NAME    = "jeegle-media-v5";
+var META_CACHE    = "jeegle-media-meta-v5";
 var MAX_ENTRIES   = 500;
 var MAX_AGE_MS    = 7 * 24 * 60 * 60 * 1000;
 var FETCH_TIMEOUT_MS = 8000;
@@ -21,7 +21,9 @@ var CACHE_HOSTS = [
   "twimg.com",
   "tadaup.jp",
   "dec.2chan.net",
-  "open2ch.net"
+  "open2ch.net",
+  "nimg.jp",
+  "smilevideo.jp"
 ];
 
 function isCacheableHost(hostname) {
@@ -46,6 +48,7 @@ self.addEventListener("activate", function(e){
         return caches.delete(k);
       }
     }));
+    await self.clients.claim();
   })());
 });
 
@@ -62,7 +65,9 @@ self.addEventListener("fetch", function(event){
   var isMedia =
     /\.(jpe?g|png|gif|webp|avif|mp4|webm)(\?|$)/i.test(url.pathname) ||
     url.hostname.endsWith("ytimg.com") ||
-    url.hostname.endsWith("twimg.com");
+    url.hostname.endsWith("twimg.com") ||
+    url.hostname.endsWith("nimg.jp") ||
+    url.hostname.endsWith("smilevideo.jp");
 
   if (!isMedia) return;
 
@@ -74,16 +79,6 @@ async function handleMedia(originalReq) {
   var cache     = await caches.open(CACHE_NAME);
   var metaCache = await caches.open(META_CACHE);
 
-  /*
-   * ★ 核心の修正箇所:
-   * リクエストを作り直して referrer を空文字列にする。
-   * これで Referer ヘッダが送信されなくなり、
-   * imgur / imgu.jp 等のホットリンク保護をすり抜ける。
-   *
-   * 要素レベルの referrerPolicy="no-referrer" だけでは、
-   * SW が fetch(e.request) する際にブラウザによっては
-   * 元ページの URL が Referer として付与されてしまう問題があった。
-   */
   var req = new Request(originalReq.url, {
     method:      originalReq.method,
     headers:     originalReq.headers,
@@ -93,65 +88,65 @@ async function handleMedia(originalReq) {
     referrerPolicy: "no-referrer"
   });
 
-  /* 1. キャッシュ確認 */
+  /* 1. キャッシュ確認（鮮度OKならそれを返す） */
   var cached = await cache.match(req);
   if (cached && await isFresh(metaCache, req)) {
     return cached;
   }
 
   /* 2. ネットワーク取得（タイムアウト付き） */
-  var fresh;
+  var fresh = null;
   try {
     fresh = await fetchWithTimeout(req, FETCH_TIMEOUT_MS);
   } catch (err) {
+    /* 取得失敗時は古くてもキャッシュがあれば返す */
     if (cached) return cached;
-    /*
-     * mode:"cors" + credentials:"omit" で 403/opaque になる場合は
-     * no-cors にフォールバックして再試行
-     */
+    /* cors で失敗したら no-cors で再試行 */
     try {
-      var noCorsReq = new Request(originalReq.url, {
-        method:         originalReq.method,
-        mode:           "no-cors",
-        credentials:    "omit",
-        referrer:       "",
-        referrerPolicy: "no-referrer"
-      });
-      fresh = await fetchWithTimeout(noCorsReq, FETCH_TIMEOUT_MS);
+      fresh = await fetchWithTimeout(makeNoCors(originalReq), FETCH_TIMEOUT_MS);
     } catch (err2) {
       throw err;
     }
   }
 
-  /*
-   * cors で 403 が返ってきた場合も no-cors でリトライ
-   */
+  /* cors で 403 が返った場合は no-cors で再試行 */
   if (fresh && !fresh.ok && fresh.status === 403) {
     try {
-      var noCorsReq2 = new Request(originalReq.url, {
-        method:         originalReq.method,
-        mode:           "no-cors",
-        credentials:    "omit",
-        referrer:       "",
-        referrerPolicy: "no-referrer"
-      });
-      var retried = await fetchWithTimeout(noCorsReq2, FETCH_TIMEOUT_MS);
+      var retried = await fetchWithTimeout(makeNoCors(originalReq), FETCH_TIMEOUT_MS);
       if (retried) fresh = retried;
-    } catch(e) { /* cors の結果をそのまま使う */ }
+    } catch (e) { /* cors の結果のままにする */ }
   }
 
-  /* 3. キャッシュ可否判定 */
-  if (fresh && fresh.ok && fresh.type !== "opaque") {
+  /* 3. キャッシュ可否判定:
+        ok かつ opaque でないレスポンスだけキャッシュする。
+        ok でない(403/404/500 等)レスポンスはキャッシュも汚染しない。 */
+  var cacheable = fresh && fresh.ok && fresh.type !== "opaque";
+
+  if (cacheable) {
     try {
       await cache.put(req, fresh.clone());
       await metaCache.put(req, new Response(String(Date.now())));
       await trimCache(cache, metaCache);
     } catch (e) {}
-  } else if (cached) {
-    return cached;
+    return fresh;
   }
 
+  /* 取得結果がキャッシュ不可(エラー等)なら、
+     古くても有効なキャッシュがあればそれを優先して返す。 */
+  if (cached) return cached;
+
+  /* no-cors の opaque はそのまま返す（画像表示のみ可・キャッシュはしない） */
   return fresh;
+}
+
+function makeNoCors(originalReq) {
+  return new Request(originalReq.url, {
+    method:         originalReq.method,
+    mode:           "no-cors",
+    credentials:    "omit",
+    referrer:       "",
+    referrerPolicy: "no-referrer"
+  });
 }
 
 /* ===== ヘルパー ===== */
