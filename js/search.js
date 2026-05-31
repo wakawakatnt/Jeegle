@@ -302,14 +302,15 @@ async function searchPostsOneDay(q, mode, dr, stype) {
   const idp = parseIdPrefix(q);
 
   // id:プレフィックスが付いていれば、検索範囲に関わらず値はプレフィックス除去後を使う。
-  // searchType が "id" の場合も user_id のみを対象にする。
   const searchValue = idp.value;
   const ws  = words(searchValue);
 
-  // 投げるカラムを決定。
-  // ・id:プレフィックスがあり、かつ現在の範囲が "id"（=デフォルト選択）の場合は user_id のみ。
-  // ・ユーザーが明示的に他の範囲へ変えていれば、その範囲のカラムを使う。
   const cols = colsForType(stype);
+
+  // ID検索は user_id インデックス(idx_posts_user_id)を使うため完全一致(eq)にする。
+  // 部分一致 ilike '%値%' は前方ワイルドカードでインデックスが効かず、
+  // posts 全件スキャン → statement timeout になるため。
+  const isIdSearch = (stype === "id");
 
   const { needSupabase, needTurso, boundary } = classifyDateRange(dr.from, dr.to);
   const SB_SELECT = "thread_id,post_num,user_id,name,posted_at,body,is_nusi,ares_count";
@@ -321,11 +322,16 @@ async function searchPostsOneDay(q, mode, dr, stype) {
     const sbFrom = (dr.from < boundary) ? boundary : dr.from;
     const df = `&posted_at=gte.${sbFrom}&posted_at=lt.${dr.to}`;
 
+    // 1カラム・1語に対する検索条件文字列を生成
+    const sbCond = (col, w) => isIdSearch
+      ? `${col}=eq.${encodeURIComponent(w)}`
+      : `${col}=ilike.${enc(w)}`;
+
     if (mode === "or" && ws.length > 1) {
       promises.push((async () => {
         const fetches = ws.flatMap(w =>
           cols.map(col =>
-            sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&${col}=ilike.${enc(w)}&order=posted_at.desc${df}`)
+            sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&${sbCond(col, w)}&order=posted_at.desc${df}`)
           )
         );
         return (await Promise.all(fetches)).flat();
@@ -334,7 +340,7 @@ async function searchPostsOneDay(q, mode, dr, stype) {
       promises.push((async () => {
         const w0 = ws[0];
         const fetches = cols.map(col =>
-          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&${col}=ilike.${enc(w0)}&order=posted_at.desc${df}`)
+          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&${sbCond(col, w0)}&order=posted_at.desc${df}`)
         );
         return (await Promise.all(fetches)).flat();
       })());
@@ -350,7 +356,9 @@ async function searchPostsOneDay(q, mode, dr, stype) {
       promises.push((async () => {
         try {
           const fetches = ws.flatMap(w =>
-            cols.map(col => tursoSearchPosts(col, w, tFrom, tursoTo, 300))
+            cols.map(col => isIdSearch
+              ? tursoSearchPostsExact(col, w, tFrom, tursoTo, 300)
+              : tursoSearchPosts(col, w, tFrom, tursoTo, 300))
           );
           return (await Promise.all(fetches)).flat().map(normalizePost);
         } catch (e) {
@@ -362,7 +370,9 @@ async function searchPostsOneDay(q, mode, dr, stype) {
       promises.push((async () => {
         try {
           const w0 = ws[0];
-          const fetches = cols.map(col => tursoSearchPosts(col, w0, tFrom, tursoTo, 300));
+          const fetches = cols.map(col => isIdSearch
+            ? tursoSearchPostsExact(col, w0, tFrom, tursoTo, 300)
+            : tursoSearchPosts(col, w0, tFrom, tursoTo, 300));
           return (await Promise.all(fetches)).flat().map(normalizePost);
         } catch (e) {
           console.warn("[Jeegle] Turso posts error:", e);
@@ -377,8 +387,9 @@ async function searchPostsOneDay(q, mode, dr, stype) {
   arrays.flat().forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
   let all = Array.from(map.values());
 
-  /* AND絞り込み: 対象カラムを連結して全語含むか判定 */
-  if (mode === "and" && ws.length > 1) {
+  /* AND絞り込み: ID検索では行わない（完全一致のため）。
+     それ以外は対象カラムを連結して全語含むか判定 */
+  if (!isIdSearch && mode === "and" && ws.length > 1) {
     all = all.filter(p => {
       const parts = cols.map(col => {
         if (col === "body")    return p.body || "";
