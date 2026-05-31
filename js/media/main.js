@@ -57,16 +57,20 @@
     else if (e.key === "ArrowLeft") MediaModal.prev();
   });
 
-  /* ── 共有ボタン ── */
+    /* ── 共有ボタン（検索側 shareUrl と同じ挙動: クリップボードコピー） ── */
   U.$("mdShareBtn").addEventListener("click", function(){
     var url = location.href;
-    if (navigator.share) {
-      navigator.share({ title: "Jeegle! 貼られた画像一覧", url: url }).catch(function(){});
-    } else if (navigator.clipboard) {
+    var btn = U.$("mdShareBtn");
+    var orig = btn.textContent;
+    if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(function(){
-        U.setStatus("URLをコピーしました", "ok");
-        setTimeout(function(){ U.setStatus(""); }, 1500);
+        btn.textContent = "✅ コピーしました";
+        setTimeout(function(){ btn.textContent = orig; }, 2000);
+      }).catch(function(){
+        window.prompt("URLをコピーしてください:", url);
       });
+    } else {
+      window.prompt("URLをコピーしてください:", url);
     }
   });
 
