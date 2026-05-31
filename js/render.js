@@ -86,9 +86,14 @@ function renderAll(q, elapsed) {
   const res = document.getElementById("results");
   res.innerHTML = "";
 
+  // ID分析バナー: "id:xxx" プレフィックス、または検索範囲ラジオで id が
+  // 選択されているときに表示する
   const idm = q.match(/^id:\s*(.+)/i);
-  if (idm && sorted.length > 0) {
-    res.appendChild(mkIdAnalysisBanner(idm[1].trim()));
+  const typeEl = document.querySelector('input[name="searchType"]:checked');
+  const isIdType = typeEl && typeEl.value === "id";
+  const idVal = idm ? idm[1].trim() : (isIdType ? q.trim() : null);
+  if (idVal && sorted.length > 0) {
+    res.appendChild(mkIdAnalysisBanner(idVal));
   }
 
   if (!sorted.length) {
