@@ -17,14 +17,14 @@ var MediaGrid = (function(){
       var p = new URLSearchParams(location.search);
       var k = (p.get("kind") || "").toLowerCase();
       if (!k) {
-        var keys = ["video","img","image","x","twitter","youtube","nico","niconico","other"];
+        var keys = ["fav","favorite","video","img","image","x","twitter","youtube","nico","niconico","other"];
         for (var i = 0; i < keys.length; i++) {
           if (p.has(keys[i])) { k = keys[i]; break; }
         }
       }
-      var alias = { x:"twitter", img:"image", youtube:"video", nico:"video", niconico:"video" };
+      var alias = { x:"twitter", img:"image", youtube:"video", nico:"video", niconico:"video", favorite:"fav" };
       if (alias[k]) k = alias[k];
-      var valid = { "":1, video:1, image:1, twitter:1, other:1 };
+      var valid = { "":1, video:1, image:1, twitter:1, other:1, fav:1 };
       currentKind = valid[k] ? k : "";
     } catch(e) { currentKind = ""; }
   })();
@@ -55,6 +55,30 @@ var MediaGrid = (function(){
     }
     ph.innerHTML = inner;
     return ph;
+  }
+
+  /* ── ★お気に入りボタン生成 ── */
+  function makeFavBtn(item) {
+    var btn = document.createElement("button");
+    btn.className = "md-fav-btn";
+    var sync = function(){
+      var on = MediaFav.has(item);
+      btn.classList.toggle("on", on);
+      btn.textContent = on ? "★" : "☆";
+      btn.title = on ? "お気に入りから外す" : "お気に入りに追加";
+    };
+    sync();
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      MediaFav.toggle(item);
+      sync();
+      // お気に入り表示中に外したらカードを消す
+      if (currentKind === "fav" && !MediaFav.has(item)) {
+        applyFilter();
+      }
+      updateFavFilterLabel();
+    });
+    return btn;
   }
 
   /* ── カード生成 ── */
@@ -129,6 +153,8 @@ var MediaGrid = (function(){
         badge.style.zIndex = "6";
         card.appendChild(badge);
 
+        card.appendChild(makeFavBtn(item));
+
         twThumbIO.observe(tw);
         card._twThumb = tw;
         return card;
@@ -165,6 +191,8 @@ var MediaGrid = (function(){
     kindBadge.textContent = D.labelOf(kind);
     card.appendChild(kindBadge);
 
+    card.appendChild(makeFavBtn(item));
+
     return card;
   }
 
@@ -199,11 +227,26 @@ var MediaGrid = (function(){
       btn.addEventListener("click", onFilterClick);
       box.appendChild(btn);
     }
+
+    /* ★お気に入りフィルタ */
+    var favBtn = document.createElement("button");
+    favBtn.className = "md-fbtn md-fbtn-fav";
+    favBtn.setAttribute("data-kind", "fav");
+    favBtn.id = "mdFavFilterBtn";
+    favBtn.textContent = "★お気に入り (" + MediaFav.count() + ")";
+    favBtn.addEventListener("click", onFilterClick);
+    box.appendChild(favBtn);
+
     if (allBtn && !allBtn._bound) {
       allBtn.addEventListener("click", onFilterClick);
       allBtn._bound = true;
     }
     syncActiveBtn();
+  }
+
+  function updateFavFilterLabel() {
+    var b = U.$("mdFavFilterBtn");
+    if (b) b.textContent = "★お気に入り (" + MediaFav.count() + ")";
   }
 
   function syncActiveBtn() {
@@ -222,7 +265,7 @@ var MediaGrid = (function(){
       var url = new URL(location.href);
       if (currentKind) url.searchParams.set("kind", currentKind);
       else url.searchParams.delete("kind");
-      ["x","twitter","img","image","video","youtube","nico","niconico","other"].forEach(function(p){
+      ["x","twitter","img","image","video","youtube","nico","niconico","other","fav","favorite"].forEach(function(p){
         url.searchParams.delete(p);
       });
       history.replaceState(null, "", url.toString());
@@ -235,7 +278,22 @@ var MediaGrid = (function(){
     var olds = U.$("mdGrid").querySelectorAll(".md-tw-thumb");
     for (var i = 0; i < olds.length; i++) if (olds[i]._cleanup) olds[i]._cleanup();
 
-    filtered = !currentKind ? allItems.slice() : allItems.filter(function(it){ return it._k === currentKind; });
+    if (currentKind === "fav") {
+      // お気に入りは保存データから構築（種別を再判定）
+      var favs = MediaFav.list().map(function(it){
+        var copy = {
+          url: it.url, k: it.k, t: it.t, n: it.n, u: it.u, p: it.p
+        };
+        copy._k = D.detectKindRaw(copy.url, copy.k);
+        return copy;
+      });
+      filtered = favs;
+    } else if (!currentKind) {
+      filtered = allItems.slice();
+    } else {
+      filtered = allItems.filter(function(it){ return it._k === currentKind; });
+    }
+
     U.$("mdGrid").innerHTML = "";
     U.$("mdEnd").style.display = "none";
     renderIdx = 0;
@@ -250,7 +308,10 @@ var MediaGrid = (function(){
       U.$("mdEnd").style.display = filtered.length > 0 ? "block" : "none";
       U.$("mdLoading").style.display = "none";
       if (filtered.length === 0) {
-        U.$("mdGrid").innerHTML = '<div class="md-empty" style="grid-column:1/-1;">該当するメディアがありません</div>';
+        var msg = (currentKind === "fav")
+          ? '★のお気に入りはまだありません'
+          : '該当するメディアがありません';
+        U.$("mdGrid").innerHTML = '<div class="md-empty" style="grid-column:1/-1;">' + msg + '</div>';
       }
       return;
     }
@@ -292,6 +353,7 @@ var MediaGrid = (function(){
     getFiltered: function(){ return filtered; },
     getRenderIdx: function(){ return renderIdx; },
     getFilteredLength: function(){ return filtered.length; },
-    makePlaceholder: makePlaceholder
+    makePlaceholder: makePlaceholder,
+    updateFavFilterLabel: updateFavFilterLabel
   };
 })();
