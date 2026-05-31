@@ -13,7 +13,8 @@ function parseIdPrefix(q) {
 }
 
 /* ===== メイン検索 ===== */
-async function doSearch(q) {
+async function doSearch(q, opts) {
+  opts = opts || {};
   if (q === undefined) q = document.getElementById("topInput").value.trim();
   q = String(q).trim();
   if (!q) return;
@@ -28,7 +29,7 @@ async function doSearch(q) {
     if (idRadio && !idRadio.checked) idRadio.checked = true;
   }
 
-  pushUrl(q);
+  if (!opts.fromHistory) pushUrl(q);
 
   document.getElementById("topPage").classList.add("hidden");
   document.getElementById("resultPage").classList.add("active");
