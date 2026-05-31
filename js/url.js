@@ -48,6 +48,12 @@ function loadUrl() {
     dateVal  = p.get("d") || null;
   }
 
+  // 検索クエリが無い → トップページ状態へ戻す（戻るボタン対策）
+  if (!q) {
+    showTopPage();
+    return;
+  }
+
   const te = document.querySelector(`input[name="searchType"][value="${typeVal}"]`);
   const me = document.querySelector(`input[name="searchMode"][value="${modeVal}"]`);
   if (te) te.checked = true;
@@ -55,21 +61,27 @@ function loadUrl() {
 
   applyDateParam(dateVal);
 
-  if (q) {
-    document.getElementById("topInput").value = q;
-    doSearch(q);
-  }
+  document.getElementById("topInput").value = q;
+  doSearch(q, { fromHistory: true });
 }
 
 /* ================================================================
    ナビゲーション
    ================================================================ */
-function goHome() {
+
+/** トップページ表示状態にする（履歴は触らない） */
+function showTopPage() {
   document.getElementById("topPage").classList.remove("hidden");
   document.getElementById("resultPage").classList.remove("active");
   document.getElementById("threadDetailPage").classList.remove("active");
   document.getElementById("topInput").value = "";
+  currentResults = [];
+  currentKeyword = "";
+}
+
+/** ロゴクリック等でトップへ戻る（履歴も積む） */
+function goHome() {
+  showTopPage();
   document.getElementById("topInput").focus();
-  currentResults = []; currentKeyword = "";
   history.pushState({}, "", location.pathname);
 }
