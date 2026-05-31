@@ -422,9 +422,15 @@ async function groupPosts(posts) {
           .catch(() => [])
       );
     }
+
+    // Turso が本当に必要なスレッド（14日より古い）だけに絞る。
+    // 新しいデータの検索では Turso に一切問い合わせず、待ち時間を発生させない。
+    // （Turso のコード自体は暫定的に残す）
+    const tursoIds = uncached.filter(id => threadNeedsTurso(id));
+
     const [sbAll, tursoAll] = await Promise.all([
       Promise.all(sbPromises).then(a => a.flat()),
-      tursoFetchThreadsByIds(uncached).catch(() => [])
+      tursoIds.length ? tursoFetchThreadsByIds(tursoIds).catch(() => []) : Promise.resolve([])
     ]);
 
     tursoAll.forEach(t => {
