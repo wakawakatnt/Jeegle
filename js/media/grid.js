@@ -171,6 +171,15 @@ var MediaGrid = (function(){
       img.referrerPolicy = "no-referrer";
       img.src = thumb;
       img.onerror = function(){
+        // キャッシュ汚染で失敗した場合、キャッシュ回避クエリを付けて
+        // 一度だけ取り直す（バグってる所だけ再取得）。
+        if (!img._retried) {
+          img._retried = true;
+          var sep = (thumb.indexOf("?") === -1) ? "?" : "&";
+          img.src = thumb + sep + "cb=" + Date.now();
+          return;
+        }
+        // リトライしても失敗ならプレースホルダー
         img.remove();
         card.insertBefore(makePlaceholder(kind, item), card.firstChild);
       };
