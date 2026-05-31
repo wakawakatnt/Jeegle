@@ -47,6 +47,17 @@ var MediaDetect = (function(){
     return m ? m[1] : null;
   }
 
+  /* ニコニコのサムネイルURLを返す。
+     ID（例: sm9 / so12345 / 12345）の数字部分を使う。
+     公式サムネサーバ: https://nicovideo.cdn.nimg.jp/thumbnails/<num>/<num> */
+  function nicoThumb(url) {
+    var id = nicoId(url);
+    if (!id) return null;
+    var num = (id.match(/\d+/) || [])[0];
+    if (!num) return null;
+    return "https://nicovideo.cdn.nimg.jp/thumbnails/" + num + "/" + num;
+  }
+
   function imgurId(url) {
     var m = url.match(/imgur\.com\/(?:gallery\/|a\/)?([A-Za-z0-9]+)(?:\.[a-z0-9]+)?/i);
     return m ? m[1] : null;
@@ -71,9 +82,13 @@ var MediaDetect = (function(){
   function thumbnailUrl(item, kind) {
     var url = item.url || "";
     if (kind === "video") {
-      if (detectVideoProvider(url) === "youtube") {
+      var prov = detectVideoProvider(url);
+      if (prov === "youtube") {
         var yid = youtubeId(url);
         return yid ? "https://i.ytimg.com/vi/" + yid + "/hqdefault.jpg" : null;
+      }
+      if (prov === "niconico") {
+        return nicoThumb(url);
       }
       return null;
     }
@@ -102,6 +117,7 @@ var MediaDetect = (function(){
     detectVideoProvider: detectVideoProvider,
     youtubeId: youtubeId,
     nicoId: nicoId,
+    nicoThumb: nicoThumb,
     imgurId: imgurId,
     tweetId: tweetId,
     tweetUser: tweetUser,
