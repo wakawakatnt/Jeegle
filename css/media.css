@@ -234,3 +234,54 @@
   .md-modal-nav.next { right:4px; background:rgba(0,0,0,0.5); border-color:rgba(255,255,255,0.5); }
   .md-modal-info { font-size:12px; padding:8px 10px; gap:6px 10px; }
 }
+/* ===== お気に入り（★）ボタン ===== */
+.md-fav-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 7;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  color: #ffd54a;
+  font-size: 17px;
+  line-height: 30px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform .12s, background .12s;
+}
+.md-fav-btn:hover { background: rgba(0,0,0,0.7); transform: scale(1.1); }
+.md-fav-btn.on { color: #ffca28; }
+
+.md-fbtn-fav.active,
+.md-fbtn-fav { font-weight: 700; }
+
+/* モーダル内ボタン */
+.md-modal-fav,
+.md-modal-copy {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 6px 14px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background: #fff;
+  color: #333;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.md-modal-fav.on { background: #fff7e0; border-color: #ffca28; color: #b8860b; }
+.md-modal-save {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: #34a853;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
