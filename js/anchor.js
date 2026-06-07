@@ -19,7 +19,7 @@ function bindAnchors(container) {
         const p  = ps.find(x => x.post_num === pnum);
         if (!p) return;
         setText(pvM, p.post_num + ": " + (p.name || "名無し") + " | ID:" + (p.user_id || "?"));
-        const b = (p.body || "").trim();
+        const b = decodeEntities((p.body || "").trim());
         setText(pvB, b.length > 250 ? b.slice(0, 250) + "…" : b);
         pv.style.display = "block"; posPv(e.clientX, e.clientY);
       });
@@ -65,9 +65,9 @@ async function anchorClick(pnum, tid, scope, fromPost) {
   const p  = ps.find(x => x.post_num === pnum);
   if (!p) return;
 
-const el = mkPost(p, tid, currentKeyword, false);
+  const el = mkPost(p, tid, currentKeyword, false);
 
-if (fromPost && fromPost.parentNode === scope) {
+  if (fromPost && fromPost.parentNode === scope) {
     const fromNum = parseInt(fromPost.dataset.postNum, 10);
     if (pnum < fromNum) {
       scope.insertBefore(el, fromPost);
