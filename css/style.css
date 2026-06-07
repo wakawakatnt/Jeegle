@@ -367,17 +367,17 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   max-width: none;       /* 画面いっぱいに使う */
   margin: 0;             /* 中央寄せしない */
 }
-/* 左ペイン: 画面の左半分 */
+/* 左ペイン: 画面の左 42% に縮める */
 .result-layout .results-container {
-  flex: 0 0 50%;
-  max-width: 50%;
+  flex: 0 0 42%;
+  max-width: 42%;
   min-width: 0;
-  padding: 0 20px 0 0;   /* 中央の境界に少し余白 */
+  padding: 0 20px 0 0;
 }
-/* 右ペイン: 画面の右半分 */
+/* 右ペイン: 画面の右 58% に拡大＋内側余白を確保 */
 .detail-pane {
-  flex: 0 0 50%;
-  max-width: 50%;
+  flex: 0 0 58%;
+  max-width: 58%;
   min-width: 0;
   position: sticky;
   top: 56px;
@@ -389,9 +389,10 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  padding: 12px 16px 24px;
-  margin-left: 20px;     /* 中央の境界に少し余白 */
+  padding: 16px 28px 28px;   /* 右端の詰まり解消（特に左右28px） */
+  margin-left: 20px;
 }
+
 /* 未選択時: 右ペインを消し、左を全幅で左詰め */
 .detail-pane:empty { display: none; }
 .result-layout:has(.detail-pane:empty) .results-container {
