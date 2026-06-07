@@ -362,23 +362,28 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .result-layout {
   display: flex;
   align-items: flex-start;
-  gap: 0;
-  padding: 12px 20px 40px;
-  max-width: none;       /* 画面いっぱいに使う */
-  margin: 0;             /* 中央寄せしない */
+  gap: 24px;                 /* ペイン間の余白は gap で一元管理 */
+  padding: 12px 24px 40px;
+  max-width: none;           /* 画面いっぱいに使う */
+  margin: 0;                 /* 中央寄せしない */
+  box-sizing: border-box;
 }
-/* 左ペイン: 画面の左 42% に縮める */
+
+/* 左ペイン: 常に 42% 固定（選択／未選択で幅が変わらないようにする） */
 .result-layout .results-container {
   flex: 0 0 42%;
+  width: 42%;
   max-width: 42%;
   min-width: 0;
-  padding: 0 20px 0 0;
+  padding: 0;                /* 余白は gap に任せて padding は使わない */
+  box-sizing: border-box;
 }
-/* 右ペイン: 画面の右 58% に拡大＋内側余白を確保 */
+
+/* 右ペイン: 残り幅。中身が右端に詰まらないよう内側余白をたっぷり取る */
 .detail-pane {
-  flex: 0 0 58%;
-  max-width: 58%;
+  flex: 1 1 0;               /* 残りをすべて使う（左が常に42%固定なので実質58%） */
   min-width: 0;
+  box-sizing: border-box;
   position: sticky;
   top: 56px;
   align-self: flex-start;
@@ -389,27 +394,41 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  padding: 16px 32px 32px;   /* 右端の余白を増やす */
-  margin-left: 20px;
+  padding: 20px 40px 40px 32px;   /* 上 右 下 左：右端の余白を大きく */
+  margin-left: 0;            /* margin は使わず gap に統一 */
 }
+
 /* 中身も右端に張り付かないよう余白を確保 */
 .detail-pane .thread-details,
 .detail-pane .posts-container,
 .detail-pane .post {
   box-sizing: border-box;
+  width: 100%;
   max-width: 100%;
 }
 .detail-pane .post-content {
   word-break: break-word;     /* 長い文字列で右にはみ出すのを防ぐ */
+  overflow-wrap: anywhere;
+  margin-right: 4px;          /* レス本文と右枠の間に追加の余白 */
+}
+.detail-pane .post-meta {
+  padding-right: 4px;
 }
 
-/* 未選択時: 右ペインを消すだけ。左幅は選択時と同じに保つ */
-.detail-pane:empty { display: none; }
-.result-layout:has(.detail-pane:empty) .results-container {
-  flex: 0 0 42%;
-  max-width: 42%;
-  padding-right: 0;
+/*
+  未選択時の幅ブレ対策:
+  detail-pane を display:none にすると flex 計算が変わり左ペインが伸縮するため、
+  非表示にせず「中身が空のときは枠だけ消して領域は保持」する。
+  これで左ペイン(42%)の描画幅が選択前後で完全に一致する。
+*/
+.detail-pane:empty {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+  pointer-events: none;
 }
+
 .detail-pane .thread-details {
   display: block !important;
   border-top: none;
@@ -430,8 +449,9 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 }
 .thread-details-inline { padding: 0 16px 16px; border-top: 1px solid #f1f3f4; }
 .thread-details-inline .thread-details { display: block; }
+
 @media (max-width: 900px) {
   .result-layout { display: block; padding: 12px 20px 40px; max-width: 900px; }
-  .result-layout .results-container { flex: none; max-width: 100%; padding: 0; }
+  .result-layout .results-container { flex: none; width: 100%; max-width: 100%; padding: 0; }
   .detail-pane { display: none; }
 }
