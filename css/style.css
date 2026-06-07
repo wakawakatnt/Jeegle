@@ -112,7 +112,7 @@ body {
 .search-summary { background:#fff3cd; border-left:4px solid #f9ab00; padding:10px 20px; font-size:13px; color:#856404; display:none; }
 
 /* ===== 結果コンテナ ===== */
-.results-container { padding:12px 20px 40px; max-width:900px; }
+.results-container { padding:0; max-width:900px; }
 
 /* ===== スレッドカード ===== */
 .thread-result { border:1px solid #dadce0; border-radius:8px; margin-bottom:10px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
@@ -357,4 +357,62 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 }
 .media-link-btn:hover {
   opacity: 0.9;
+}
+/* ===== 結果ページ 2ペインレイアウト ===== */
+.result-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 12px 20px 40px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.result-layout .results-container {
+  flex: 0 0 520px;
+  max-width: 520px;
+  padding: 0;
+}
+.detail-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  position: sticky;
+  top: 64px;
+  align-self: flex-start;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.detail-pane-empty {
+  padding: 40px 24px;
+  color: #9aa0a6;
+  font-size: 14px;
+  text-align: center;
+}
+.detail-pane-body { padding: 12px 16px 24px; }
+.detail-pane .thread-details {
+  display: block !important;
+  border-top: none;
+  padding: 0;
+}
+.thread-result.selected {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26,115,232,0.25);
+}
+.detail-pane-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #202124;
+  padding: 4px 0 10px;
+  border-bottom: 1px solid #f1f3f4;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+/* モバイルは1カラムに戻す（従来のインライン展開） */
+@media (max-width: 900px) {
+  .result-layout { display: block; padding: 12px 20px 40px; max-width: 900px; }
+  .result-layout .results-container { flex: none; max-width: 100%; padding: 0; }
+  .detail-pane { display: none; }
 }
