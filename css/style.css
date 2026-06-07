@@ -377,10 +377,11 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   flex: 6 1 0;
   min-width: 0;
   position: sticky;
-  top: 64px;
+  top: 56px;                       /* ヘッダー高さに合わせる */
   align-self: flex-start;
-  max-height: calc(100vh - 80px);
+  max-height: calc(100vh - 64px);  /* 画面いっぱいまで使う */
   overflow-y: auto;
+  overscroll-behavior: contain;    /* ← スクロール伝播を止める */
   border: 1px solid #dadce0;
   border-radius: 8px;
   background: #fff;
