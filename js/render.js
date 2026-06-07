@@ -181,12 +181,65 @@ function mkCard(thread, q) {
   else { bk.className = "badge-title"; setText(bk, "タイトル一致"); }
   ba.appendChild(bk); hdr.appendChild(ta); hdr.appendChild(ba);
 
+  // モバイル用のインライン詳細コンテナ（PCでは使わない）
+  const inlineDet = document.createElement("div");
+  inlineDet.className = "thread-details";
+  inlineDet.style.display = "none";
+
+  hdr.addEventListener("click", () => {
+    const isMobile = window.matchMedia("(max-width: 900px)").matches;
+
+    if (isMobile) {
+      // モバイル: カード内でトグル
+      if (inlineDet.style.display === "block") {
+        inlineDet.style.display = "none";
+        inlineDet.innerHTML = "";
+      } else {
+        inlineDet.innerHTML = "";
+        inlineDet.appendChild(buildDetail(thread, q));
+        inlineDet.style.display = "block";
+      }
+      return;
+    }
+
+    // PC: 右ペインに描画
+    const pane = document.getElementById("detailPane");
+    if (!pane) return;
+
+    // すでに選択中のカードを再クリック → 閉じる
+    if (card.classList.contains("selected")) {
+      card.classList.remove("selected");
+      pane.innerHTML = "";
+      return;
+    }
+
+    document.querySelectorAll(".thread-result.selected")
+      .forEach(c => c.classList.remove("selected"));
+    card.classList.add("selected");
+
+    pane.innerHTML = "";
+    const title = document.createElement("div");
+    title.className = "detail-pane-title";
+    setText(title, thread.title || ("スレッド " + thread.thread_id));
+    pane.appendChild(title);
+    pane.appendChild(buildDetail(thread, q));
+    pane.scrollTop = 0;
+  });
+
+  card.appendChild(hdr);
+  card.appendChild(inlineDet);
+  return card;
+}
+
+/* ===== 詳細DOMを生成（PC=右ペイン / モバイル=カード内 共通） ===== */
+function buildDetail(thread, q) {
   const det = document.createElement("div"); det.className = "thread-details";
 
   const ab = document.createElement("div"); ab.className = "thread-action-bar";
   const lnk = document.createElement("a"); lnk.className = "thread-ext-link";
   lnk.href = "https://hayabusa.open2ch.net/test/read.cgi/livejupiter/" + thread.thread_id + "/";
-  lnk.target = "_blank"; lnk.rel = "noopener noreferrer"; lnk.textContent = "↗ 元スレを開く"; ab.appendChild(lnk);
+  lnk.target = "_blank"; lnk.rel = "noopener noreferrer"; lnk.textContent = "↗ 元スレを開く";
+  ab.appendChild(lnk);
   const allBtn = document.createElement("button"); allBtn.className = "btn btn-success btn-sm"; allBtn.textContent = "全レス表示";
   ab.appendChild(allBtn); det.appendChild(ab);
 
@@ -204,6 +257,9 @@ function mkCard(thread, q) {
     thread.matchedPosts.forEach(p => pw.appendChild(mkPost(p, thread.thread_id, q, true)));
     bindAnchors(pw);
   }
+
+  return det;
+}
 
   hdr.addEventListener("click", () => {
     // モバイル幅では従来どおりカード内インライン展開
