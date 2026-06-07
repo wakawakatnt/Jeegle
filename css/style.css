@@ -362,18 +362,19 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .result-layout {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
-  padding: 12px 20px 40px;
-  max-width: 1600px;
+  gap: 24px;
+  padding: 12px 24px 40px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 .result-layout .results-container {
-  flex: 0 0 520px;
-  max-width: 520px;
+  flex: 4 1 0;
+  min-width: 0;
+  max-width: none;
   padding: 0;
 }
 .detail-pane {
-  flex: 1 1 auto;
+  flex: 6 1 0;
   min-width: 0;
   position: sticky;
   top: 64px;
@@ -387,6 +388,11 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   padding: 12px 16px 24px;
 }
 .detail-pane:empty { display: none; }
+.result-layout:has(.detail-pane:empty) .results-container {
+  flex-basis: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
 .detail-pane .thread-details {
   display: block !important;
   border-top: none;
@@ -405,7 +411,6 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   border-color: #1a73e8;
   box-shadow: 0 0 0 2px rgba(26,115,232,0.25);
 }
-/* モバイル: カード内インライン展開 */
 .thread-details-inline { padding: 0 16px 16px; border-top: 1px solid #f1f3f4; }
 .thread-details-inline .thread-details { display: block; }
 @media (max-width: 900px) {
