@@ -90,8 +90,7 @@ function renderAll(q, elapsed) {
   const pane = document.getElementById("detailPane");
   if (pane) pane.innerHTML = "";
 
-  // ID分析バナー: "id:xxx" プレフィックス、または検索範囲ラジオで id が
-  // 選択されているときに表示する
+  // ID分析バナー
   const idm = q.match(/^id:\s*(.+)/i);
   const typeEl = document.querySelector('input[name="searchType"]:checked');
   const isIdType = typeEl && typeEl.value === "id";
@@ -212,19 +211,16 @@ function mkCard(thread, q) {
     const pane = document.getElementById("detailPane");
     if (!pane) return;
 
-    // 同じカードを再クリック → 閉じる
     if (card.classList.contains("selected")) {
       card.classList.remove("selected");
       pane.innerHTML = "";
       return;
     }
 
-    // 他カードの選択を解除
     document.querySelectorAll(".thread-result.selected")
       .forEach(c => c.classList.remove("selected"));
     card.classList.add("selected");
 
-    // 右ペインを描き直す
     pane.innerHTML = "";
     const title = document.createElement("div");
     title.className = "detail-pane-title";
@@ -325,7 +321,7 @@ async function showDetail(tid, q) {
 }
 
 /* ================================================================
-   レス要素（安価はares_countカラム + bodyパース。RPC不使用）
+   レス要素
    ================================================================ */
 function mkPost(post, tid, q, showRange) {
   const div = document.createElement("div"); div.className = "post"; div.dataset.postNum = post.post_num;
@@ -376,7 +372,7 @@ function mkPost(post, tid, q, showRange) {
     btns.appendChild(up); btns.appendChild(dn);
   }
   const cp = document.createElement("button"); cp.className = "btn btn-copy btn-sm"; cp.textContent = "コピペ";
-  const cpText = `${post.post_num}: ${post.name || "名無し"} | 時刻: ${fmtDate(post.posted_at)} | ID:${post.user_id || "?"}${post.is_nusi ? " 主" : ""}\n${(post.body || "").trim()}`;
+  const cpText = `${post.post_num}: ${decodeEntities(post.name || "名無し")} | 時刻: ${fmtDate(post.posted_at)} | ID:${post.user_id || "?"}${post.is_nusi ? " 主" : ""}\n${decodeEntities((post.body || "").trim())}`;
   cp.addEventListener("click", e => {
     e.stopPropagation();
     navigator.clipboard.writeText(cpText).then(() => { cp.textContent = "コピー完了!"; setTimeout(() => cp.textContent = "コピペ", 1200); })
@@ -403,7 +399,6 @@ function mkPost(post, tid, q, showRange) {
     const aresList2 = document.createElement("div"); aresList2.className = "ares-list";
     div.appendChild(aresList2);
 
-    /* 安価カウント: ares_countカラムを読む */
     (async () => {
       try {
         const cnt = await countAres(tid, post.post_num);
@@ -413,7 +408,6 @@ function mkPost(post, tid, q, showRange) {
       } catch (e) {}
     })();
 
-    /* 安価レス展開: 全レスからbodyパースで取得 */
     aresBtn2.addEventListener("click", async e => {
       e.stopPropagation();
       if (aresList2.classList.contains("open")) {
@@ -450,7 +444,7 @@ function mkPost(post, tid, q, showRange) {
    本文レンダリング
    ================================================================ */
 function renderBody(container, bodyText, tid, q) {
-  const lines = bodyText.split("\n");
+  const lines = decodeEntities(bodyText).split("\n");
   lines.forEach((line, li) => {
     if (li > 0) container.appendChild(document.createElement("br"));
     tokenize(line).forEach(tok => {
@@ -463,19 +457,23 @@ function renderBody(container, bodyText, tid, q) {
         const img = document.createElement("img");
         img.src = "https://i.imgur.com/" + tok.id + ".jpg"; img.loading = "lazy";
         img.onerror = () => { w.style.display = "none"; }; w.appendChild(img); container.appendChild(w);
-        hlAppend(container, tok.raw, q);
+        appendUrlLink(container, tok.raw);
       } else if (tok.type === "imgujp") {
         const w = document.createElement("div"); w.className = "media-embed";
         const img = document.createElement("img");
         img.src = tok.raw; img.loading = "lazy";
         img.onerror = () => { w.style.display = "none"; }; w.appendChild(img); container.appendChild(w);
-        hlAppend(container, tok.raw, q);
+        appendUrlLink(container, tok.raw);
       } else if (tok.type === "youtube") {
         const w = document.createElement("div"); w.className = "media-embed";
         const fr = document.createElement("iframe");
         fr.src = "https://www.youtube.com/embed/" + tok.vid; fr.allowFullscreen = true; fr.loading = "lazy";
         w.appendChild(fr); container.appendChild(w);
-        hlAppend(container, tok.raw, q);
+        appendUrlLink(container, tok.raw);
+      } else if (tok.type === "x") {
+        appendXEmbed(container, tok.tid, tok.raw);
+      } else if (tok.type === "url") {
+        appendUrlLink(container, tok.raw);
       } else {
         hlAppend(container, tok.raw, q);
       }
@@ -489,13 +487,20 @@ function tokenize(line) {
   const igRe  = /https?:\/\/(?:i\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\.[a-zA-Z]+)?/g;
   const igjpRe = /https?:\/\/imgu?\.jp\/(?:i\/)?([a-zA-Z0-9_-]+(?:\.[a-zA-Z]{3,4}))/g;
   const ytRe  = /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/g;
+  const xRe   = /https?:\/\/(?:www\.|mobile\.)?(?:twitter\.com|x\.com)\/(?:[A-Za-z0-9_]+|i\/web)\/status(?:es)?\/(\d+)/g;
+  const urlRe = /https?:\/\/[^\s<>"'）」】]+/g;
   let m;
   const hits = [];
-  ancRe.lastIndex = 0; while ((m = ancRe.exec(line)) !== null) hits.push({ s: m.index, e: m.index + m[0].length, type: "anchor", raw: m[0], num: m[1] });
-  igRe.lastIndex = 0;  while ((m = igRe.exec(line)) !== null)  hits.push({ s: m.index, e: m.index + m[0].length, type: "imgur", raw: m[0], id: m[1] });
-  igjpRe.lastIndex = 0; while ((m = igjpRe.exec(line)) !== null) hits.push({ s: m.index, e: m.index + m[0].length, type: "imgujp", raw: m[0], id: m[1] });
-  ytRe.lastIndex = 0;  while ((m = ytRe.exec(line)) !== null)  hits.push({ s: m.index, e: m.index + m[0].length, type: "youtube", raw: m[0], vid: m[1] });
-  hits.sort((a, b) => a.s - b.s);
+  ancRe.lastIndex = 0;  while ((m = ancRe.exec(line))  !== null) hits.push({ s: m.index, e: m.index + m[0].length, type: "anchor",  raw: m[0], num: m[1], pri: 0 });
+  igRe.lastIndex = 0;   while ((m = igRe.exec(line))   !== null) hits.push({ s: m.index, e: m.index + m[0].length, type: "imgur",   raw: m[0], id: m[1],  pri: 1 });
+  igjpRe.lastIndex = 0; while ((m = igjpRe.exec(line)) !== null) hits.push({ s: m.index, e: m.index + m[0].length, type: "imgujp",  raw: m[0], id: m[1],  pri: 1 });
+  ytRe.lastIndex = 0;   while ((m = ytRe.exec(line))   !== null) hits.push({ s: m.index, e: m.index + m[0].length, type: "youtube", raw: m[0], vid: m[1], pri: 1 });
+  xRe.lastIndex = 0;    while ((m = xRe.exec(line))    !== null) hits.push({ s: m.index, e: m.index + m[0].length, type: "x",       raw: m[0], tid: m[1], pri: 1 });
+  urlRe.lastIndex = 0;  while ((m = urlRe.exec(line))  !== null) {
+    const trimmed = m[0].replace(/[.,!?:;、。）)」』】>]+$/, "");
+    hits.push({ s: m.index, e: m.index + trimmed.length, type: "url", raw: trimmed, pri: 2 });
+  }
+  hits.sort((a, b) => (a.s - b.s) || (a.pri - b.pri) || (b.e - a.e));
   const kept = []; let last = 0;
   hits.forEach(h => { if (h.s >= last) { kept.push(h); last = h.e; } });
   let pos = 0;
@@ -510,6 +515,7 @@ function tokenize(line) {
 /* ===== ハイライト ===== */
 function hlAppend(container, text, q) {
   if (!text) return;
+  text = decodeEntities(text);
   if (!q) { container.appendChild(document.createTextNode(text)); return; }
   const ws = words(q.replace(/^id:\s*/i, "")).filter(Boolean);
   if (!ws.length) { container.appendChild(document.createTextNode(text)); return; }
@@ -529,3 +535,69 @@ function hlAppend(container, text, q) {
 }
 
 function hlSet(el, text, q) { el.textContent = ""; hlAppend(el, text, q); }
+
+/* ===== URLを安全にリンク化（href は http/https のみ許可） ===== */
+function appendUrlLink(container, url) {
+  if (!url) return;
+  let safe = false;
+  try {
+    const u = new URL(url);
+    safe = (u.protocol === "http:" || u.protocol === "https:");
+  } catch (e) { safe = false; }
+  if (!safe) { container.appendChild(document.createTextNode(url)); return; }
+  const a = document.createElement("a");
+  a.href = url;
+  a.textContent = url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer nofollow";
+  a.className = "body-link";
+  container.appendChild(a);
+}
+
+/* ===== X / Twitter 埋め込み（公式 platform.twitter.com を iframe 読込） ===== */
+function appendXEmbed(container, tweetId, rawUrl) {
+  if (!tweetId) { appendUrlLink(container, rawUrl); return; }
+
+  const w = document.createElement("div");
+  w.className = "media-embed x-embed";
+
+  const fr = document.createElement("iframe");
+  fr.className = "x-embed-frame";
+  fr.src = "https://platform.twitter.com/embed/Tweet.html?id=" + encodeURIComponent(tweetId) +
+           "&theme=light&dnt=true&lang=ja";
+  fr.loading = "lazy";
+  fr.setAttribute("scrolling", "no");
+  fr.setAttribute("frameborder", "0");
+  fr.setAttribute("allowtransparency", "true");
+  fr.title = "X post " + tweetId;
+  fr.style.height = "320px";
+  w.appendChild(fr);
+  container.appendChild(w);
+
+  appendUrlLink(container, rawUrl);
+
+  let resized = false;
+  const fallbackTimer = setTimeout(() => { if (!resized) {} }, 8000);
+
+  if (!window.__xEmbedListenerAdded) {
+    window.__xEmbedListenerAdded = true;
+    window.addEventListener("message", function (e) {
+      let host = "";
+      try { host = new URL(e.origin).hostname; } catch (_) { return; }
+      if (!/(^|\.)twitter\.com$|(^|\.)x\.com$/.test(host)) return;
+      let data = e.data;
+      try { if (typeof data === "string") data = JSON.parse(data); } catch (_) { return; }
+      const payload = data && data["twttr.embed"];
+      if (!payload || payload.method !== "twttr.private.resize") return;
+      const p = (payload.params && payload.params[0]) || {};
+      const h = p.height;
+      const widgetId = p.data && p.data.tweet_id;
+      if (!h) return;
+      document.querySelectorAll("iframe.x-embed-frame").forEach(f => {
+        if (widgetId && f.src.indexOf("id=" + widgetId) === -1) return;
+        f.style.height = h + "px";
+      });
+    });
+  }
+  fr.addEventListener("load", () => { resized = true; clearTimeout(fallbackTimer); });
+}
