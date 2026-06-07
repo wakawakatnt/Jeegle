@@ -389,15 +389,25 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  padding: 16px 28px 28px;   /* 右端の詰まり解消（特に左右28px） */
+  padding: 16px 32px 32px;   /* 右端の余白を増やす */
   margin-left: 20px;
 }
+/* 中身も右端に張り付かないよう余白を確保 */
+.detail-pane .thread-details,
+.detail-pane .posts-container,
+.detail-pane .post {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+.detail-pane .post-content {
+  word-break: break-word;     /* 長い文字列で右にはみ出すのを防ぐ */
+}
 
-/* 未選択時: 右ペインを消し、左を全幅で左詰め */
+/* 未選択時: 右ペインを消すだけ。左幅は選択時と同じに保つ */
 .detail-pane:empty { display: none; }
 .result-layout:has(.detail-pane:empty) .results-container {
-  flex: 1 1 auto;
-  max-width: 900px;      /* 読みやすさのため上限。左詰めのまま */
+  flex: 0 0 42%;
+  max-width: 42%;
   padding-right: 0;
 }
 .detail-pane .thread-details {
