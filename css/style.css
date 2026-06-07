@@ -63,7 +63,7 @@ body {
 .result-logo span:nth-child(5){color:#34A853}.result-logo span:nth-child(6){color:#EA4335}
 .result-logo span:nth-child(7){color:#FBBC05}
 .result-search-box {
-  display:flex; align-items:center; flex:0 1 auto; width:60%; max-width:560px;
+  display:flex; align-items:center; flex:1; min-width:0; max-width:560px;
   border:1px solid #dfe1e5; border-radius:24px; padding:8px 14px;
 }
 .result-search-box:focus-within { box-shadow:0 1px 6px rgba(32,33,36,.28); border-color:transparent; }
@@ -207,17 +207,16 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .media-embed iframe { width:100%; height:360px; border:none; }
 
 @media(max-width:640px){
-  .result-header { padding:8px 10px; gap:8px; }
+  .result-header { padding:8px 8px; gap:6px; }
   .result-logo { font-size:22px; }
   .search-options-bar { padding:8px 12px; gap:8px; }
   .results-container,.thread-detail-posts { padding:8px 12px 40px; }
   .logo { font-size:48px; }
 
-  /* 主マークの隣にボタンを並べる（改行させない） */
   .post-buttons { margin-left:auto; margin-top:0; width:auto; }
 
-  /* 検索バーとアイコンを程よく圧縮 */
-  .result-search-box { width:58%; padding:6px 12px; }
+  /* 検索バーは残り幅いっぱいに自動調整（固定幅は指定しない） */
+  .result-search-box { padding:6px 12px; }
   .result-search-box input { font-size:15px; }
   .share-btn { width:32px; height:32px; font-size:14px; }
 }
