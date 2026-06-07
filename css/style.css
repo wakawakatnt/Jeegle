@@ -386,19 +386,11 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   padding: 12px 16px 24px;
 }
-/* 中身が空のときはペインごと隠す（デッドスペース化を防ぐ） */
-.detail-pane:empty {
-  display: none;
-}
-/* 右ペイン内の詳細は常時表示・枠なし */
+.detail-pane:empty { display: none; }
 .detail-pane .thread-details {
   display: block !important;
   border-top: none;
   padding: 0;
-}
-.thread-result.selected {
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 2px rgba(26,115,232,0.25);
 }
 .detail-pane-title {
   font-size: 16px;
@@ -409,7 +401,13 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   margin-bottom: 8px;
   word-break: break-word;
 }
-/* モバイルは1カラムに戻す（従来のインライン展開） */
+.thread-result.selected {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26,115,232,0.25);
+}
+/* モバイル: カード内インライン展開 */
+.thread-details-inline { padding: 0 16px 16px; border-top: 1px solid #f1f3f4; }
+.thread-details-inline .thread-details { display: block; }
 @media (max-width: 900px) {
   .result-layout { display: block; padding: 12px 20px 40px; max-width: 900px; }
   .result-layout .results-container { flex: none; max-width: 100%; padding: 0; }
