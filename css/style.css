@@ -212,7 +212,9 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   .search-options-bar { padding:8px 12px; gap:8px; }
   .results-container,.thread-detail-posts { padding:8px 12px 40px; }
   .logo { font-size:48px; }
-  .post-buttons { margin-left:0; margin-top:4px; width:100%; }
+
+  /* 主マークの隣にボタンを並べる（改行させない） */
+  .post-buttons { margin-left:auto; margin-top:0; width:auto; }
 
   /* 検索バーとアイコンを程よく圧縮 */
   .result-search-box { width:58%; padding:6px 12px; }
