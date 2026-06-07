@@ -205,7 +205,54 @@ function mkCard(thread, q) {
     bindAnchors(pw);
   }
 
-  hdr.addEventListener("click", () => { det.style.display = det.style.display === "block" ? "none" : "block"; });
+  hdr.addEventListener("click", () => {
+    // モバイル幅では従来どおりカード内インライン展開
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      if (det.parentElement !== card) card.appendChild(det);
+      det.style.display = det.style.display === "block" ? "none" : "block";
+      return;
+    }
+
+    // PC: 右ペインに詳細を表示
+    const pane      = document.getElementById("detailPane");
+    const paneBody  = document.getElementById("detailPaneBody");
+    const paneEmpty = document.getElementById("detailPaneEmpty");
+
+    // すでに選択中ならトグルで閉じる（detを元カードへ戻して状態保持）
+    if (card.classList.contains("selected")) {
+      card.classList.remove("selected");
+      det.style.display = "none";
+      card.appendChild(det);
+      paneBody.innerHTML = "";
+      if (paneEmpty) paneEmpty.style.display = "";
+      return;
+    }
+
+    // 表示中の別カードの det を元へ戻す
+    const prev = paneBody.querySelector(".thread-details");
+    if (prev && prev._ownerCard) {
+      prev.style.display = "none";
+      prev._ownerCard.appendChild(prev);
+    }
+    document.querySelectorAll(".thread-result.selected")
+      .forEach(c => c.classList.remove("selected"));
+
+    // 右ペイン構築
+    card.classList.add("selected");
+    if (paneEmpty) paneEmpty.style.display = "none";
+    paneBody.innerHTML = "";
+
+    const title = document.createElement("div");
+    title.className = "detail-pane-title";
+    setText(title, thread.title || ("スレッド " + thread.thread_id));
+    paneBody.appendChild(title);
+
+    det._ownerCard = card;
+    det.style.display = "block";
+    paneBody.appendChild(det);
+    pane.scrollTop = 0;
+  });
+
   card.appendChild(hdr); card.appendChild(det);
   return card;
 }
