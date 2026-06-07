@@ -86,6 +86,10 @@ function renderAll(q, elapsed) {
   const res = document.getElementById("results");
   res.innerHTML = "";
 
+  // 検索のたびに右ペインをクリア（前回の表示を残さない）
+  const pane = document.getElementById("detailPane");
+  if (pane) pane.innerHTML = "";
+
   // ID分析バナー: "id:xxx" プレフィックス、または検索範囲ラジオで id が
   // 選択されているときに表示する
   const idm = q.match(/^id:\s*(.+)/i);
@@ -158,7 +162,7 @@ function mkIdAnalysisBanner(userId) {
   return banner;
 }
 
-/* ===== スレッドカード ===== */
+/* ===== スレッドカード（PC=右ペイン展開 / モバイル=カード内展開） ===== */
 function mkCard(thread, q) {
   const card = document.createElement("div");
   card.className = "thread-result";
@@ -181,42 +185,46 @@ function mkCard(thread, q) {
   else { bk.className = "badge-title"; setText(bk, "タイトル一致"); }
   ba.appendChild(bk); hdr.appendChild(ta); hdr.appendChild(ba);
 
-  // モバイル用のインライン詳細コンテナ（PCでは使わない）
+  // モバイル時にのみ使うカード内インライン詳細コンテナ
   const inlineDet = document.createElement("div");
-  inlineDet.className = "thread-details";
+  inlineDet.className = "thread-details-inline";
   inlineDet.style.display = "none";
 
   hdr.addEventListener("click", () => {
     const isMobile = window.matchMedia("(max-width: 900px)").matches;
 
+    /* ---- モバイル: カード内でトグル ---- */
     if (isMobile) {
-      // モバイル: カード内でトグル
       if (inlineDet.style.display === "block") {
         inlineDet.style.display = "none";
         inlineDet.innerHTML = "";
+        card.classList.remove("selected");
       } else {
         inlineDet.innerHTML = "";
         inlineDet.appendChild(buildDetail(thread, q));
         inlineDet.style.display = "block";
+        card.classList.add("selected");
       }
       return;
     }
 
-    // PC: 右ペインに描画
+    /* ---- PC: 右ペインに展開 ---- */
     const pane = document.getElementById("detailPane");
     if (!pane) return;
 
-    // すでに選択中のカードを再クリック → 閉じる
+    // 同じカードを再クリック → 閉じる
     if (card.classList.contains("selected")) {
       card.classList.remove("selected");
       pane.innerHTML = "";
       return;
     }
 
+    // 他カードの選択を解除
     document.querySelectorAll(".thread-result.selected")
       .forEach(c => c.classList.remove("selected"));
     card.classList.add("selected");
 
+    // 右ペインを描き直す
     pane.innerHTML = "";
     const title = document.createElement("div");
     title.className = "detail-pane-title";
@@ -231,9 +239,10 @@ function mkCard(thread, q) {
   return card;
 }
 
-/* ===== 詳細DOMを生成（PC=右ペイン / モバイル=カード内 共通） ===== */
+/* ===== 詳細DOMを生成（PC右ペイン / モバイルカード内 共通） ===== */
 function buildDetail(thread, q) {
   const det = document.createElement("div"); det.className = "thread-details";
+  det.style.display = "block";
 
   const ab = document.createElement("div"); ab.className = "thread-action-bar";
   const lnk = document.createElement("a"); lnk.className = "thread-ext-link";
@@ -259,58 +268,6 @@ function buildDetail(thread, q) {
   }
 
   return det;
-}
-
-  hdr.addEventListener("click", () => {
-    // モバイル幅では従来どおりカード内インライン展開
-    if (window.matchMedia("(max-width: 900px)").matches) {
-      if (det.parentElement !== card) card.appendChild(det);
-      det.style.display = det.style.display === "block" ? "none" : "block";
-      return;
-    }
-
-    // PC: 右ペインに詳細を表示
-    const pane      = document.getElementById("detailPane");
-    const paneBody  = document.getElementById("detailPaneBody");
-    const paneEmpty = document.getElementById("detailPaneEmpty");
-
-    // すでに選択中ならトグルで閉じる（detを元カードへ戻して状態保持）
-    if (card.classList.contains("selected")) {
-      card.classList.remove("selected");
-      det.style.display = "none";
-      card.appendChild(det);
-      paneBody.innerHTML = "";
-      if (paneEmpty) paneEmpty.style.display = "";
-      return;
-    }
-
-    // 表示中の別カードの det を元へ戻す
-    const prev = paneBody.querySelector(".thread-details");
-    if (prev && prev._ownerCard) {
-      prev.style.display = "none";
-      prev._ownerCard.appendChild(prev);
-    }
-    document.querySelectorAll(".thread-result.selected")
-      .forEach(c => c.classList.remove("selected"));
-
-    // 右ペイン構築
-    card.classList.add("selected");
-    if (paneEmpty) paneEmpty.style.display = "none";
-    paneBody.innerHTML = "";
-
-    const title = document.createElement("div");
-    title.className = "detail-pane-title";
-    setText(title, thread.title || ("スレッド " + thread.thread_id));
-    paneBody.appendChild(title);
-
-    det._ownerCard = card;
-    det.style.display = "block";
-    paneBody.appendChild(det);
-    pane.scrollTop = 0;
-  });
-
-  card.appendChild(hdr); card.appendChild(det);
-  return card;
 }
 
 /* ===== 全レスインライン ===== */
