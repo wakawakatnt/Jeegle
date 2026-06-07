@@ -384,14 +384,13 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  padding: 12px 16px 24px;
 }
-.detail-pane-empty {
-  padding: 40px 24px;
-  color: #9aa0a6;
-  font-size: 14px;
-  text-align: center;
+/* 中身が空のときはペインごと隠す（デッドスペース化を防ぐ） */
+.detail-pane:empty {
+  display: none;
 }
-.detail-pane-body { padding: 12px 16px 24px; }
+/* 右ペイン内の詳細は常時表示・枠なし */
 .detail-pane .thread-details {
   display: block !important;
   border-top: none;
