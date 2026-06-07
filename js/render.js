@@ -558,6 +558,10 @@ function appendUrlLink(container, url) {
 function appendXEmbed(container, tweetId, rawUrl) {
   if (!tweetId) { appendUrlLink(container, rawUrl); return; }
 
+  // 先に元URLリンクを出す（埋め込みはこの下に表示）
+  appendUrlLink(container, rawUrl);
+  container.appendChild(document.createElement("br"));
+
   const w = document.createElement("div");
   w.className = "media-embed x-embed";
 
@@ -573,8 +577,6 @@ function appendXEmbed(container, tweetId, rawUrl) {
   fr.style.height = "320px";
   w.appendChild(fr);
   container.appendChild(w);
-
-  appendUrlLink(container, rawUrl);
 
   let resized = false;
   const fallbackTimer = setTimeout(() => { if (!resized) {} }, 8000);
