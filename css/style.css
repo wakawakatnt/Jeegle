@@ -362,37 +362,42 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .result-layout {
   display: flex;
   align-items: flex-start;
-  gap: 24px;
-  padding: 12px 24px 40px;
-  max-width: 1400px;
-  margin: 0 auto;
+  gap: 0;
+  padding: 12px 20px 40px;
+  max-width: none;       /* 画面いっぱいに使う */
+  margin: 0;             /* 中央寄せしない */
 }
+/* 左ペイン: 画面の左半分 */
 .result-layout .results-container {
-  flex: 4 1 0;
+  flex: 0 0 50%;
+  max-width: 50%;
   min-width: 0;
-  max-width: none;
-  padding: 0;
+  padding: 0 20px 0 0;   /* 中央の境界に少し余白 */
 }
+/* 右ペイン: 画面の右半分 */
 .detail-pane {
-  flex: 6 1 0;
+  flex: 0 0 50%;
+  max-width: 50%;
   min-width: 0;
   position: sticky;
-  top: 56px;                       /* ヘッダー高さに合わせる */
+  top: 56px;
   align-self: flex-start;
-  max-height: calc(100vh - 64px);  /* 画面いっぱいまで使う */
+  max-height: calc(100vh - 64px);
   overflow-y: auto;
-  overscroll-behavior: contain;    /* ← スクロール伝播を止める */
+  overscroll-behavior: contain;
   border: 1px solid #dadce0;
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   padding: 12px 16px 24px;
+  margin-left: 20px;     /* 中央の境界に少し余白 */
 }
+/* 未選択時: 右ペインを消し、左を全幅で左詰め */
 .detail-pane:empty { display: none; }
 .result-layout:has(.detail-pane:empty) .results-container {
-  flex-basis: 100%;
-  max-width: 760px;
-  margin: 0 auto;
+  flex: 1 1 auto;
+  max-width: 900px;      /* 読みやすさのため上限。左詰めのまま */
+  padding-right: 0;
 }
 .detail-pane .thread-details {
   display: block !important;
