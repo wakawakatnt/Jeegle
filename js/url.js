@@ -94,7 +94,11 @@ function loadUrl() {
     : [];
 
   document.getElementById("topInput").value = q;
-  doSearch(q, { fromHistory: true, restoreActiveIds: restoreIds });
+  doSearch(q, {
+    fromHistory: true,
+    restoreActiveIds: restoreIds,
+    forceId: forceIdFromHistory   // ★ id: の時は履歴復元でもID範囲を強制
+  });
 }
 
 /* ================================================================
