@@ -664,43 +664,45 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   font-size: 11px;
   color: #5f8a3c;
 }
-/* ===== モバイル：展開スレッドの折りたたみレール ===== */
+/* ===== モバイル：展開スレッドの折りたたみレール（幅を取らずに重ねる）===== */
 .thread-details-inline.open {
-  display: flex !important;   /* レールと本文を横並び。inline style の block より優先 */
-  align-items: stretch;
+  display: block !important;
+  position: relative;          /* レールの絶対配置の基準 */
+  padding-left: 14px;          /* 線とのわずかな余白だけ確保（最小限）*/
 }
 
+/* 左端に重ねる縦線。本文の幅は奪わない */
 .collapse-rail {
-  flex-shrink: 0;
-  width: 24px;
+  position: absolute;
+  left: 2px;
+  top: 4px;
+  bottom: 4px;
+  width: 16px;                 /* タップ領域。線自体は細い */
   cursor: pointer;
-  position: relative;
-  margin-left: 4px;
-  min-height: 40px;           /* 中身が短くても線が見えるよう最低高さを確保 */
+  z-index: 2;
 }
 .collapse-rail::before {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 6px;
-  bottom: 6px;
-  width: 2px;
-  transform: translateX(-50%);
-  background: #c0c0c0;        /* 灰色の線 */
-  border-radius: 2px;
-  transition: background 0.12s, width 0.12s;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;                /* 細く滑らかな線 */
+  background: #dadce0;
+  border-radius: 999px;        /* 端を丸めて滑らかに */
+  transition: background 0.15s ease, width 0.15s ease;
 }
 .collapse-rail:hover::before,
 .collapse-rail:active::before {
   background: #1a73e8;
-  width: 3px;
+  width: 2px;
 }
 
 .collapse-body {
-  flex: 1;
-  min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 .collapse-body .thread-details {
   border-top: none;
-  padding: 0 8px 12px 4px;
+  padding: 0;                  /* レール用の余分なパディングを除去 */
 }
