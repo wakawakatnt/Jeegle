@@ -55,16 +55,26 @@ async function doSearch(q, opts) {
     opts.restoreActiveIds.forEach(id => activeIdSet.add(normId(id)));
   }
 
-  /* id:プレフィックスならデフォルトで検索範囲ラジオを id に切り替える。
-     ただし手動でラジオ変更(userTypeChange)や履歴復元(fromHistory)では尊重する。
-     ※ pushUrl はラジオを切り替えた「後」に呼ぶこと。
-        先に呼ぶと古いラジオ値(例: 本文=h)がURLに焼き付いてしまう。 */
-  if (idp.isId && !opts.userTypeChange && !opts.fromHistory) {
+  /* id:プレフィックスなら検索範囲ラジオを id に切り替える。
+     - 通常の id: 検索（手動ラジオ変更でない）→ 切り替える
+     - 履歴復元でも forceId が立っていれば切り替える（古い t=h 等のURL対策）
+     ※ pushUrl はラジオを切り替えた「後」に呼ぶこと。 */
+  if (idp.isId && (opts.forceId || (!opts.userTypeChange && !opts.fromHistory))) {
     const idRadio = document.querySelector('input[name="searchType"][value="id"]');
     if (idRadio && !idRadio.checked) idRadio.checked = true;
+    window.__userChangedType = false;   // 強制ID時は手動フラグを下ろす
   }
 
-  if (!opts.fromHistory) pushUrl(q);   // ← ラジオ切替後なので t=i が正しく入る
+  /* 履歴復元でも forceId でIDに直したら、URLを正しい t=i に書き直す
+     （古い t=h リンクを開いた瞬間に正しいURLへ静かに置換する） */
+  if (!opts.fromHistory || opts.forceId) {
+    if (opts.fromHistory) {
+      history.replaceState({}, "", buildUrlForCurrentState(q));
+    } else {
+      pushUrl(q);
+    }
+  }
+
   
   document.getElementById("topPage").classList.add("hidden");
   document.getElementById("resultPage").classList.add("active");
