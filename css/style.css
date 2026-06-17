@@ -664,22 +664,19 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   font-size: 11px;
   color: #5f8a3c;
 }
-/* ===== モバイル：展開スレッドの折りたたみレール（YouTubeコメント風）===== */
-.thread-details-inline {
-  display: none;
-}
-.thread-details-inline[style*="block"] {
-  display: flex;       /* レールと本文を横並びに */
+/* ===== モバイル：展開スレッドの折りたたみレール ===== */
+.thread-details-inline.open {
+  display: flex !important;   /* レールと本文を横並び。inline style の block より優先 */
   align-items: stretch;
 }
 
-/* 左側の縦線。タップで閉じる */
 .collapse-rail {
   flex-shrink: 0;
-  width: 24px;                 /* タップしやすい幅 */
+  width: 24px;
   cursor: pointer;
   position: relative;
   margin-left: 4px;
+  min-height: 40px;           /* 中身が短くても線が見えるよう最低高さを確保 */
 }
 .collapse-rail::before {
   content: "";
@@ -689,17 +686,16 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   bottom: 6px;
   width: 2px;
   transform: translateX(-50%);
-  background: #dadce0;
+  background: #c0c0c0;        /* 灰色の線 */
   border-radius: 2px;
   transition: background 0.12s, width 0.12s;
 }
 .collapse-rail:hover::before,
 .collapse-rail:active::before {
-  background: #1a73e8;         /* タップ時に青くなって反応が分かる */
+  background: #1a73e8;
   width: 3px;
 }
 
-/* 本文側 */
 .collapse-body {
   flex: 1;
   min-width: 0;
