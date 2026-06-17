@@ -4,17 +4,27 @@ let currentResults = [];
 let currentKeyword = "";
 let lastSegmentTimings = [];
 
-/* ID検索: 本体表示中の完全ID（同一人物かもボタン / URLのaパラメータで切替）*/
-let activeIdFull = null;
+/* ID検索: 検索した元ID（生の値）と、追加表示中ID集合（正規化キーで保持）*/
+let searchedId = null;
+let activeIdSet = new Set();
 
-/* IDの前方2文字を取り出す（2文字未満ならそのまま）*/
+/* IDの正規化: ドット(.)を除去。'7x.z2.L90' と '7xz2L90' を同一とみなす */
+function normId(id) {
+  return String(id || "").replace(/\./g, "");
+}
+
+/* 正規化後の文字数で「4文字かどうか」を判定 */
+function isLen4(id) {
+  return normId(id).length === 4;
+}
+
+/* 正規化後の前方2文字（DB前方一致検索用）*/
 function idPrefix2(id) {
-  const s = String(id);
+  const s = normId(id);
   return s.length >= 2 ? s.slice(0, 2) : s;
 }
 
 /* ===== id:プレフィックス解析 ===== */
-/** "id: xxx" なら {isId:true, value:"xxx"}、そうでなければ {isId:false, value:q} */
 function parseIdPrefix(q) {
   const m = String(q).match(/^id:\s*(.+)/i);
   if (m) return { isId: true, value: m[1].trim() };
@@ -29,13 +39,17 @@ async function doSearch(q, opts) {
   if (!q) return;
   currentKeyword = q;
 
-  /* URL復元なら復元ID、それ以外（新規検索）はリセット */
-  activeIdFull = opts.restoreActiveId || null;
+  const idp = parseIdPrefix(q);
+
+  /* ID検索の表示状態をリセット。URL復元時は復元分を集合に入れる */
+  searchedId = idp.isId ? idp.value : null;
+  activeIdSet = new Set();
+  if (opts.restoreActiveIds && opts.restoreActiveIds.length) {
+    opts.restoreActiveIds.forEach(id => activeIdSet.add(normId(id)));
+  }
 
   /* id:プレフィックスならデフォルトで検索範囲ラジオを id に切り替える。
-     ただし「ユーザーが手動で範囲ラジオを変更した」場合(userTypeChange)や
-     履歴復元(fromHistory)では尊重し、強制的に id に戻さない。 */
-  const idp = parseIdPrefix(q);
+     ただし手動でラジオ変更(userTypeChange)や履歴復元(fromHistory)では尊重する */
   if (idp.isId && !opts.userTypeChange && !opts.fromHistory) {
     const idRadio = document.querySelector('input[name="searchType"][value="id"]');
     if (idRadio && !idRadio.checked) idRadio.checked = true;
@@ -67,7 +81,6 @@ async function doSearch(q, opts) {
     if (stype === "title") {
       results = await searchTitle(q, smode, dr);
     } else if (stype === "all") {
-      // タイトル + 本文（body/name/user_id）をマージ
       const [tr, br] = await Promise.all([
         searchTitle(q, smode, dr),
         searchPosts(q, smode, dr, "all")
@@ -84,7 +97,6 @@ async function doSearch(q, opts) {
       });
       results = Array.from(map.values());
     } else {
-      // body / name / id はそれぞれ単一カラム検索
       results = await searchPosts(q, smode, dr, stype);
     }
     currentResults = results;
@@ -168,7 +180,7 @@ async function runAllSegments(segs, kind, runner) {
 }
 
 /* ================================================================
-   公開API: タイトル検索（日ごとに分割して並列実行 → マージ）
+   公開API: タイトル検索
    ================================================================ */
 async function searchTitle(q, mode, dr) {
   const segs = splitDateRangeByDay(dr);
@@ -188,8 +200,7 @@ async function searchTitle(q, mode, dr) {
 }
 
 /* ================================================================
-   公開API: レス検索（body/name/id/all を日ごとに分割して並列実行 → マージ）
-   stype: "all" | "body" | "name" | "id"
+   公開API: レス検索
    ================================================================ */
 async function searchPosts(q, mode, dr, stype) {
   const segs = splitDateRangeByDay(dr);
@@ -219,7 +230,7 @@ async function searchPosts(q, mode, dr, stype) {
 }
 
 /* ================================================================
-   内部実装: タイトル1セグメント（デュアルDB対応）
+   内部実装: タイトル1セグメント
    ================================================================ */
 async function searchTitleOneDay(q, mode, dr) {
   const ws = words(parseIdPrefix(q).value);
@@ -227,7 +238,6 @@ async function searchTitleOneDay(q, mode, dr) {
 
   const promises = [];
 
-  /* --- Supabase --- */
   if (needSupabase) {
     const sbFrom = (dr.from < boundary) ? boundary : dr.from;
     const sbTo   = dr.to;
@@ -254,7 +264,6 @@ async function searchTitleOneDay(q, mode, dr) {
     })());
   }
 
-  /* --- Turso --- */
   if (needTurso) {
     promises.push((async () => {
       try {
@@ -306,7 +315,7 @@ async function searchTitleOneDay(q, mode, dr) {
 }
 
 /* ================================================================
-   内部実装: レス1セグメント（デュアルDB対応）
+   内部実装: レス1セグメント
    stype: "all" | "body" | "name" | "id"
    ================================================================ */
 async function searchPostsOneDay(q, mode, dr, stype) {
@@ -316,12 +325,10 @@ async function searchPostsOneDay(q, mode, dr, stype) {
 
   const isIdSearch = (stype === "id");
 
-  /* ID検索のときは「前方2文字」で前方一致検索。
-     非ID検索（全て/本文/名前）では従来どおり値そのものを語分割。 */
+  /* ID検索のときは「正規化後の前方2文字」で前方一致検索 */
   let ws;
   if (isIdSearch) {
-    const pfx = idPrefix2(searchValue);
-    ws = [pfx];
+    ws = [idPrefix2(searchValue)];
   } else {
     ws = words(searchValue);
   }
@@ -339,7 +346,6 @@ async function searchPostsOneDay(q, mode, dr, stype) {
     const sbFrom = (dr.from < boundary) ? boundary : dr.from;
     const df = `&posted_at=gte.${sbFrom}&posted_at=lt.${dr.to}`;
 
-    // ID検索は前方一致 like.プレフィックス*（末尾ワイルドカードのみ＝インデックス有効）
     const sbCond = (col, w) => isIdSearch
       ? `${col}=like.${encodeURIComponent(w + "*")}`
       : `${col}=ilike.${enc(w)}`;
@@ -407,8 +413,6 @@ async function searchPostsOneDay(q, mode, dr, stype) {
   arrays.flat().forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
   let all = Array.from(map.values());
 
-  /* AND絞り込み: ID検索では行わない（前方一致のため）。
-     それ以外は対象カラムを連結して全語含むか判定 */
   if (!isIdSearch && mode === "and" && ws.length > 1) {
     all = all.filter(p => {
       const parts = cols.map(col => {
@@ -426,7 +430,7 @@ async function searchPostsOneDay(q, mode, dr, stype) {
 }
 
 /* ================================================================
-   groupPosts（デュアルDB対応）
+   groupPosts
    ================================================================ */
 async function groupPosts(posts) {
   if (!posts.length) return [];
