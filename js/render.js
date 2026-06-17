@@ -114,31 +114,41 @@ function renderAll(q, elapsed) {
   if (isIdSearch) {
     const searchedKey = normId(searchedId);
 
-    // 追加表示中（＝選択済み）のIDを件数付きで集める
-    const activeEntries = [];
+    /* 候補(altIds)と選択済み(activeIdSet)を「同じ並び」で1列にまとめる。
+       並び順は altIds の固定順序に従い、その中で active フラグだけ切り替える。
+       こうすると選択しても項目が上下に飛ばず、順序が変わらない。 */
+    const entryMap = new Map();
+
+    // まず候補（未選択）を固定順で登録
+    altIds.forEach(a => {
+      entryMap.set(a.key, { key: a.key, id: a.id, count: a.count, active: false, order: altOrderMap.get(a.key) ?? entryMap.size });
+    });
+
+    // 選択済みを active=true にする。候補に出ていないキーも件数を数えて追加
     activeIdSet.forEach(key => {
       if (key === searchedKey) return;
       let count = 0;
       currentResults.forEach(r => {
         r.matchedPosts.forEach(p => { if (normId(p.user_id) === key) count++; });
       });
-      activeEntries.push({
-        key,
-        id: idDisplayMap.get(key) || key,
-        count,
-        active: true
-      });
+      if (entryMap.has(key)) {
+        const e = entryMap.get(key);
+        e.active = true;
+        e.count = count;
+      } else {
+        if (!altOrderMap.has(key)) altOrderMap.set(key, altOrderMap.size);
+        entryMap.set(key, { key, id: idDisplayMap.get(key) || key, count, active: true, order: altOrderMap.get(key) });
+      }
     });
 
-    // 未選択の候補
-    const candEntries = altIds.map(a => Object.assign({}, a, { active: false }));
+    const allEntries = Array.from(entryMap.values())
+      .sort((a, b) => a.order - b.order);
 
-    // 選択済みを上に、その下に候補。両方無ければブロックごと出さない
-    const allEntries = activeEntries.concat(candEntries);
     if (allEntries.length > 0) {
       res.appendChild(mkSameUserBlock(allEntries));
     }
   }
+
 
   /* ID分析バナー: 検索ID + 追加表示中の各ID をそれぞれ並べる */
   if (sorted.length > 0 && isIdSearch) {
