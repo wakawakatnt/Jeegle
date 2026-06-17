@@ -1,6 +1,9 @@
 "use strict";
 
-let lastElapsed = "0.00";  /* 再描画(同一人物かも切替)時に検索時間を据え置くため */
+let lastElapsed = "0.00";
+
+/* 同一人物かものID表示表記(正規化キー→元表記)を覚えるマップ（バナー用）*/
+let idDisplayMap = new Map();
 
 /* ================================================================
    描画
@@ -10,18 +13,13 @@ function renderAll(q, elapsed) {
 
   const order  = document.querySelector('input[name="sortOrder"]:checked').value;
 
-  /* ID検索かどうか判定。queryId=元の検索ID, fullId=本体表示ID(activeIdFullを優先) */
-  const typeEl = document.querySelector('input[name="searchType"]:checked');
-  const isIdType = typeEl && typeEl.value === "id";
-  const idm = q.match(/^id:\s*(.+)/i);
-  const queryId = idm ? idm[1].trim() : (isIdType ? q.trim() : null);
-  const fullId  = activeIdFull || queryId;
+  /* ID検索かどうか。searchedId は doSearch がセット済み */
+  const isIdSearch = !!searchedId;
 
-  /* ID検索なら currentResults を「本体(完全一致)」と「同一人物候補」に振り分け */
   let resultsToShow = currentResults;
   let altIds = [];
-  if (fullId) {
-    const split = splitIdResults(currentResults, fullId);
+  if (isIdSearch) {
+    const split = splitIdResults(currentResults, searchedId, activeIdSet);
     resultsToShow = split.main;
     altIds = split.altIds;
   }
@@ -107,23 +105,23 @@ function renderAll(q, elapsed) {
   const res = document.getElementById("results");
   res.innerHTML = "";
 
-  // 検索のたびに右ペインをクリア（前回の表示を残さない）
   const pane = document.getElementById("detailPane");
   if (pane) pane.innerHTML = "";
 
-  /* ID分析バナー: 元の検索ID + 表示中ID の2つを並べる */
-  if (sorted.length > 0) {
-    if (queryId) {
-      res.appendChild(mkIdAnalysisBanner(queryId));
-    }
-    if (activeIdFull && activeIdFull !== queryId) {
-      res.appendChild(mkIdAnalysisBanner(activeIdFull));
-    }
+  /* ID分析バナー: 検索ID + 追加表示中の各ID をそれぞれ並べる */
+  if (sorted.length > 0 && isIdSearch) {
+    res.appendChild(mkIdAnalysisBanner(searchedId));
+    const searchedKey = normId(searchedId);
+    activeIdSet.forEach(key => {
+      if (key === searchedKey) return;
+      const disp = idDisplayMap.get(key) || key;
+      res.appendChild(mkIdAnalysisBanner(disp));
+    });
   }
 
-  /* 同一人物かもブロック（バナーの下に表示） */
-  if (fullId && altIds.length > 0) {
-    res.appendChild(mkSameUserBlock(fullId, altIds));
+  /* 同一人物かもブロック */
+  if (isIdSearch && altIds.length > 0) {
+    res.appendChild(mkSameUserBlock(altIds));
   }
 
   if (!sorted.length) {
@@ -150,31 +148,45 @@ function sortRes(rs, order) {
   return rs;
 }
 
-/* ===== ID検索結果を「本体(検索ID完全一致)」と「同一人物候補ID」に分割 =====
-   currentResults は前方2文字でヒットした全レスを含む。
-   - main   : user_id === fullId のレスだけを残したスレッド配列
-   - altIds : fullId とは文字数が異なる同プレフィックスID（重複除去・件数付き） */
-function splitIdResults(results, fullId) {
+/* ===== ID検索結果を「本体(表示中ID群)」と「同一人物候補ID」に分割 =====
+   - searchedIdRaw : 検索した元ID（生の値）
+   - activeSet     : 追加表示中IDの正規化キー集合
+   比較は normId（ドット除去）で行う。
+   候補は「searchedIdが4文字なら非4文字」「searchedIdが非4文字なら4文字」のIDのみ。 */
+function splitIdResults(results, searchedIdRaw, activeSet) {
+  const searchedKey = normId(searchedIdRaw);
+  const searchedIs4 = (searchedKey.length === 4);
+
+  // 本体に表示する正規化キー集合（検索ID + 追加選択ID）
+  const showKeys = new Set([searchedKey, ...activeSet]);
+
   const mainMap = new Map();
-  const altCount = new Map();
+  const altMap = new Map();   // 正規化キー → {displayId, count}
 
   results.forEach(r => {
-    const matched = r.matchedPosts.filter(p => (p.user_id || "") === fullId);
+    const matched = r.matchedPosts.filter(p => showKeys.has(normId(p.user_id)));
     if (matched.length > 0) {
       mainMap.set(r.thread_id, Object.assign({}, r, { matchedPosts: matched }));
     }
+
     r.matchedPosts.forEach(p => {
-      const uid = p.user_id || "";
-      if (!uid || uid === fullId) return;
-      // 検索IDと文字数が異なる同プレフィックスIDのみ候補にする
-      if (uid.length !== fullId.length) {
-        altCount.set(uid, (altCount.get(uid) || 0) + 1);
+      const key = normId(p.user_id);
+      if (!key) return;
+      // 元表記を覚えておく（バナー・ボタン用）
+      if (p.user_id && !idDisplayMap.has(key)) idDisplayMap.set(key, p.user_id);
+      if (showKeys.has(key)) return;                  // 既に表示中は候補に出さない
+      const is4 = (key.length === 4);
+      if (searchedIs4 ? !is4 : is4) {                 // 4文字検索→非4文字 / 非4文字検索→4文字
+        if (!altMap.has(key)) {
+          altMap.set(key, { displayId: p.user_id || key, count: 0 });
+        }
+        altMap.get(key).count++;
       }
     });
   });
 
-  const altIds = Array.from(altCount.entries())
-    .map(([id, count]) => ({ id, count }))
+  const altIds = Array.from(altMap.entries())
+    .map(([key, v]) => ({ key, id: v.displayId, count: v.count }))
     .sort((a, b) => b.count - a.count);
 
   return { main: Array.from(mainMap.values()), altIds };
@@ -220,20 +232,20 @@ function mkIdAnalysisBanner(userId) {
   return banner;
 }
 
-/* ===== 「👤同一人物かも」ブロック（再検索せず再描画で切替）===== */
-function mkSameUserBlock(fullId, altIds) {
+/* ===== 「👤同一人物かも」ブロック（複数選択・追加表示トグル）===== */
+function mkSameUserBlock(altIds) {
   const box = document.createElement("div");
   box.className = "same-user-block";
 
   const head = document.createElement("div");
   head.className = "same-user-head";
-  head.textContent = "👤 同一人物かも";
+  head.textContent = "👤 同一人物かも（タップで追加表示・もう一度で解除）";
   box.appendChild(head);
 
   const list = document.createElement("div");
   list.className = "same-user-list";
 
-  altIds.forEach(({ id, count }) => {
+  altIds.forEach(({ key, id, count }) => {
     const btn = document.createElement("button");
     btn.className = "same-user-btn";
     btn.type = "button";
@@ -250,11 +262,14 @@ function mkSameUserBlock(fullId, altIds) {
 
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      // 再検索しない。前方2文字で取得済みの currentResults から
-      // 表示IDを切り替えて再描画するだけ。
-      activeIdFull = id;
-      pushUrl(currentKeyword, id);   // s=元クエリ, a=表示中ID
-      renderAll(currentKeyword);     // q は元の検索クエリ（バナー2つ表示のため）
+      // 再検索せず、currentResults から表示IDを追加/解除して再描画
+      if (activeIdSet.has(key)) {
+        activeIdSet.delete(key);
+      } else {
+        activeIdSet.add(key);
+      }
+      pushUrl(currentKeyword, Array.from(activeIdSet));
+      renderAll(currentKeyword);
       window.scrollTo(0, 0);
     });
 
@@ -277,7 +292,7 @@ function mkCard(thread, q) {
   const ta = document.createElement("div"); ta.className = "thread-title-area";
   const ts = document.createElement("span"); ts.className = "thread-title";
   hlSet(ts, thread.title || "スレッド " + thread.thread_id, q); ta.appendChild(ts);
-  /* thread-url の行は削除（hayabusa.open2ch.net › livejupiter › ... を非表示） */
+  /* thread-url の行は削除（hayabusa.open2ch.net › ... を非表示） */
   const ml = document.createElement("div"); ml.className = "thread-meta-line";
   setText(ml, "更新: " + (thread.updated_at ? new Date(thread.updated_at).toLocaleDateString("ja-JP") : "")); ta.appendChild(ml);
 
@@ -287,7 +302,6 @@ function mkCard(thread, q) {
   else { bk.className = "badge-title"; setText(bk, "タイトル一致"); }
   ba.appendChild(bk); hdr.appendChild(ta); hdr.appendChild(ba);
 
-  // モバイル時にのみ使うカード内インライン詳細コンテナ
   const inlineDet = document.createElement("div");
   inlineDet.className = "thread-details-inline";
   inlineDet.style.display = "none";
@@ -295,7 +309,6 @@ function mkCard(thread, q) {
   hdr.addEventListener("click", () => {
     const isMobile = window.matchMedia("(max-width: 900px)").matches;
 
-    /* ---- モバイル: カード内でトグル ---- */
     if (isMobile) {
       if (inlineDet.style.display === "block") {
         inlineDet.style.display = "none";
@@ -310,7 +323,6 @@ function mkCard(thread, q) {
       return;
     }
 
-    /* ---- PC: 右ペインに展開 ---- */
     const pane = document.getElementById("detailPane");
     if (!pane) return;
 
@@ -338,7 +350,7 @@ function mkCard(thread, q) {
   return card;
 }
 
-/* ===== 詳細DOMを生成（PC右ペイン / モバイルカード内 共通） ===== */
+/* ===== 詳細DOMを生成 ===== */
 function buildDetail(thread, q) {
   const det = document.createElement("div"); det.className = "thread-details";
   det.style.display = "block";
@@ -639,7 +651,7 @@ function hlAppend(container, text, q) {
 
 function hlSet(el, text, q) { el.textContent = ""; hlAppend(el, text, q); }
 
-/* ===== URLを安全にリンク化（href は http/https のみ許可） ===== */
+/* ===== URLを安全にリンク化 ===== */
 function appendUrlLink(container, url) {
   if (!url) return;
   let safe = false;
@@ -657,11 +669,10 @@ function appendUrlLink(container, url) {
   container.appendChild(a);
 }
 
-/* ===== X / Twitter 埋め込み（公式 platform.twitter.com を iframe 読込） ===== */
+/* ===== X / Twitter 埋め込み ===== */
 function appendXEmbed(container, tweetId, rawUrl) {
   if (!tweetId) { appendUrlLink(container, rawUrl); return; }
 
-  // 先に元URLリンクを出す（埋め込みはこの下に表示）
   appendUrlLink(container, rawUrl);
   container.appendChild(document.createElement("br"));
 
