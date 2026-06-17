@@ -3,7 +3,7 @@
 /* ================================================================
    URL管理
    ================================================================ */
-function pushUrl(q) {
+function pushUrl(q, activeId) {
   const url = new URL(window.location.href);
   ["search", "type", "mode"].forEach(k => url.searchParams.delete(k));
 
@@ -16,8 +16,16 @@ function pushUrl(q) {
     url.searchParams.set("t", TYPE_TO_URL[type] || "b");
     url.searchParams.set("m", MODE_TO_URL[mode] || "t");
     url.searchParams.set("d", dr.urlParam);
+
+    /* 同一人物かもから表示中のID（あれば）。
+       引数で渡されればそれを、なければ現在のグローバル値を使う */
+    const aid = (activeId !== undefined)
+      ? activeId
+      : (typeof activeIdFull !== "undefined" ? activeIdFull : null);
+    if (aid) url.searchParams.set("a", aid);
+    else     url.searchParams.delete("a");
   } else {
-    ["s", "t", "m", "d"].forEach(k => url.searchParams.delete(k));
+    ["s", "t", "m", "d", "a"].forEach(k => url.searchParams.delete(k));
   }
   history.pushState({}, "", url.toString());
 }
@@ -31,7 +39,7 @@ function shareUrl() {
 
 function loadUrl() {
   const p = new URLSearchParams(window.location.search);
-  let q, typeVal, modeVal, dateVal;
+  let q, typeVal, modeVal, dateVal, activeIdVal = null;
 
   if (p.has("search")) {
     q        = p.get("search") || "";
@@ -46,6 +54,7 @@ function loadUrl() {
     typeVal  = URL_TO_TYPE[p.get("t")] || "all";
     modeVal  = URL_TO_MODE[p.get("m")] || "default";
     dateVal  = p.get("d") || null;
+    activeIdVal = p.get("a") || null;
   }
 
   // 検索クエリが無い → トップページ状態へ戻す（戻るボタン対策）
@@ -62,7 +71,8 @@ function loadUrl() {
   applyDateParam(dateVal);
 
   document.getElementById("topInput").value = q;
-  doSearch(q, { fromHistory: true });
+  // 復元: fromHistory で自動type切替を抑制しつつ、復元IDを渡す
+  doSearch(q, { fromHistory: true, restoreActiveId: activeIdVal });
 }
 
 /* ================================================================
@@ -77,6 +87,7 @@ function showTopPage() {
   document.getElementById("topInput").value = "";
   currentResults = [];
   currentKeyword = "";
+  activeIdFull = null;
 }
 
 /** ロゴクリック等でトップへ戻る（履歴も積む） */
