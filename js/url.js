@@ -8,8 +8,15 @@ function pushUrl(q, activeIds) {
   ["search", "type", "mode"].forEach(k => url.searchParams.delete(k));
 
   const mode = document.querySelector('input[name="searchMode"]:checked').value;
-  const type = document.querySelector('input[name="searchType"]:checked').value;
+  let   type = document.querySelector('input[name="searchType"]:checked').value;
   const dr   = getDateRange();
+
+  /* 保険: クエリが id: プレフィックスで、かつユーザーが手動でラジオを
+     変更していない場合は、ラジオの実値に関わらず必ず "id" を書き込む。
+     （ラジオ反映前に pushUrl が走ってもURLが本文等に化けないようにする） */
+  if (/^id:/i.test(q) && !window.__userChangedType) {
+    type = "id";
+  }
 
   if (q) {
     url.searchParams.set("s", q);
