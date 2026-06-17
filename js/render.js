@@ -260,22 +260,29 @@ function mkIdAnalysisBanner(userId) {
   return banner;
 }
 
-function mkSameUserBlock(altIds) {
+function mkSameUserBlock(entries) {
   const box = document.createElement("div");
   box.className = "same-user-block";
 
   const head = document.createElement("div");
   head.className = "same-user-head";
-  head.textContent = "👤 同一人物かも（タップで追加表示・もう一度で解除）";
+  head.textContent = "👤 同一人物かも（タップで表示中に追加・もう一度で解除）";
   box.appendChild(head);
 
   const list = document.createElement("div");
   list.className = "same-user-list";
 
-  altIds.forEach(({ key, id, count }) => {
+  entries.forEach(({ key, id, count, active }) => {
     const btn = document.createElement("button");
-    btn.className = "same-user-btn";
+    btn.className = "same-user-btn" + (active ? " active" : "");
     btn.type = "button";
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+
+    // 選択中はチェック、未選択はプラスのアイコンで見た目を明確に区別
+    const mark = document.createElement("span");
+    mark.className = "same-user-mark";
+    mark.textContent = active ? "✓" : "＋";
+    btn.appendChild(mark);
 
     const idSpan = document.createElement("span");
     idSpan.className = "same-user-id";
@@ -289,15 +296,14 @@ function mkSameUserBlock(altIds) {
 
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      // 再検索せず、currentResults から表示IDを追加/解除して再描画
       if (activeIdSet.has(key)) {
-        activeIdSet.delete(key);
+        activeIdSet.delete(key);   // 解除
       } else {
-        activeIdSet.add(key);
+        activeIdSet.add(key);      // 追加表示
       }
       pushUrl(currentKeyword, Array.from(activeIdSet));
       renderAll(currentKeyword);
-      window.scrollTo(0, 0);
+      // スクロール位置は動かさない（タップした場所から飛ばないように）
     });
 
     list.appendChild(btn);
@@ -306,6 +312,7 @@ function mkSameUserBlock(altIds) {
   box.appendChild(list);
   return box;
 }
+
 
 
 /* ===== スレッドカード（PC=右ペイン展開 / モバイル=カード内展開） ===== */
