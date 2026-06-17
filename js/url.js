@@ -3,7 +3,7 @@
 /* ================================================================
    URL管理
    ================================================================ */
-function pushUrl(q, activeId) {
+function pushUrl(q, activeIds) {
   const url = new URL(window.location.href);
   ["search", "type", "mode"].forEach(k => url.searchParams.delete(k));
 
@@ -17,13 +17,16 @@ function pushUrl(q, activeId) {
     url.searchParams.set("m", MODE_TO_URL[mode] || "t");
     url.searchParams.set("d", dr.urlParam);
 
-    /* 同一人物かもから表示中のID（あれば）。
-       引数で渡されればそれを、なければ現在のグローバル値を使う */
-    const aid = (activeId !== undefined)
-      ? activeId
-      : (typeof activeIdFull !== "undefined" ? activeIdFull : null);
-    if (aid) url.searchParams.set("a", aid);
-    else     url.searchParams.delete("a");
+    /* 追加表示中のID群（同一人物かもで選択）。カンマ区切りで a に格納 */
+    let ids = activeIds;
+    if (ids === undefined) {
+      ids = (typeof activeIdSet !== "undefined") ? Array.from(activeIdSet) : [];
+    }
+    if (ids && ids.length) {
+      url.searchParams.set("a", ids.join(","));
+    } else {
+      url.searchParams.delete("a");
+    }
   } else {
     ["s", "t", "m", "d", "a"].forEach(k => url.searchParams.delete(k));
   }
@@ -57,7 +60,6 @@ function loadUrl() {
     activeIdVal = p.get("a") || null;
   }
 
-  // 検索クエリが無い → トップページ状態へ戻す（戻るボタン対策）
   if (!q) {
     showTopPage();
     return;
@@ -70,9 +72,12 @@ function loadUrl() {
 
   applyDateParam(dateVal);
 
+  const restoreIds = activeIdVal
+    ? activeIdVal.split(",").map(s => s.trim()).filter(Boolean)
+    : [];
+
   document.getElementById("topInput").value = q;
-  // 復元: fromHistory で自動type切替を抑制しつつ、復元IDを渡す
-  doSearch(q, { fromHistory: true, restoreActiveId: activeIdVal });
+  doSearch(q, { fromHistory: true, restoreActiveIds: restoreIds });
 }
 
 /* ================================================================
@@ -87,7 +92,8 @@ function showTopPage() {
   document.getElementById("topInput").value = "";
   currentResults = [];
   currentKeyword = "";
-  activeIdFull = null;
+  searchedId = null;
+  activeIdSet = new Set();
 }
 
 /** ロゴクリック等でトップへ戻る（履歴も積む） */
