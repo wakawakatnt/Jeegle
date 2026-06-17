@@ -9,13 +9,14 @@ document.getElementById("detailInput").addEventListener("keydown", e => { if (e.
 
 // ソート変更
 document.querySelectorAll('input[name="sortOrder"]').forEach(r => r.addEventListener("change", () => {
-  if (currentResults.length) renderAll(currentKeyword, "0.00");
+  if (currentResults.length) renderAll(currentKeyword);
 }));
 
 // 検索モード・範囲変更
 document.querySelectorAll('input[name="searchMode"],input[name="searchType"]').forEach(r => r.addEventListener("change", () => {
   const q = document.getElementById("resultInput").value.trim();
-  if (q) doSearch(q);
+  // 手動でラジオを変えたので、id:プレフィックスがあっても強制的にidへ戻さない
+  if (q) doSearch(q, { userTypeChange: true });
 }));
 
 // 日付プリセット変更
@@ -24,7 +25,7 @@ document.querySelectorAll('input[name="dateRange"]').forEach(r => r.addEventList
   document.getElementById("dateCustomGroup").style.display = (v === "custom") ? "" : "none";
   if (v !== "custom") {
     const q = document.getElementById("resultInput").value.trim();
-    if (q) doSearch(q);
+    if (q) doSearch(q, { userTypeChange: true });
   }
 }));
 
@@ -33,12 +34,11 @@ document.getElementById("dateFrom").addEventListener("change", () => {
   const fromEl = document.getElementById("dateFrom");
   const toEl   = document.getElementById("dateTo");
   if (!fromEl.value || !toEl.value) return;
-  // 前後逆ならスワップ（UIに即反映）
   if (fromEl.value > toEl.value) {
     [fromEl.value, toEl.value] = [toEl.value, fromEl.value];
   }
   const q = document.getElementById("resultInput").value.trim();
-  if (q) doSearch(q);
+  if (q) doSearch(q, { userTypeChange: true });
 });
 document.getElementById("dateTo").addEventListener("change", () => {
   const fromEl = document.getElementById("dateFrom");
@@ -48,7 +48,7 @@ document.getElementById("dateTo").addEventListener("change", () => {
     [fromEl.value, toEl.value] = [toEl.value, fromEl.value];
   }
   const q = document.getElementById("resultInput").value.trim();
-  if (q) doSearch(q);
+  if (q) doSearch(q, { userTypeChange: true });
 });
 
 
