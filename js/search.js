@@ -4,6 +4,15 @@ let currentResults = [];
 let currentKeyword = "";
 let lastSegmentTimings = [];
 
+/* ID検索: 本体表示中の完全ID（同一人物かもボタン / URLのaパラメータで切替）*/
+let activeIdFull = null;
+
+/* IDの前方2文字を取り出す（2文字未満ならそのまま）*/
+function idPrefix2(id) {
+  const s = String(id);
+  return s.length >= 2 ? s.slice(0, 2) : s;
+}
+
 /* ===== id:プレフィックス解析 ===== */
 /** "id: xxx" なら {isId:true, value:"xxx"}、そうでなければ {isId:false, value:q} */
 function parseIdPrefix(q) {
@@ -20,11 +29,14 @@ async function doSearch(q, opts) {
   if (!q) return;
   currentKeyword = q;
 
+  /* URL復元なら復元ID、それ以外（新規検索）はリセット */
+  activeIdFull = opts.restoreActiveId || null;
+
   /* id:プレフィックスならデフォルトで検索範囲ラジオを id に切り替える。
-     （あくまでデフォルト。ユーザーは後から自由に変更でき、その場合は
-       app.js の change ハンドラ経由で再検索される） */
+     ただし「ユーザーが手動で範囲ラジオを変更した」場合(userTypeChange)や
+     履歴復元(fromHistory)では尊重し、強制的に id に戻さない。 */
   const idp = parseIdPrefix(q);
-  if (idp.isId) {
+  if (idp.isId && !opts.userTypeChange && !opts.fromHistory) {
     const idRadio = document.querySelector('input[name="searchType"][value="id"]');
     if (idRadio && !idRadio.checked) idRadio.checked = true;
   }
@@ -210,7 +222,6 @@ async function searchPosts(q, mode, dr, stype) {
    内部実装: タイトル1セグメント（デュアルDB対応）
    ================================================================ */
 async function searchTitleOneDay(q, mode, dr) {
-  // タイトル検索では id:プレフィックスは無意味なので素のクエリを使う
   const ws = words(parseIdPrefix(q).value);
   const { needSupabase, needTurso, boundary } = classifyDateRange(dr.from, dr.to);
 
@@ -300,20 +311,26 @@ async function searchTitleOneDay(q, mode, dr) {
    ================================================================ */
 async function searchPostsOneDay(q, mode, dr, stype) {
   const idp = parseIdPrefix(q);
-
-  // id:プレフィックスが付いていれば、検索範囲に関わらず値はプレフィックス除去後を使う。
   const searchValue = idp.value;
-  const ws  = words(searchValue);
-
   const cols = colsForType(stype);
 
-  // ID検索は user_id インデックス(idx_posts_user_id)を使うため完全一致(eq)にする。
-  // 部分一致 ilike '%値%' は前方ワイルドカードでインデックスが効かず、
-  // posts 全件スキャン → statement timeout になるため。
   const isIdSearch = (stype === "id");
+
+  /* ID検索のときは「前方2文字」で前方一致検索。
+     非ID検索（全て/本文/名前）では従来どおり値そのものを語分割。 */
+  let ws;
+  if (isIdSearch) {
+    const pfx = idPrefix2(searchValue);
+    ws = [pfx];
+  } else {
+    ws = words(searchValue);
+  }
 
   const { needSupabase, needTurso, boundary } = classifyDateRange(dr.from, dr.to);
   const SB_SELECT = "thread_id,post_num,user_id,name,posted_at,body,is_nusi,ares_count";
+
+  /* ID検索の取得上限（前方一致で多数ヒットするため大きめ）*/
+  const ID_LIMIT = 5000;
 
   const promises = [];
 
@@ -322,16 +339,18 @@ async function searchPostsOneDay(q, mode, dr, stype) {
     const sbFrom = (dr.from < boundary) ? boundary : dr.from;
     const df = `&posted_at=gte.${sbFrom}&posted_at=lt.${dr.to}`;
 
-    // 1カラム・1語に対する検索条件文字列を生成
+    // ID検索は前方一致 like.プレフィックス*（末尾ワイルドカードのみ＝インデックス有効）
     const sbCond = (col, w) => isIdSearch
-      ? `${col}=eq.${encodeURIComponent(w)}`
+      ? `${col}=like.${encodeURIComponent(w + "*")}`
       : `${col}=ilike.${enc(w)}`;
+
+    const sbLimit = isIdSearch ? ID_LIMIT : 300;
 
     if (mode === "or" && ws.length > 1) {
       promises.push((async () => {
         const fetches = ws.flatMap(w =>
           cols.map(col =>
-            sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&${sbCond(col, w)}&order=posted_at.desc${df}`)
+            sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=${sbLimit}&${sbCond(col, w)}&order=posted_at.desc${df}`)
           )
         );
         return (await Promise.all(fetches)).flat();
@@ -340,7 +359,7 @@ async function searchPostsOneDay(q, mode, dr, stype) {
       promises.push((async () => {
         const w0 = ws[0];
         const fetches = cols.map(col =>
-          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=300&${sbCond(col, w0)}&order=posted_at.desc${df}`)
+          sbFetch(`posts?select=${encodeURIComponent(SB_SELECT)}&limit=${sbLimit}&${sbCond(col, w0)}&order=posted_at.desc${df}`)
         );
         return (await Promise.all(fetches)).flat();
       })());
@@ -351,13 +370,14 @@ async function searchPostsOneDay(q, mode, dr, stype) {
   if (needTurso) {
     const tursoTo = (dr.to > boundary) ? boundary : dr.to;
     const tFrom   = dr.from;
+    const tLimit  = isIdSearch ? ID_LIMIT : 300;
 
     if (mode === "or" && ws.length > 1) {
       promises.push((async () => {
         try {
           const fetches = ws.flatMap(w =>
             cols.map(col => isIdSearch
-              ? tursoSearchPostsExact(col, w, tFrom, tursoTo, 300)
+              ? tursoSearchPostsPrefix(col, w, tFrom, tursoTo, tLimit)
               : tursoSearchPosts(col, w, tFrom, tursoTo, 300))
           );
           return (await Promise.all(fetches)).flat().map(normalizePost);
@@ -371,7 +391,7 @@ async function searchPostsOneDay(q, mode, dr, stype) {
         try {
           const w0 = ws[0];
           const fetches = cols.map(col => isIdSearch
-            ? tursoSearchPostsExact(col, w0, tFrom, tursoTo, 300)
+            ? tursoSearchPostsPrefix(col, w0, tFrom, tursoTo, tLimit)
             : tursoSearchPosts(col, w0, tFrom, tursoTo, 300));
           return (await Promise.all(fetches)).flat().map(normalizePost);
         } catch (e) {
@@ -387,7 +407,7 @@ async function searchPostsOneDay(q, mode, dr, stype) {
   arrays.flat().forEach(p => map.set(`${p.thread_id}_${p.post_num}`, p));
   let all = Array.from(map.values());
 
-  /* AND絞り込み: ID検索では行わない（完全一致のため）。
+  /* AND絞り込み: ID検索では行わない（前方一致のため）。
      それ以外は対象カラムを連結して全語含むか判定 */
   if (!isIdSearch && mode === "and" && ws.length > 1) {
     all = all.filter(p => {
@@ -423,9 +443,6 @@ async function groupPosts(posts) {
       );
     }
 
-    // Turso が本当に必要なスレッド（14日より古い）だけに絞る。
-    // 新しいデータの検索では Turso に一切問い合わせず、待ち時間を発生させない。
-    // （Turso のコード自体は暫定的に残す）
     const tursoIds = uncached.filter(id => threadNeedsTurso(id));
 
     const [sbAll, tursoAll] = await Promise.all([
