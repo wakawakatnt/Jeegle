@@ -529,3 +529,44 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   color: #1a73e8;
   font-weight: 600;
 }
+/* 同一人物かも：未選択ボタン */
+.same-user-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1.5px solid #dadce0;
+  border-radius: 18px;
+  background: #fff;
+  color: #3c4043;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background .12s, border-color .12s, color .12s, box-shadow .12s;
+}
+.same-user-btn:hover {
+  border-color: #1a73e8;
+  background: #f8fbff;
+}
+.same-user-mark {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* 同一人物かも：選択中ボタン（はっきり色を変える） */
+.same-user-btn.active {
+  background: #1a73e8;
+  border-color: #1a73e8;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(26,115,232,.35);
+}
+.same-user-btn.active:hover {
+  background: #1765cc;
+  border-color: #1765cc;
+}
+.same-user-btn.active .same-user-count {
+  color: #e8f0fe;
+}
+.same-user-btn .same-user-count {
+  color: #5f6368;
+  font-size: 12px;
+}
