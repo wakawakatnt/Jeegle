@@ -72,6 +72,16 @@ function loadUrl() {
     return;
   }
 
+  /* ★ クエリが id: で始まるなら、URLの t がどんな値でも（古い t=h 等でも）
+     必ず検索範囲を "id" に強制する。
+     「検索方法が何でもIDが入っていたら最初は必ずID」を保証する。 */
+  let forceIdFromHistory = false;
+  if (/^id:/i.test(q)) {
+    typeVal = "id";
+    forceIdFromHistory = true;
+  }
+
+
   const te = document.querySelector(`input[name="searchType"][value="${typeVal}"]`);
   const me = document.querySelector(`input[name="searchMode"][value="${modeVal}"]`);
   if (te) te.checked = true;
