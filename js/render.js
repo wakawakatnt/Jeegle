@@ -187,6 +187,12 @@ function renderAll(q, elapsed) {
   const searchedKey = isIdSearch ? normId(searchedId) : null;
   const hasActiveIds = isIdSearch && activeIdSet.size > 0;
 
+  /* レス単位ハイライト用：本人ID(正規化) + 追加表示中ID(正規化) のキー集合。
+     normId でドットを除去して比較するので 7xz2L90 と 7x.z2.L90 は同一視される。 */
+  const highlightKeys = isIdSearch
+    ? new Set([searchedKey, ...activeIdSet])
+    : null;
+
   sorted.forEach(r => {
     let viaActiveOnly = false;
     if (hasActiveIds) {
@@ -195,7 +201,7 @@ function renderAll(q, elapsed) {
       // 本人のレスが無く、追加IDのレスで出ている → 追加で新たに現れたスレッド
       viaActiveOnly = !hasSearched && hasActive;
     }
-    res.appendChild(mkCard(r, q, { highlightNew: viaActiveOnly }));
+    res.appendChild(mkCard(r, q, { highlightNew: viaActiveOnly, highlightKeys }));
   });
 
   adjustStickyOffsets();
@@ -375,15 +381,6 @@ function mkCard(thread, q, opts) {
   const hdr = document.createElement("div");
   hdr.className = "thread-header";
 
-  /* 追加IDによって新たに現れたスレッドには目印バッジを付ける */
-  if (opts.highlightNew) {
-    const flag = document.createElement("span");
-    flag.className = "new-by-altid-flag";
-    flag.textContent = "👤 追加IDで表示";
-    hdr.appendChild(flag);
-  }
-
-
   const ta = document.createElement("div"); ta.className = "thread-title-area";
   const ts = document.createElement("span"); ts.className = "thread-title";
   hlSet(ts, thread.title || "スレッド " + thread.thread_id, q); ta.appendChild(ts);
@@ -411,7 +408,7 @@ function mkCard(thread, q, opts) {
         card.classList.remove("selected");
       } else {
         inlineDet.innerHTML = "";
-        inlineDet.appendChild(buildDetail(thread, q));
+        inlineDet.appendChild(buildDetail(thread, q, opts.highlightKeys));
         inlineDet.style.display = "block";
         card.classList.add("selected");
       }
@@ -436,7 +433,7 @@ function mkCard(thread, q, opts) {
     title.className = "detail-pane-title";
     setText(title, thread.title || ("スレッド " + thread.thread_id));
     pane.appendChild(title);
-    pane.appendChild(buildDetail(thread, q));
+    pane.appendChild(buildDetail(thread, q, opts.highlightKeys));
     pane.scrollTop = 0;
   });
 
@@ -446,7 +443,7 @@ function mkCard(thread, q, opts) {
 }
 
 /* ===== 詳細DOMを生成 ===== */
-function buildDetail(thread, q) {
+function buildDetail(thread, q, highlightKeys) {
   const det = document.createElement("div"); det.className = "thread-details";
   det.style.display = "block";
 
@@ -469,7 +466,7 @@ function buildDetail(thread, q) {
     const n = document.createElement("p"); n.style.cssText = "color:#5f6368;font-size:13px;padding:8px 0;";
     setText(n, "スレッドタイトルが一致しました。「全レス表示」でレスを確認できます。"); pw.appendChild(n);
   } else {
-    thread.matchedPosts.forEach(p => pw.appendChild(mkPost(p, thread.thread_id, q, true)));
+    thread.matchedPosts.forEach(p => pw.appendChild(mkPost(p, thread.thread_id, q, true, highlightKeys)));
     bindAnchors(pw);
   }
 
@@ -533,8 +530,13 @@ async function showDetail(tid, q) {
 /* ================================================================
    レス要素
    ================================================================ */
-function mkPost(post, tid, q, showRange) {
+function mkPost(post, tid, q, showRange, highlightKeys) {
   const div = document.createElement("div"); div.className = "post"; div.dataset.postNum = post.post_num;
+
+  /* ID検索で本人ID・追加IDに該当するレスをハイライト（ドット表記ゆれも吸収）*/
+  if (highlightKeys && highlightKeys.has(normId(post.user_id))) {
+    div.classList.add("highlight-id");
+  }
 
   const meta = document.createElement("div"); meta.className = "post-meta";
 
