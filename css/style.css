@@ -215,7 +215,6 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 
   .post-buttons { margin-left:auto; margin-top:0; width:auto; }
 
-  /* 検索バーは残り幅いっぱいに自動調整（固定幅は指定しない） */
   .result-search-box { padding:6px 12px; }
   .result-search-box input { font-size:15px; }
   .share-btn { width:32px; height:32px; font-size:14px; }
@@ -335,10 +334,10 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .md-tw-thumb iframe {
   position:absolute;
   top:0; left:0;
-  width:550px;          /* X の最小幅。これより小さくすると X 側で出ない */
+  width:550px;
   border:0; background:transparent;
   transform-origin: top left;
-  pointer-events:none;  /* カードのクリックを邪魔しない */
+  pointer-events:none;
 }
 /* スピナー */
 .md-tw-thumb-loading {
@@ -362,26 +361,26 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .result-layout {
   display: flex;
   align-items: flex-start;
-  gap: 24px;                 /* ペイン間の余白は gap で一元管理 */
+  gap: 24px;
   padding: 12px 24px 40px;
-  max-width: none;           /* 画面いっぱいに使う */
-  margin: 0;                 /* 中央寄せしない */
+  max-width: none;
+  margin: 0;
   box-sizing: border-box;
 }
 
-/* 左ペイン: 常に 42% 固定（選択／未選択で幅が変わらないようにする） */
+/* 左ペイン: 常に 42% 固定 */
 .result-layout .results-container {
   flex: 0 0 42%;
   width: 42%;
   max-width: 42%;
   min-width: 0;
-  padding: 0;                /* 余白は gap に任せて padding は使わない */
+  padding: 0;
   box-sizing: border-box;
 }
 
-/* 右ペイン: 残り幅。中身が右端に詰まらないよう内側余白をたっぷり取る */
+/* 右ペイン: 残り幅。左スクロールでも固定（sticky） */
 .detail-pane {
-  flex: 1 1 0;               /* 残りをすべて使う（左が常に42%固定なので実質58%） */
+  flex: 1 1 0;
   min-width: 0;
   box-sizing: border-box;
   position: sticky;
@@ -394,11 +393,10 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  padding: 20px 40px 40px 32px;   /* 上 右 下 左：右端の余白を大きく */
-  margin-left: 0;            /* margin は使わず gap に統一 */
+  padding: 20px 40px 40px 32px;
+  margin-left: 0;
 }
 
-/* 中身も右端に張り付かないよう余白を確保 */
 .detail-pane .thread-details,
 .detail-pane .posts-container,
 .detail-pane .post {
@@ -407,20 +405,14 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   max-width: 100%;
 }
 .detail-pane .post-content {
-  word-break: break-word;     /* 長い文字列で右にはみ出すのを防ぐ */
+  word-break: break-word;
   overflow-wrap: anywhere;
-  margin-right: 4px;          /* レス本文と右枠の間に追加の余白 */
+  margin-right: 4px;
 }
 .detail-pane .post-meta {
   padding-right: 4px;
 }
 
-/*
-  未選択時の幅ブレ対策:
-  detail-pane を display:none にすると flex 計算が変わり左ペインが伸縮するため、
-  非表示にせず「中身が空のときは枠だけ消して領域は保持」する。
-  これで左ペイン(42%)の描画幅が選択前後で完全に一致する。
-*/
 .detail-pane:empty {
   border: none;
   box-shadow: none;
@@ -481,3 +473,53 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   display: block;
 }
 .detail-pane .x-embed { max-width: 100%; }
+
+/* ===== 同一人物かもブロック（追加）===== */
+.same-user-block {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.same-user-head {
+  font-size: 14px;
+  font-weight: 700;
+  color: #b06b00;
+  margin-bottom: 8px;
+}
+.same-user-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.same-user-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #ffcc66;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #8a5a00;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.same-user-btn:hover {
+  background: #fff3d6;
+  box-shadow: 0 2px 6px rgba(176,107,0,0.2);
+}
+.same-user-id { font-weight: 700; }
+.same-user-count {
+  font-size: 11px;
+  color: #b06b00;
+  background: #fff3d6;
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+
+/* ===== PC: 上部バー群を段積み固定（topはJSのadjustStickyOffsetsで補正）===== */
+@media (min-width: 901px) {
+  .result-header     { position: sticky; top: 0;   z-index: 103; }
+  .search-options-bar{ position: sticky; z-index: 102; }
+  .result-stats-bar  { position: sticky; z-index: 101; background: #fff; }
+  .search-summary    { position: sticky; z-index: 100; }
+}
