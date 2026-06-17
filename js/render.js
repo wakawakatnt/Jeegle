@@ -213,12 +213,29 @@ function splitIdResults(results, searchedIdRaw, activeSet) {
     });
   });
 
-  const altIds = Array.from(altMap.entries())
-    .map(([key, v]) => ({ key, id: v.displayId, count: v.count }))
-    .sort((a, b) => b.count - a.count);
+  let altIds = Array.from(altMap.entries())
+    .map(([key, v]) => ({ key, id: v.displayId, count: v.count }));
+
+  /* 並び順を固定する。
+     - 検索キーワードが変わったら順序記憶をリセットし、件数降順で初期順を確定
+     - 同じ検索中は、最初に確定した順序（altOrderMap）を維持する
+       → タップで件数が変わっても並びが動かない */
+  if (altOrderKeyword !== currentKeyword) {
+    altOrderKeyword = currentKeyword;
+    altOrderMap = new Map();
+    altIds.sort((a, b) => b.count - a.count || (a.key < b.key ? -1 : 1));
+    altIds.forEach((e, i) => altOrderMap.set(e.key, i));
+  } else {
+    // 既知のキーは記憶順、新規キーは末尾に追加して順序を確定
+    altIds.forEach(e => {
+      if (!altOrderMap.has(e.key)) altOrderMap.set(e.key, altOrderMap.size);
+    });
+    altIds.sort((a, b) => altOrderMap.get(a.key) - altOrderMap.get(b.key));
+  }
 
   return { main: Array.from(mainMap.values()), altIds };
 }
+
 
 /* ===== ID分析バナー ===== */
 function mkIdAnalysisBanner(userId) {
