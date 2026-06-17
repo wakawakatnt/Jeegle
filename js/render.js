@@ -556,7 +556,18 @@ function mkPost(post, tid, q, showRange, highlightKeys) {
 
   const s2 = document.createElement("span"); s2.className = "post-sep"; setText(s2, " | ID:"); meta.appendChild(s2);
   const uid = document.createElement("span");
-  hlSet(uid, post.user_id || "?", q); meta.appendChild(uid);
+  const uidKey = normId(post.user_id);
+  if (highlightIdKeys && highlightIdKeys.has(uidKey)) {
+    // 本人ID・同一人物かもで追加したIDは、通常の検索ヒットと同じ mark.hl で強調
+    const mk = document.createElement("mark");
+    mk.className = "hl";
+    setText(mk, post.user_id || "?");
+    uid.appendChild(mk);
+  } else {
+    hlSet(uid, post.user_id || "?", q);
+  }
+  meta.appendChild(uid);
+
 
   if (post.user_id) {
     const idSearch = document.createElement("span");
