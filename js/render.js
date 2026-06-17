@@ -360,13 +360,23 @@ function mkSameUserBlock(entries) {
 
 
 /* ===== スレッドカード（PC=右ペイン展開 / モバイル=カード内展開） ===== */
-function mkCard(thread, q) {
+function mkCard(thread, q, opts) {
+  opts = opts || {};
   const card = document.createElement("div");
-  card.className = "thread-result";
+  card.className = "thread-result" + (opts.highlightNew ? " new-by-altid" : "");
   card.dataset.threadId = thread.thread_id;
 
   const hdr = document.createElement("div");
   hdr.className = "thread-header";
+
+  /* 追加IDによって新たに現れたスレッドには目印バッジを付ける */
+  if (opts.highlightNew) {
+    const flag = document.createElement("span");
+    flag.className = "new-by-altid-flag";
+    flag.textContent = "👤 追加IDで表示";
+    hdr.appendChild(flag);
+  }
+
 
   const ta = document.createElement("div"); ta.className = "thread-title-area";
   const ts = document.createElement("span"); ts.className = "thread-title";
