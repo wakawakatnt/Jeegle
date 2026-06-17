@@ -23,24 +23,16 @@
 </p>
 <!-- トップページ -->
 <div class="top-page" id="topPage">
-  <div class="logo" onclick="goHome()">
-    <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
-  </div>
-  <div class="search-box">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </svg>
-    <input type="text" id="topInput" placeholder="スレッド・レスを検索" autocomplete="off">
-  </div>
-  <div class="search-btn-wrap">
-    <button class="search-btn" onclick="doSearch()">Jeegle 検索</button>
-  </div>
-    <div class="ranking-link-wrap">
+  <div class="logo" onclick="goHome()"> ... </div>
+  <div class="search-box"> ... </div>
+  <div class="search-btn-wrap"> ... </div>
+
+  <div class="ranking-link-wrap">
      <a href="ranking.html" class="ranking-link-btn">🏆 ID数書き込みランキング！</a>
      <a href="toukei.html" class="ranking-link-btn toukei-link-btn">📊 統計を見る</a>
      <a href="media.html" class="ranking-link-btn media-link-btn">🖼️ 貼られた画像一覧</a>
   </div>
-</div>
+
   <!-- おんJ民が作ったサイトの紹介 -->
   <div class="friend-sites">
     <div class="friend-sites-head">🎹 おんJ民が作ったサイト</div>
@@ -51,8 +43,11 @@
       </a>
     </div>
   </div>
-</div>
+
+</div><!-- ← ここが top-page を閉じる </div>。friend-sites はこの「内側」 -->
+
 <!-- 結果ページ -->
+<div class="result-page" id="resultPage">
 <div class="result-page" id="resultPage">
   <div class="result-header">
     <div class="result-logo" onclick="goHome()">
