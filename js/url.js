@@ -4,25 +4,6 @@
    URL管理
    ================================================================ */
 function pushUrl(q, activeIds) {
-   /* 現在のラジオ状態から共有用URL文字列を生成（履歴を積まない用途） */
-function buildUrlForCurrentState(q) {
-  const url = new URL(window.location.href);
-  const mode = document.querySelector('input[name="searchMode"]:checked').value;
-  let   type = document.querySelector('input[name="searchType"]:checked').value;
-  const dr   = getDateRange();
-  if (/^id:/i.test(q) && !window.__userChangedType) type = "id";
-
-  url.searchParams.set("s", q);
-  url.searchParams.set("t", TYPE_TO_URL[type] || "b");
-  url.searchParams.set("m", MODE_TO_URL[mode] || "t");
-  url.searchParams.set("d", dr.urlParam);
-  const ids = (typeof activeIdSet !== "undefined") ? Array.from(activeIdSet) : [];
-  if (ids.length) url.searchParams.set("a", ids.join(","));
-  else url.searchParams.delete("a");
-  ["search", "type", "mode"].forEach(k => url.searchParams.delete(k));
-  return url.toString();
-}
-
   const url = new URL(window.location.href);
   ["search", "type", "mode"].forEach(k => url.searchParams.delete(k));
 
@@ -59,12 +40,32 @@ function buildUrlForCurrentState(q) {
   history.pushState({}, "", url.toString());
 }
 
+/* 現在のラジオ状態から共有用URL文字列を生成（履歴を積まない用途） */
+function buildUrlForCurrentState(q) {
+  const url = new URL(window.location.href);
+  const mode = document.querySelector('input[name="searchMode"]:checked').value;
+  let   type = document.querySelector('input[name="searchType"]:checked').value;
+  const dr   = getDateRange();
+  if (/^id:/i.test(q) && !window.__userChangedType) type = "id";
+
+  url.searchParams.set("s", q);
+  url.searchParams.set("t", TYPE_TO_URL[type] || "b");
+  url.searchParams.set("m", MODE_TO_URL[mode] || "t");
+  url.searchParams.set("d", dr.urlParam);
+  const ids = (typeof activeIdSet !== "undefined") ? Array.from(activeIdSet) : [];
+  if (ids.length) url.searchParams.set("a", ids.join(","));
+  else url.searchParams.delete("a");
+  ["search", "type", "mode"].forEach(k => url.searchParams.delete(k));
+  return url.toString();
+}
+
 function shareUrl() {
   navigator.clipboard.writeText(window.location.href).then(() => {
     const b = document.getElementById("shareBtn"); const o = b.textContent;
-    b.textContent = "✅ コピーしました"; setTimeout(() => b.textContent = o, 2000);
+    b.textContent = "✅"; setTimeout(() => b.textContent = o, 2000);
   }).catch(() => prompt("URLをコピーしてください:", window.location.href));
 }
+
 
 function loadUrl() {
   const p = new URLSearchParams(window.location.search);
