@@ -142,6 +142,18 @@ async function tursoSearchPostsExact(col, word, fromISO, toISO, limit) {
   return tursoQuery(sql, [word, fromISO, toISO, limit || 300]);
 }
 
+/* 前方一致（末尾ワイルドカード）でレス検索。
+   '77' → user_id LIKE '77%'。インデックスが効くのでタイムアウトしない。
+   ID検索の上限はデフォルトで大きめ(5000)に取る。 */
+async function tursoSearchPostsPrefix(col, prefix, fromISO, toISO, limit) {
+  // LIKE のメタ文字 % _ \ をエスケープ（'.' はメタ文字ではないのでそのまま）
+  const safe = String(prefix).replace(/[%_\\]/g, m => "\\" + m);
+  const sql = `SELECT ${TURSO_POSTS_COLS} FROM posts`
+    + ` WHERE ${col} LIKE ? ESCAPE '\\' AND posted_at >= ? AND posted_at < ?`
+    + ` ORDER BY posted_at DESC LIMIT ?`;
+  return tursoQuery(sql, [safe + "%", fromISO, toISO, limit || 5000]);
+}
+
 async function tursoFetchThreadsByIds(ids) {
   if (!ids.length) return [];
   const ph = ids.map(() => "?").join(",");
@@ -157,13 +169,11 @@ async function tursoFetchThreadsByIds(ids) {
 async function countAres(tid, pnum) {
   const id = Number(tid);
 
-  /* キャッシュ済み全レスがあればそこから読む */
   if (postsCache.has(id)) {
     const p = postsCache.get(id).find(x => x.post_num === pnum);
     if (p) return Number(p.ares_count) || 0;
   }
 
-  /* キャッシュになければ個別取得 */
   const promises = [
     sbFetch(`posts?select=ares_count&thread_id=eq.${id}&post_num=eq.${pnum}&limit=1`)
       .then(rows => (rows[0] && Number(rows[0].ares_count)) || 0)
@@ -189,7 +199,7 @@ async function countAres(tid, pnum) {
    ================================================================ */
 async function getAresPosts(tid, pnum) {
   const allPosts = await fetchAllPosts(tid);
-  const re = /&gt;&gt;(\d+)|>>(\d+)/g;  // HTMLエンティティ化されてる可能性も両対応
+  const re = /&gt;&gt;(\d+)|>>(\d+)/g;
   return allPosts.filter(p => {
     const body = p.body || "";
     re.lastIndex = 0;
