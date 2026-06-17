@@ -589,3 +589,9 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .thread-header .new-by-altid-flag {
   margin: 0 0 4px 0;
 }
+/* 同一人物かもで追加されたIDによって表示されたスレッドの黄色枠 */
+.thread-result.new-by-altid {
+  border: 2px solid #f5b400;
+  background: #fffdf3;
+  box-shadow: 0 0 0 3px rgba(245,180,0,.15);
+}
