@@ -49,6 +49,34 @@ function idaFmtTime(posted_at) {
 }
 function idaEscHtml(s) { var d=document.createElement("div"); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
 function idaCharCount(body) { return (body||"").replace(/\n/g,"").length; }
+function idaCharCount(body) { return (body||"").replace(/\n/g,"").length; }
+
+var idaHasHover = !!(window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches);
+var idaTraitTip = null;
+function idaShowTraitTip(badge, text) {
+  if (!idaTraitTip) { idaTraitTip = document.createElement("div"); idaTraitTip.className="ida-trait-tip"; document.body.appendChild(idaTraitTip); }
+  idaSetText(idaTraitTip, text);
+  idaTraitTip.style.display = "block";
+  var r = badge.getBoundingClientRect();
+  var tipR = idaTraitTip.getBoundingClientRect();
+  var left = Math.max(8, Math.min(r.left + r.width/2 - tipR.width/2, window.innerWidth - tipR.width - 8));
+  var top = r.top - tipR.height - 8;
+  if (top < 8) top = r.bottom + 8;
+  idaTraitTip.style.left = left + "px";
+  idaTraitTip.style.top = top + "px";
+}
+function idaHideTraitTip() {
+  if (idaTraitTip) idaTraitTip.style.display = "none";
+  document.querySelectorAll(".ida-trait-badge.tip-open").forEach(function(b){ b.classList.remove("tip-open"); });
+}
+document.addEventListener("click", function(e){
+  if (!e.target.closest || !e.target.closest(".ida-trait-badge")) idaHideTraitTip();
+});
+window.addEventListener("scroll", idaHideTraitTip, true);
+
+/* ================================================================
+   Supabase通信
+   ================================================================ */
 
 /* ================================================================
    Supabase通信
