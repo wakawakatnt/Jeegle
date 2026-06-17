@@ -44,6 +44,13 @@ async function doSearch(q, opts) {
   /* ID検索の表示状態をリセット。URL復元時は復元分を集合に入れる */
   searchedId = idp.isId ? idp.value : null;
   activeIdSet = new Set();
+
+  /* 新しく id: 検索を開始したら手動変更フラグをリセット（デフォルト=ID に戻す）。
+     ただし履歴復元・手動ラジオ変更経由では維持する。 */
+  if (idp.isId && !opts.userTypeChange && !opts.fromHistory) {
+    window.__userChangedType = false;
+  }
+
   if (opts.restoreActiveIds && opts.restoreActiveIds.length) {
     opts.restoreActiveIds.forEach(id => activeIdSet.add(normId(id)));
   }
