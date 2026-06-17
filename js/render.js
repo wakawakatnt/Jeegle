@@ -260,7 +260,6 @@ function mkIdAnalysisBanner(userId) {
   return banner;
 }
 
-/* ===== 「👤同一人物かも」ブロック（複数選択・追加表示トグル）===== */
 function mkSameUserBlock(altIds) {
   const box = document.createElement("div");
   box.className = "same-user-block";
@@ -307,6 +306,7 @@ function mkSameUserBlock(altIds) {
   box.appendChild(list);
   return box;
 }
+
 
 /* ===== スレッドカード（PC=右ペイン展開 / モバイル=カード内展開） ===== */
 function mkCard(thread, q) {
