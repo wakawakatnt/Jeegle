@@ -392,22 +392,44 @@ function mkCard(thread, q, opts) {
   inlineDet.className = "thread-details-inline";
   inlineDet.style.display = "none";
 
+  // モバイルで開いた展開を閉じる共通処理
+  const closeInline = () => {
+    inlineDet.style.display = "none";
+    inlineDet.innerHTML = "";
+    card.classList.remove("selected");
+  };
+
   hdr.addEventListener("click", () => {
     const isMobile = window.matchMedia("(max-width: 900px)").matches;
 
     if (isMobile) {
       if (inlineDet.style.display === "block") {
-        inlineDet.style.display = "none";
-        inlineDet.innerHTML = "";
-        card.classList.remove("selected");
+        closeInline();
       } else {
         inlineDet.innerHTML = "";
-        inlineDet.appendChild(buildDetail(thread, q, opts.highlightKeys));
+
+        // YouTubeコメント風：左の縦線レール。タップで折りたたむ
+        const rail = document.createElement("div");
+        rail.className = "collapse-rail";
+        rail.title = "タップで閉じる";
+        rail.addEventListener("click", (e) => {
+          e.stopPropagation();
+          closeInline();
+        });
+        inlineDet.appendChild(rail);
+
+        // 中身は線の右側に入れるラッパに
+        const body = document.createElement("div");
+        body.className = "collapse-body";
+        body.appendChild(buildDetail(thread, q));
+        inlineDet.appendChild(body);
+
         inlineDet.style.display = "block";
         card.classList.add("selected");
       }
       return;
     }
+
 
     const pane = document.getElementById("detailPane");
     if (!pane) return;
