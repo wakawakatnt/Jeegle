@@ -369,7 +369,7 @@ function mkSameUserBlock(entries) {
 function mkCard(thread, q, opts) {
   opts = opts || {};
   const card = document.createElement("div");
-  card.className = "thread-result" + (opts.highlightNew ? " new-by-altid" : "");
+  card.className = "thread-result";
   card.dataset.threadId = thread.thread_id;
 
   const hdr = document.createElement("div");
