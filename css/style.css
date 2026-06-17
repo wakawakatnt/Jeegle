@@ -570,3 +570,27 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   color: #5f6368;
   font-size: 12px;
 }
+/* 同一人物かも：追加IDによって新たに表示されたスレッド */
+.thread-result.new-by-altid {
+  border: 2px solid #f5b400;            /* 黄色枠 */
+  background: #fffdf3;                   /* ほんのり黄色背景 */
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px rgba(245,180,0,.15);
+}
+
+/* 帯バッジ（card 先頭に入れた場合） */
+.new-by-altid-flag {
+  display: inline-block;
+  background: #f5b400;
+  color: #3c2f00;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+/* ヘッダー内に入れた小さいバッジ版を使う場合 */
+.thread-header .new-by-altid-flag {
+  margin: 0 0 4px 0;
+}
