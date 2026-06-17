@@ -23,9 +23,18 @@
 </p>
 <!-- トップページ -->
 <div class="top-page" id="topPage">
-  <div class="logo" onclick="goHome()"> ... </div>
-  <div class="search-box"> ... </div>
-  <div class="search-btn-wrap"> ... </div>
+  <div class="logo" onclick="goHome()">
+    <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
+  </div>
+  <div class="search-box">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="text" id="topInput" placeholder="スレッド・レスを検索" autocomplete="off">
+  </div>
+  <div class="search-btn-wrap">
+    <button class="search-btn" onclick="doSearch()">Jeegle 検索</button>
+  </div>
 
   <div class="ranking-link-wrap">
      <a href="ranking.html" class="ranking-link-btn">🏆 ID数書き込みランキング！</a>
