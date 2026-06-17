@@ -301,11 +301,21 @@ async function runAnalysis() {
       var traitTitle=idaCE("div","ida-card-title"); traitTitle.style.marginTop="10px";
       idaSetText(traitTitle,"🏷️ ユーザー属性"); traitSection.appendChild(traitTitle);
       var traitWrap=idaCE("div","ida-trait-wrap");
-      traits.forEach(function(tr){
+traits.forEach(function(tr){
         var badge=idaCE("div","ida-trait-badge");
         var bIcon=idaCE("span","ida-trait-icon"); bIcon.textContent=tr.icon; badge.appendChild(bIcon);
         var bName=idaCE("span","ida-trait-name"); idaSetText(bName,tr.name); badge.appendChild(bName);
-        badge.title=tr.desc;
+        if (idaHasHover) {
+          badge.addEventListener("mouseenter",function(){ idaShowTraitTip(badge,tr.desc); });
+          badge.addEventListener("mouseleave",idaHideTraitTip);
+        } else {
+          badge.addEventListener("click",function(e){
+            e.stopPropagation();
+            var wasOpen = badge.classList.contains("tip-open");
+            idaHideTraitTip();
+            if (!wasOpen) { idaShowTraitTip(badge,tr.desc); badge.classList.add("tip-open"); }
+          });
+        }
         traitWrap.appendChild(badge);
       });
       traitSection.appendChild(traitWrap);
