@@ -570,12 +570,26 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   color: #5f6368;
   font-size: 12px;
 }
-/* 同一人物かも：追加IDによって新たに表示されたスレッド */
+/* 同一人物かも：追加IDで新たに現れたスレッド枠 */
+.thread-result {
+  border: 2px solid transparent;   /* 通常時も枠分の幅を確保してレイアウトを安定させる */
+}
 .thread-result.new-by-altid {
-  border: 2px solid #f5b400;            /* 黄色枠 */
-  background: #fffdf3;                   /* ほんのり黄色背景 */
+  border-color: #f5b400;           /* 黄色枠 */
+  background: #fffdf3;
   border-radius: 8px;
   box-shadow: 0 0 0 3px rgba(245,180,0,.15);
+}
+
+/* 該当IDのレスを検索結果らしくハイライト */
+.post.highlight-id {
+  background: #fff8e1;             /* 淡い黄色 */
+  border-left: 4px solid #f5b400;  /* 左に黄色アクセント */
+  border-radius: 6px;
+  padding-left: 10px;
+}
+.post.highlight-id .post-meta {
+  font-weight: 600;
 }
 
 /* 帯バッジ（card 先頭に入れた場合） */
