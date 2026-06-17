@@ -276,7 +276,6 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 }
 
 @media (max-width: 640px) {
-  /* スマホでは横並びのコンパクト表示にして高さを節約 */
   .id-analysis-banner {
     flex-direction: row;
     align-items: center;
@@ -285,18 +284,24 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
     margin-bottom: 10px;
   }
   .id-analysis-banner-icon {
-    font-size: 18px;          /* 28px → 18px に縮小 */
+    font-size: 18px;
+  }
+  .id-analysis-banner-text {
+    min-width: 0;            /* テキスト領域が縮めるようにする（重要）*/
+    flex: 1;
   }
   .id-analysis-banner-main {
     font-size: 13px;
+    white-space: nowrap;       /* 折り返さない */
+    overflow: hidden;
+    text-overflow: ellipsis;   /* 収まらなければ末尾を … で省略 */
   }
-  /* 補足説明はスマホでは隠して縦幅を稼ぐ（不要なら表示のままにしてOK） */
   .id-analysis-banner-sub {
     display: none;
   }
   .id-analysis-banner-btn {
+    flex-shrink: 0;            /* ボタンは縮まない */
     align-self: center;
-    text-align: center;
     padding: 6px 12px;
     font-size: 12px;
     white-space: nowrap;
