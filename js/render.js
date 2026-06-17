@@ -174,10 +174,27 @@ function renderAll(q, elapsed) {
   const sum = document.getElementById("searchSummary");
   setText(sum, `検索: 「${q}」 | ヒット: ${sorted.length}スレッド, ${total}レス`);
   sum.style.display = "block";
-  sorted.forEach(r => res.appendChild(mkCard(r, q)));
+
+  /* 「同一人物かも」で追加表示したIDによって新たに出てきたスレッドを判定。
+     = 検索本人ID(searchedKey)のレスを1件も含まず、
+       追加表示中ID(activeIdSet)のレスのみで表示されているスレッド。 */
+  const searchedKey = isIdSearch ? normId(searchedId) : null;
+  const hasActiveIds = isIdSearch && activeIdSet.size > 0;
+
+  sorted.forEach(r => {
+    let viaActiveOnly = false;
+    if (hasActiveIds) {
+      const hasSearched = r.matchedPosts.some(p => normId(p.user_id) === searchedKey);
+      const hasActive   = r.matchedPosts.some(p => activeIdSet.has(normId(p.user_id)));
+      // 本人のレスが無く、追加IDのレスで出ている → 追加で新たに現れたスレッド
+      viaActiveOnly = !hasSearched && hasActive;
+    }
+    res.appendChild(mkCard(r, q, { highlightNew: viaActiveOnly }));
+  });
 
   adjustStickyOffsets();
 }
+
 
 function sortRes(rs, order) {
   if (order === "newest")    return rs.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
