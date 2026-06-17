@@ -395,6 +395,7 @@ function mkCard(thread, q, opts) {
   // モバイルで開いた展開を閉じる共通処理
   const closeInline = () => {
     inlineDet.style.display = "none";
+    inlineDet.classList.remove("open");   // ★ 外す
     inlineDet.innerHTML = "";
     card.classList.remove("selected");
   };
@@ -408,7 +409,6 @@ function mkCard(thread, q, opts) {
       } else {
         inlineDet.innerHTML = "";
 
-        // YouTubeコメント風：左の縦線レール。タップで折りたたむ
         const rail = document.createElement("div");
         rail.className = "collapse-rail";
         rail.title = "タップで閉じる";
@@ -418,13 +418,13 @@ function mkCard(thread, q, opts) {
         });
         inlineDet.appendChild(rail);
 
-        // 中身は線の右側に入れるラッパに
         const body = document.createElement("div");
         body.className = "collapse-body";
         body.appendChild(buildDetail(thread, q));
         inlineDet.appendChild(body);
 
         inlineDet.style.display = "block";
+        inlineDet.classList.add("open");   // ★ 開いたフラグ
         card.classList.add("selected");
       }
       return;
