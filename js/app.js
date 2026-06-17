@@ -14,10 +14,13 @@ document.querySelectorAll('input[name="sortOrder"]').forEach(r => r.addEventList
 
 // 検索モード・範囲変更
 document.querySelectorAll('input[name="searchMode"],input[name="searchType"]').forEach(r => r.addEventListener("change", () => {
+  // ユーザーが手動でラジオを操作した印。これが立っている間は
+  // id:プレフィックスでも type を id に強制しない（手動選択を尊重する）。
+  window.__userChangedType = true;
   const q = document.getElementById("resultInput").value.trim();
-  // 手動でラジオを変えたので、id:プレフィックスがあっても強制的にidへ戻さない
   if (q) doSearch(q, { userTypeChange: true });
 }));
+
 
 // 日付プリセット変更
 document.querySelectorAll('input[name="dateRange"]').forEach(r => r.addEventListener("change", () => {
