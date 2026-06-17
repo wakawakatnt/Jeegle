@@ -49,14 +49,16 @@ async function doSearch(q, opts) {
   }
 
   /* id:プレフィックスならデフォルトで検索範囲ラジオを id に切り替える。
-     ただし手動でラジオ変更(userTypeChange)や履歴復元(fromHistory)では尊重する */
+     ただし手動でラジオ変更(userTypeChange)や履歴復元(fromHistory)では尊重する。
+     ※ pushUrl はラジオを切り替えた「後」に呼ぶこと。
+        先に呼ぶと古いラジオ値(例: 本文=h)がURLに焼き付いてしまう。 */
   if (idp.isId && !opts.userTypeChange && !opts.fromHistory) {
     const idRadio = document.querySelector('input[name="searchType"][value="id"]');
     if (idRadio && !idRadio.checked) idRadio.checked = true;
   }
 
-  if (!opts.fromHistory) pushUrl(q);
-
+  if (!opts.fromHistory) pushUrl(q);   // ← ラジオ切替後なので t=i が正しく入る
+  
   document.getElementById("topPage").classList.add("hidden");
   document.getElementById("resultPage").classList.add("active");
   document.getElementById("threadDetailPage").classList.remove("active");
