@@ -1,11 +1,32 @@
 "use strict";
 
+let lastElapsed = "0.00";  /* 再描画(同一人物かも切替)時に検索時間を据え置くため */
+
 /* ================================================================
    描画
    ================================================================ */
 function renderAll(q, elapsed) {
+  if (elapsed !== undefined) lastElapsed = elapsed;
+
   const order  = document.querySelector('input[name="sortOrder"]:checked').value;
-  const sorted = sortRes([...currentResults], order);
+
+  /* ID検索かどうか判定。queryId=元の検索ID, fullId=本体表示ID(activeIdFullを優先) */
+  const typeEl = document.querySelector('input[name="searchType"]:checked');
+  const isIdType = typeEl && typeEl.value === "id";
+  const idm = q.match(/^id:\s*(.+)/i);
+  const queryId = idm ? idm[1].trim() : (isIdType ? q.trim() : null);
+  const fullId  = activeIdFull || queryId;
+
+  /* ID検索なら currentResults を「本体(完全一致)」と「同一人物候補」に振り分け */
+  let resultsToShow = currentResults;
+  let altIds = [];
+  if (fullId) {
+    const split = splitIdResults(currentResults, fullId);
+    resultsToShow = split.main;
+    altIds = split.altIds;
+  }
+
+  const sorted = sortRes([...resultsToShow], order);
   const total  = sorted.reduce((s, r) => s + r.matchedPosts.length, 0);
 
   const stats = document.getElementById("resultStats");
@@ -25,7 +46,7 @@ function renderAll(q, elapsed) {
   }
 
   const summaryText = document.createElement("span");
-  summaryText.textContent = `約 ${sorted.length} スレッド / ${total} レス (${elapsed || "0.00"} 秒)`;
+  summaryText.textContent = `約 ${sorted.length} スレッド / ${total} レス (${lastElapsed} 秒)`;
   summaryRow.appendChild(summaryText);
 
   if (failed.length) {
@@ -90,13 +111,19 @@ function renderAll(q, elapsed) {
   const pane = document.getElementById("detailPane");
   if (pane) pane.innerHTML = "";
 
-  // ID分析バナー
-  const idm = q.match(/^id:\s*(.+)/i);
-  const typeEl = document.querySelector('input[name="searchType"]:checked');
-  const isIdType = typeEl && typeEl.value === "id";
-  const idVal = idm ? idm[1].trim() : (isIdType ? q.trim() : null);
-  if (idVal && sorted.length > 0) {
-    res.appendChild(mkIdAnalysisBanner(idVal));
+  /* ID分析バナー: 元の検索ID + 表示中ID の2つを並べる */
+  if (sorted.length > 0) {
+    if (queryId) {
+      res.appendChild(mkIdAnalysisBanner(queryId));
+    }
+    if (activeIdFull && activeIdFull !== queryId) {
+      res.appendChild(mkIdAnalysisBanner(activeIdFull));
+    }
+  }
+
+  /* 同一人物かもブロック（バナーの下に表示） */
+  if (fullId && altIds.length > 0) {
+    res.appendChild(mkSameUserBlock(fullId, altIds));
   }
 
   if (!sorted.length) {
@@ -112,6 +139,8 @@ function renderAll(q, elapsed) {
   setText(sum, `検索: 「${q}」 | ヒット: ${sorted.length}スレッド, ${total}レス`);
   sum.style.display = "block";
   sorted.forEach(r => res.appendChild(mkCard(r, q)));
+
+  adjustStickyOffsets();
 }
 
 function sortRes(rs, order) {
@@ -119,6 +148,36 @@ function sortRes(rs, order) {
   if (order === "oldest")    return rs.sort((a, b) => new Date(a.updated_at || 0) - new Date(b.updated_at || 0));
   if (order === "relevance") return rs.sort((a, b) => b.matchedPosts.length - a.matchedPosts.length);
   return rs;
+}
+
+/* ===== ID検索結果を「本体(検索ID完全一致)」と「同一人物候補ID」に分割 =====
+   currentResults は前方2文字でヒットした全レスを含む。
+   - main   : user_id === fullId のレスだけを残したスレッド配列
+   - altIds : fullId とは文字数が異なる同プレフィックスID（重複除去・件数付き） */
+function splitIdResults(results, fullId) {
+  const mainMap = new Map();
+  const altCount = new Map();
+
+  results.forEach(r => {
+    const matched = r.matchedPosts.filter(p => (p.user_id || "") === fullId);
+    if (matched.length > 0) {
+      mainMap.set(r.thread_id, Object.assign({}, r, { matchedPosts: matched }));
+    }
+    r.matchedPosts.forEach(p => {
+      const uid = p.user_id || "";
+      if (!uid || uid === fullId) return;
+      // 検索IDと文字数が異なる同プレフィックスIDのみ候補にする
+      if (uid.length !== fullId.length) {
+        altCount.set(uid, (altCount.get(uid) || 0) + 1);
+      }
+    });
+  });
+
+  const altIds = Array.from(altCount.entries())
+    .map(([id, count]) => ({ id, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return { main: Array.from(mainMap.values()), altIds };
 }
 
 /* ===== ID分析バナー ===== */
@@ -161,6 +220,51 @@ function mkIdAnalysisBanner(userId) {
   return banner;
 }
 
+/* ===== 「👤同一人物かも」ブロック（再検索せず再描画で切替）===== */
+function mkSameUserBlock(fullId, altIds) {
+  const box = document.createElement("div");
+  box.className = "same-user-block";
+
+  const head = document.createElement("div");
+  head.className = "same-user-head";
+  head.textContent = "👤 同一人物かも";
+  box.appendChild(head);
+
+  const list = document.createElement("div");
+  list.className = "same-user-list";
+
+  altIds.forEach(({ id, count }) => {
+    const btn = document.createElement("button");
+    btn.className = "same-user-btn";
+    btn.type = "button";
+
+    const idSpan = document.createElement("span");
+    idSpan.className = "same-user-id";
+    setText(idSpan, "id:" + id);
+    btn.appendChild(idSpan);
+
+    const cnt = document.createElement("span");
+    cnt.className = "same-user-count";
+    setText(cnt, count + "件");
+    btn.appendChild(cnt);
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      // 再検索しない。前方2文字で取得済みの currentResults から
+      // 表示IDを切り替えて再描画するだけ。
+      activeIdFull = id;
+      pushUrl(currentKeyword, id);   // s=元クエリ, a=表示中ID
+      renderAll(currentKeyword);     // q は元の検索クエリ（バナー2つ表示のため）
+      window.scrollTo(0, 0);
+    });
+
+    list.appendChild(btn);
+  });
+
+  box.appendChild(list);
+  return box;
+}
+
 /* ===== スレッドカード（PC=右ペイン展開 / モバイル=カード内展開） ===== */
 function mkCard(thread, q) {
   const card = document.createElement("div");
@@ -173,8 +277,7 @@ function mkCard(thread, q) {
   const ta = document.createElement("div"); ta.className = "thread-title-area";
   const ts = document.createElement("span"); ts.className = "thread-title";
   hlSet(ts, thread.title || "スレッド " + thread.thread_id, q); ta.appendChild(ts);
-  const ud = document.createElement("div"); ud.className = "thread-url";
-  setText(ud, "hayabusa.open2ch.net › livejupiter › " + thread.thread_id); ta.appendChild(ud);
+  /* thread-url の行は削除（hayabusa.open2ch.net › livejupiter › ... を非表示） */
   const ml = document.createElement("div"); ml.className = "thread-meta-line";
   setText(ml, "更新: " + (thread.updated_at ? new Date(thread.updated_at).toLocaleDateString("ja-JP") : "")); ta.appendChild(ml);
 
@@ -603,3 +706,33 @@ function appendXEmbed(container, tweetId, rawUrl) {
   }
   fr.addEventListener("load", () => { resized = true; clearTimeout(fallbackTimer); });
 }
+
+/* ===== PC時、固定バーのtopをヘッダー実高に合わせて自動設定 ===== */
+function adjustStickyOffsets() {
+  if (!window.matchMedia("(min-width: 901px)").matches) return;
+  const header  = document.querySelector(".result-header");
+  const options = document.querySelector(".search-options-bar");
+  const stats   = document.querySelector(".result-stats-bar");
+  const summary = document.querySelector(".search-summary");
+  if (!header) return;
+
+  const hH = header.offsetHeight;
+  const oH = options ? options.offsetHeight : 0;
+  const sH = stats ? stats.offsetHeight : 0;
+
+  if (options) options.style.top = hH + "px";
+  if (stats)   stats.style.top   = (hH + oH) + "px";
+
+  const summaryVisible = summary && summary.style.display === "block";
+  const summaryH = summaryVisible ? summary.offsetHeight : 0;
+  if (summary) summary.style.top = (hH + oH + sH) + "px";
+
+  const totalTop = hH + oH + sH + summaryH;
+  const pane = document.querySelector(".detail-pane");
+  if (pane) {
+    pane.style.top = totalTop + "px";
+    pane.style.maxHeight = `calc(100vh - ${totalTop + 8}px)`;
+  }
+}
+window.addEventListener("resize", adjustStickyOffsets);
+window.addEventListener("load", adjustStickyOffsets);
