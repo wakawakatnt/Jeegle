@@ -108,6 +108,38 @@ function renderAll(q, elapsed) {
   const pane = document.getElementById("detailPane");
   if (pane) pane.innerHTML = "";
 
+  /* === 同一人物かもブロック（分析バナーより「上」に表示） ===
+     候補(altIds)に加えて、追加表示中(activeIdSet)のIDも
+     「選択済み」として渡し、再タップで解除できるようにする。 */
+  if (isIdSearch) {
+    const searchedKey = normId(searchedId);
+
+    // 追加表示中（＝選択済み）のIDを件数付きで集める
+    const activeEntries = [];
+    activeIdSet.forEach(key => {
+      if (key === searchedKey) return;
+      let count = 0;
+      currentResults.forEach(r => {
+        r.matchedPosts.forEach(p => { if (normId(p.user_id) === key) count++; });
+      });
+      activeEntries.push({
+        key,
+        id: idDisplayMap.get(key) || key,
+        count,
+        active: true
+      });
+    });
+
+    // 未選択の候補
+    const candEntries = altIds.map(a => Object.assign({}, a, { active: false }));
+
+    // 選択済みを上に、その下に候補。両方無ければブロックごと出さない
+    const allEntries = activeEntries.concat(candEntries);
+    if (allEntries.length > 0) {
+      res.appendChild(mkSameUserBlock(allEntries));
+    }
+  }
+
   /* ID分析バナー: 検索ID + 追加表示中の各ID をそれぞれ並べる */
   if (sorted.length > 0 && isIdSearch) {
     res.appendChild(mkIdAnalysisBanner(searchedId));
@@ -119,10 +151,6 @@ function renderAll(q, elapsed) {
     });
   }
 
-  /* 同一人物かもブロック */
-  if (isIdSearch && altIds.length > 0) {
-    res.appendChild(mkSameUserBlock(altIds));
-  }
 
   if (!sorted.length) {
     const d = document.createElement("div"); d.className = "no-results";
