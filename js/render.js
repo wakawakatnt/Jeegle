@@ -3,6 +3,7 @@
 let lastElapsed = "0.00";
 
 /* 同一人物かものID表示表記(正規化キー→元表記)を覚えるマップ（バナー用）*/
+let highlightIdKeys = null;
 let idDisplayMap = new Map();
 
 /* 同一人物候補の表示順を固定するための順序記憶（正規化キー → 並び順インデックス）。
@@ -181,28 +182,21 @@ function renderAll(q, elapsed) {
   setText(sum, `検索: 「${q}」 | ヒット: ${sorted.length}スレッド, ${total}レス`);
   sum.style.display = "block";
 
-  /* 「同一人物かも」で追加表示したIDによって新たに出てきたスレッドを判定。
-     = 検索本人ID(searchedKey)のレスを1件も含まず、
-       追加表示中ID(activeIdSet)のレスのみで表示されているスレッド。 */
   const searchedKey = isIdSearch ? normId(searchedId) : null;
   const hasActiveIds = isIdSearch && activeIdSet.size > 0;
 
-  /* レス単位ハイライト用：本人ID(正規化) + 追加表示中ID(正規化) のキー集合。
-     normId でドットを除去して比較するので 7xz2L90 と 7x.z2.L90 は同一視される。 */
-  const highlightKeys = isIdSearch
-    ? new Set([searchedKey, ...activeIdSet])
-    : null;
+  highlightIdKeys = isIdSearch ? new Set([searchedKey, ...activeIdSet]) : null;
 
   sorted.forEach(r => {
     let viaActiveOnly = false;
     if (hasActiveIds) {
       const hasSearched = r.matchedPosts.some(p => normId(p.user_id) === searchedKey);
       const hasActive   = r.matchedPosts.some(p => activeIdSet.has(normId(p.user_id)));
-      // 本人のレスが無く、追加IDのレスで出ている → 追加で新たに現れたスレッド
       viaActiveOnly = !hasSearched && hasActive;
     }
-    res.appendChild(mkCard(r, q, { highlightNew: viaActiveOnly, highlightKeys }));
+    res.appendChild(mkCard(r, q, { highlightNew: viaActiveOnly }));
   });
+
 
   adjustStickyOffsets();
 }
