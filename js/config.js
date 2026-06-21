@@ -1,8 +1,8 @@
 "use strict";
 
 /* ===== Supabase（14日以内の検索データ） ===== */
-const SB_URL = "https://icafholrrjxrrbeibyru.supabase.co";
-const SB_KEY = "sb_publishable_u5yJH2bZ7HBlQyvSLknL_w_hMsGyBQl";
+const SB_URL = ""https://icafholrrjxrrbeibyru.supabase.co;
+const SB_KEY = ""sb_publishable_u5yJH2bZ7HBlQyvSLknL_w_hMsGyBQl;
 
 /* ===== Turso（14日より古い検索データ）(更新中...) ===== */
 const TURSO_URL = "";
