@@ -2,7 +2,7 @@
 
 /* ===== Supabase（14日以内の検索データ） ===== */
 const SB_URL = "https://gentle-mouse-d138.sub714685.workers.dev";
-const SB_KEY = ""sb_publishable_530ash4ew_ewbw3olsva4bnk33;
+const SB_KEY = "sb_publishable_530ash4ew_ewbw3olsva4bnk33";
 
 /* ===== Turso（14日より古い検索データ）(更新中...) ===== */
 const TURSO_URL = "";
