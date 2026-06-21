@@ -60,7 +60,7 @@ var MediaData = (function(){
       })
       .catch(function(err){
         console.error(err);
-        U.setStatus("読み込みエラー: " + (err && err.message ? err.message : err), "err");
+        U.setStatus("現在メンテ中...: " + (err && err.message ? err.message : err), "err");
       });
   }
 
