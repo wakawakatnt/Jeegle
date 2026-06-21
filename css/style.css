@@ -711,3 +711,15 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   border-top: none;
   padding: 0;                  /* レール用の余分なパディングを除去 */
 }
+.maintenance-notice {
+  background: #fff3cd;
+  color: #664d03;
+  border: 1px solid #ffe69c;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px auto;
+  max-width: 560px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.6;
+}
