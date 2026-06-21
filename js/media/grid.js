@@ -326,7 +326,7 @@ var MediaGrid = (function(){
       if (filtered.length === 0) {
         var msg = (currentKind === "fav")
           ? '★のお気に入りはまだありません'
-          : '該当するメディアがありません';
+          : '現在メンテ中...';
         U.$("mdGrid").innerHTML = '<div class="md-empty" style="grid-column:1/-1;">' + msg + '</div>';
       }
       return;
