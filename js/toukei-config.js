@@ -1,8 +1,7 @@
 /* グローバル定数・状態 */
 window.TK = window.TK || {};
 
-TK.FIREBASE_PROJECT_ID = 'itiran-be2af';
-TK.FIREBASE_API_KEY    = 'AIzaSyCasS3f9WJ26Dkk1B8_NrMFI2S-rahwMiM';
+TK.WORKER_BASE        = 'https://gentle-mouse-d138.1145148101919.workers.dev';
 TK.DATA_START_DATE     = '2026-05-14';
 TK.CACHE_VER           = 'v2';
 TK.CACHE_KEY_PREFIX    = `jeegle_stats_${TK.CACHE_VER}_`;
