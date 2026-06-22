@@ -1,4 +1,4 @@
-/* ===== media/config.js — 定数・Firebase初期化 ===== */
+/* ===== media/config.js — 定数 ===== */
 "use strict";
 
 var MediaCfg = {
@@ -6,7 +6,8 @@ var MediaCfg = {
   THREAD_BASE: "https://hayabusa.open2ch.net/test/read.cgi/livejupiter/",
   PAGE_SIZE: 30,
   META_CACHE_KEY: "jeegle_media_meta_v3",
-  META_CACHE_TTL_MS: 60 * 1000
+  META_CACHE_TTL_MS: 60 * 1000,
+  WORKER_BASE: "https://gentle-mouse-d138.1145148101919.workers.dev"
 };
 
 /* Firebase */
