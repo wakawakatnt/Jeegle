@@ -56,13 +56,12 @@
       const ls = readLSCache(yyyymm);
       if (ls !== null) { mc.set(yyyymm, ls); return ls; }
     }
-    const url = `https://firestore.googleapis.com/v1/projects/${TK.FIREBASE_PROJECT_ID}/databases/(default)/documents/stats/${yyyymm}?key=${TK.FIREBASE_API_KEY}`;
+    const url = `${TK.WORKER_BASE}/fs/stats/${yyyymm}`;
     try {
       const res = await fetch(url);
       if (res.status === 404) { mc.set(yyyymm, null); writeLSCache(yyyymm, null); return null; }
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json();
-      const parsed = parseFirestoreDoc(json);
+      const parsed = await res.json();   // ← Worker が既に素のJSONを返す
       mc.set(yyyymm, parsed);
       writeLSCache(yyyymm, parsed);
       return parsed;
