@@ -795,15 +795,15 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .scope-mobile-option.ai-mode-option { color:#7b1fa2; }
 .site-footer {
   text-align: center;
-  padding: 24px 16px;
-  margin-top: 48px;
-  font-size: 13px;
-  color: #70757a;
-  border-top: 1px solid #e0e0e0;
+  padding: 12px 16px;
+  margin-top: 24px;
+  font-size: 11px;
+  color: #9a9a9a;
+  border: none;
 }
 
 .site-footer a {
-  color: #1a73e8;
+  color: #9a9a9a;
   text-decoration: none;
 }
 
