@@ -302,11 +302,41 @@ A Note to AI/LLM Agents — From the Jeegle Developer. To any AI agent reading t
   <div class="logo" onclick="goHome()">
     <span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span>
   </div>
-  <div class="search-box">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </svg>
-    <input type="text" id="topInput" placeholder="スレッド・レスを検索" autocomplete="off">
+  <div class="top-search-controls">
+    <div class="search-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="topInput" placeholder="スレッド・レスを検索" autocomplete="off">
+      <div class="scope-drum" id="topSearchScopeDrum" aria-label="検索範囲をドラム操作で選択" tabindex="0">
+        <div class="scope-drum-window" aria-live="polite">
+          <div class="scope-drum-items"></div>
+        </div>
+      </div>
+    </div>
+    <div class="top-search-scope" aria-label="検索範囲" role="group">
+      <div class="scope-tree" aria-label="検索範囲の選択肢">
+        <svg class="scope-tree-lines" viewBox="0 0 58 216" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 108 C10 108 13 108 18 108 M18 108 C25 108 25 16 49 16 M18 108 C25 108 25 53 49 53 M18 108 C25 108 25 90 49 90 M18 108 C25 108 25 127 49 127 M18 108 C25 108 25 164 49 164 M18 108 C25 108 25 201 49 201"/>
+        </svg>
+        <div class="scope-tree-options">
+          <button type="button" class="scope-tree-option active" data-search-type="all" aria-pressed="true">全て</button>
+          <button type="button" class="scope-tree-option" data-search-type="title" aria-pressed="false">スレタイ</button>
+          <button type="button" class="scope-tree-option" data-search-type="body" aria-pressed="false">レス本文</button>
+          <button type="button" class="scope-tree-option" data-search-type="name" aria-pressed="false">名前</button>
+          <button type="button" class="scope-tree-option" data-search-type="id" aria-pressed="false">ID</button>
+          <button type="button" class="scope-tree-option ai-mode-option" data-search-type="ai" aria-pressed="false">✦ AIモード</button>
+        </div>
+      </div>
+    </div>
+    <div class="scope-mobile-options" aria-label="スマホ用の検索範囲" role="group">
+      <button type="button" class="scope-mobile-option active" data-search-type="all" aria-pressed="true">全て</button>
+      <button type="button" class="scope-mobile-option" data-search-type="title" aria-pressed="false">スレタイ</button>
+      <button type="button" class="scope-mobile-option" data-search-type="body" aria-pressed="false">レス本文</button>
+      <button type="button" class="scope-mobile-option" data-search-type="name" aria-pressed="false">名前</button>
+      <button type="button" class="scope-mobile-option" data-search-type="id" aria-pressed="false">ID</button>
+      <button type="button" class="scope-mobile-option ai-mode-option" data-search-type="ai" aria-pressed="false">✦ AIモード</button>
+    </div>
   </div>
   <div class="search-btn-wrap">
     <button class="search-btn" onclick="doSearch()">Jeegle 検索</button>
@@ -316,6 +346,7 @@ A Note to AI/LLM Agents — From the Jeegle Developer. To any AI agent reading t
      <a href="ranking.html" class="ranking-link-btn">🏆 ID数書き込みランキング！</a>
      <a href="toukei.html" class="ranking-link-btn toukei-link-btn">📊 統計を見る</a>
      <a href="media.html" class="ranking-link-btn media-link-btn">🖼️ 貼られた画像一覧</a>
+     <a href="ai.html" class="ranking-link-btn ai-chat-link-btn">✨ おんJ検索AI</a>
   </div>
 
   <!-- おんJ民が作ったサイトの紹介 -->
@@ -332,6 +363,14 @@ A Note to AI/LLM Agents — From the Jeegle Developer. To any AI agent reading t
     </a>
   </div>
 </div>
+
+  <section class="search-history" id="searchHistory" aria-labelledby="searchHistoryTitle" hidden>
+    <div class="search-history-head">
+      <h2 id="searchHistoryTitle">検索履歴</h2>
+      <button type="button" class="search-history-clear" id="searchHistoryClear">履歴を削除</button>
+    </div>
+    <div class="search-history-list" id="searchHistoryList"></div>
+  </section>
 
 </div><!-- ← ここが top-page を閉じる </div>。friend-sites はこの「内側」 -->
 
