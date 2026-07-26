@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>おんJ検索AIチャット - Jeegle!</title>
+  <link rel="stylesheet" href="css/ai.css">
+</head>
+<body>
+  <main class="ai-page">
+    <header class="ai-header">
+      <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="保存した会話を開閉" aria-expanded="true">☰</button>
+      <a class="ai-logo" href="index.html" aria-label="Jeegle! 検索へ戻る"><span>J</span><span>e</span><span>e</span><span>g</span><span>l</span><span>e</span><span>!</span></a>
+      <div class="ai-header-title"><span class="ai-sparkle" aria-hidden="true">✦</span><span>おんJ検索AIチャット</span></div>
+      <div class="ai-header-actions">
+        <button type="button" class="new-chat-button" id="newChatButton">新しい会話</button>
+        <a href="index.html" class="back-link">← 検索に戻る</a>
+      </div>
+    </header>
+
+    <div class="ai-shell">
+      <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+      <aside class="conversation-sidebar" id="conversationSidebar" aria-label="保存した会話">
+        <div class="conversation-panel-head"><h2>保存した会話</h2><button type="button" id="clearConversationsButton">すべて削除</button></div>
+        <p class="conversation-note">このブラウザに保存されます。</p>
+        <div class="conversation-list" id="conversationList"></div>
+      </aside>
+
+      <div class="ai-layout">
+        <section class="ai-chat-shell" aria-label="AIチャット">
+          <div class="chat-log" id="chatLog" aria-live="polite"></div>
+          <div class="chat-status" id="chatStatus" role="status" aria-live="polite" hidden></div>
+        </section>
+      </div>
+    </div>
+
+    <section class="ai-composer" aria-label="メッセージ入力">
+      <div class="composer-inner">
+        <div class="ai-settings" aria-label="AI設定">
+          <div class="setting-field">
+            <label for="modelSelect">モデル</label>
+            <select id="modelSelect">
+              <option value="0">0: デフォルト</option>
+              <option value="1">1: gemma-4-26b-a4b-it</option>
+              <option value="2">2: gemma-4-31b-it</option>
+              <option value="3">3: gemini-3.5-flash-lite</option>
+              <option value="4">4: gemini-3.1-flash-lite</option>
+              <option value="5">5: gemini-flash(flash族)</option>
+            </select>
+            <small class="field-hint" id="modelHint"></small>
+          </div>
+          <div class="setting-field">
+            <label for="thinkingSelect">思考</label>
+            <select id="thinkingSelect"><option value="">サーバー既定</option><option value="high">high</option><option value="minimal">minimal</option></select>
+            <small class="field-hint" id="thinkingHint"></small>
+          </div>
+          <div class="setting-field">
+            <label for="temperatureInput">temperature</label>
+            <input id="temperatureInput" type="number" inputmode="decimal" min="0" max="2" step="0.1" placeholder="既定">
+            <small class="field-hint" id="temperatureHint"></small>
+          </div>
+        </div>
+        <form id="chatForm" class="chat-form">
+          <textarea id="chatInput" maxlength="500" rows="1" placeholder="おんJについて質問してください" aria-label="質問"></textarea>
+          <button type="submit" class="send-button" id="sendButton">送信</button>
+        </form>
+        <div class="composer-footer"><span id="charCount">0 / 500</span><span>Enterで送信 / Shift + Enterで改行</span></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/ai.js"></script>
+</body>
+</html>
