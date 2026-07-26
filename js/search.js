@@ -2,7 +2,6 @@
 
 let currentResults = [];
 let currentKeyword = "";
-let lastSegmentTimings = [];
 
 /* ID検索: 検索した元ID（生の値）と、追加表示中ID集合（正規化キーで保持）*/
 let searchedId = null;
@@ -37,6 +36,13 @@ async function doSearch(q, opts) {
   if (q === undefined) q = document.getElementById("topInput").value.trim();
   q = String(q).trim();
   if (!q) return;
+
+  // トップのAIモードは通常検索を実行せず、質問をAIページへ引き渡す。
+  if (window.__topSearchType === "ai") {
+    window.location.href = `ai.html?q=${encodeURIComponent(q)}`;
+    return;
+  }
+
   currentKeyword = q;
 
   const idp = parseIdPrefix(q);
@@ -62,7 +68,15 @@ async function doSearch(q, opts) {
   if (idp.isId && (opts.forceId || (!opts.userTypeChange && !opts.fromHistory))) {
     const idRadio = document.querySelector('input[name="searchType"][value="id"]');
     if (idRadio && !idRadio.checked) idRadio.checked = true;
+    if (typeof syncTopSearchType === "function") syncTopSearchType("id");
     window.__userChangedType = false;   // 強制ID時は手動フラグを下ろす
+  }
+
+  // 検索範囲・日付の再選択も、同じ検索語の履歴を最新の条件で更新する。
+  // URL復元だけは履歴へ再記録しない。
+  if (!opts.fromHistory && typeof recordSearchHistory === "function") {
+    const selectedType = document.querySelector('input[name="searchType"]:checked').value;
+    recordSearchHistory(q, selectedType);
   }
 
   /* 履歴復元でも forceId でIDに直したら、URLを正しい t=i に書き直す
@@ -93,8 +107,6 @@ async function doSearch(q, opts) {
   const dr    = getDateRange();
   const t0    = performance.now();
 
-  lastSegmentTimings = [];
-
   try {
     let results;
     if (stype === "title") {
@@ -124,12 +136,7 @@ async function doSearch(q, opts) {
     res.innerHTML = "";
     const d = document.createElement("div");
     d.className = "no-results";
-    let msg = "エラー: " + e.message;
-    const failed = lastSegmentTimings.filter(t => !t.ok);
-    if (failed.length) {
-      msg += "\n失敗した日付: " + failed.map(f => `${f.label}(${f.kind}) ${f.ms}ms ${f.error}`).join(" / ");
-    }
-    setText(d, msg);
+    setText(d, "エラー: " + e.message);
     d.style.whiteSpace = "pre-wrap";
     res.appendChild(d);
   }
@@ -154,104 +161,20 @@ function colsForType(stype) {
 }
 
 /* ================================================================
-   セグメント計測ヘルパー
-   ================================================================ */
-function segLabel(seg) {
-  const f = new Date(seg.from);
-  const t = new Date(new Date(seg.to).getTime() - 1);
-  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-  const fl = fmt(f), tl = fmt(t);
-  return (fl === tl) ? fl : `${fl}〜${tl}`;
-}
-
-async function runSegment(label, kind, fn) {
-  const t0 = performance.now();
-  try {
-    const r = await fn();
-    const ms = +(performance.now() - t0).toFixed(1);
-    lastSegmentTimings.push({ label, kind, ms, ok: true, count: Array.isArray(r) ? r.length : null });
-    return r;
-  } catch (e) {
-    const ms = +(performance.now() - t0).toFixed(1);
-    lastSegmentTimings.push({ label, kind, ms, ok: false, error: e.message });
-    const wrapped = new Error(`[${kind} ${label}] ${e.message}`);
-    wrapped.segLabel = label;
-    wrapped.kind = kind;
-    wrapped.original = e;
-    throw wrapped;
-  }
-}
-
-async function runAllSegments(segs, kind, runner) {
-  const settled = await Promise.allSettled(
-    segs.map(seg => runSegment(segLabel(seg), kind, () => runner(seg)))
-  );
-  const oks   = settled.filter(s => s.status === "fulfilled").map(s => s.value);
-  const fails = settled.filter(s => s.status === "rejected").map(s => s.reason);
-
-  if (fails.length === segs.length) {
-    throw new Error("全セグメント失敗: " + fails.map(f => f.message).join(" / "));
-  }
-  if (fails.length > 0) {
-    console.warn(`[Jeegle] ${fails.length}/${segs.length} セグメント失敗:`, fails);
-  }
-  return oks;
-}
-
-/* ================================================================
-   公開API: タイトル検索
+   公開API: 選択した日付範囲をそのまま検索
    ================================================================ */
 async function searchTitle(q, mode, dr) {
-  const segs = splitDateRangeByDay(dr);
-  const parts = await runAllSegments(segs, "title", seg => searchTitleOneDay(q, mode, seg));
-  const map = new Map();
-  parts.flat().forEach(r => {
-    if (!map.has(r.thread_id)) {
-      map.set(r.thread_id, r);
-    } else {
-      const ex = map.get(r.thread_id);
-      if (r.updated_at && (!ex.updated_at || r.updated_at > ex.updated_at)) {
-        ex.updated_at = r.updated_at;
-      }
-    }
-  });
-  return Array.from(map.values());
+  return searchTitleInRange(q, mode, dr);
 }
 
-/* ================================================================
-   公開API: レス検索
-   ================================================================ */
 async function searchPosts(q, mode, dr, stype) {
-  const segs = splitDateRangeByDay(dr);
-  const parts = await runAllSegments(segs, "posts", seg => searchPostsOneDay(q, mode, seg, stype));
-
-  const tmap = new Map();
-  parts.flat().forEach(r => {
-    if (!tmap.has(r.thread_id)) {
-      tmap.set(r.thread_id, {
-        thread_id: r.thread_id,
-        title: r.title,
-        updated_at: r.updated_at,
-        matchedPosts: [...r.matchedPosts],
-        titleMatch: r.titleMatch
-      });
-    } else {
-      const ex = tmap.get(r.thread_id);
-      const seen = new Set(ex.matchedPosts.map(p => p.post_num));
-      r.matchedPosts.forEach(p => { if (!seen.has(p.post_num)) ex.matchedPosts.push(p); });
-      if (r.updated_at && (!ex.updated_at || r.updated_at > ex.updated_at)) {
-        ex.updated_at = r.updated_at;
-      }
-    }
-  });
-  tmap.forEach(r => r.matchedPosts.sort((a, b) => a.post_num - b.post_num));
-  return Array.from(tmap.values());
+  return searchPostsInRange(q, mode, dr, stype);
 }
 
 /* ================================================================
-   内部実装: タイトル1セグメント
+   内部実装: タイトル検索
    ================================================================ */
-async function searchTitleOneDay(q, mode, dr) {
+async function searchTitleInRange(q, mode, dr) {
   const ws = words(parseIdPrefix(q).value);
   const { needSupabase, needTurso, boundary } = classifyDateRange(dr.from, dr.to);
 
@@ -334,10 +257,10 @@ async function searchTitleOneDay(q, mode, dr) {
 }
 
 /* ================================================================
-   内部実装: レス1セグメント
+   内部実装: レス検索
    stype: "all" | "body" | "name" | "id"
    ================================================================ */
-async function searchPostsOneDay(q, mode, dr, stype) {
+async function searchPostsInRange(q, mode, dr, stype) {
   const idp = parseIdPrefix(q);
   const searchValue = idp.value;
   const cols = colsForType(stype);
