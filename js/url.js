@@ -106,6 +106,7 @@ function loadUrl() {
   const me = document.querySelector(`input[name="searchMode"][value="${modeVal}"]`);
   if (te) te.checked = true;
   if (me) me.checked = true;
+  if (typeof syncTopSearchType === "function") syncTopSearchType(typeVal);
 
   applyDateParam(dateVal);
 
@@ -131,6 +132,7 @@ function showTopPage() {
   document.getElementById("resultPage").classList.remove("active");
   document.getElementById("threadDetailPage").classList.remove("active");
   document.getElementById("topInput").value = "";
+  if (typeof renderSearchHistory === "function") renderSearchHistory();
   currentResults = [];
   currentKeyword = "";
   searchedId = null;
