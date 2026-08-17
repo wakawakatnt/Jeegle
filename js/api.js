@@ -92,7 +92,7 @@ async function flushAresBatch() {
 
 function updateAresDisplay(postEl, count) {
   if (count <= 0) return;
-  const footer = postEl.querySelector(".post-footer-ares");
+  const footer = postEl.querySelector(".post-footer");
   if (!footer) return;
   const span = footer.querySelector(".ares-count");
   if (span) setText(span, String(count));
@@ -237,7 +237,11 @@ async function tursoSearchPostsExact(col, word, fromISO, toISO, limit) {
   return tursoQuery(sql, [word, fromISO, toISO, limit || 300]);
 }
 
+/* 前方一致（末尾ワイルドカード）でレス検索。
+   '77' → user_id LIKE '77%'。インデックスが効くのでタイムアウトしない。
+   ID検索の上限はデフォルトで大きめ(5000)に取る。 */
 async function tursoSearchPostsPrefix(col, prefix, fromISO, toISO, limit) {
+  // LIKE のメタ文字 % _ \ をエスケープ（'.' はメタ文字ではないのでそのまま）
   const safe = String(prefix).replace(/[%_\\]/g, m => "\\" + m);
   const sql = `SELECT ${TURSO_POSTS_COLS} FROM posts`
     + ` WHERE ${col} LIKE ? ESCAPE '\\' AND posted_at >= ? AND posted_at < ?`
@@ -252,6 +256,7 @@ async function tursoFetchThreadsByIds(ids) {
     `SELECT thread_id, title FROM threads WHERE thread_id IN (${ph})`, ids
   );
 }
+
 
 /* ================================================================
    安価カウント（キャッシュからのみ取得。ネットワークは aresObserver が担当）
