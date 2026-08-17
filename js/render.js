@@ -47,23 +47,16 @@ function renderAll(q, elapsed) {
   const pane = document.getElementById("detailPane");
   if (pane) pane.innerHTML = "";
 
-  /* === 同一人物かもブロック（分析バナーより「上」に表示） ===
-     候補(altIds)に加えて、追加表示中(activeIdSet)のIDも
-     「選択済み」として渡し、再タップで解除できるようにする。 */
+  /* === 同一人物かもブロック（分析バナーより「上」に表示） === */
   if (isIdSearch) {
     const searchedKey = normId(searchedId);
 
-    /* 候補(altIds)と選択済み(activeIdSet)を「同じ並び」で1列にまとめる。
-       並び順は altIds の固定順序に従い、その中で active フラグだけ切り替える。
-       こうすると選択しても項目が上下に飛ばず、順序が変わらない。 */
     const entryMap = new Map();
 
-    // まず候補（未選択）を固定順で登録
     altIds.forEach(a => {
       entryMap.set(a.key, { key: a.key, id: a.id, count: a.count, active: false, order: altOrderMap.get(a.key) ?? entryMap.size });
     });
 
-    // 選択済みを active=true にする。候補に出ていないキーも件数を数えて追加
     activeIdSet.forEach(key => {
       if (key === searchedKey) return;
       let count = 0;
@@ -89,7 +82,7 @@ function renderAll(q, elapsed) {
   }
 
 
-  /* ID分析バナー: 検索ID + 追加表示中の各ID をそれぞれ並べる */
+  /* ID分析バナー */
   if (sorted.length > 0 && isIdSearch) {
     res.appendChild(mkIdAnalysisBanner(searchedId));
     const searchedKey = normId(searchedId);
@@ -141,20 +134,15 @@ function sortRes(rs, order) {
   return rs;
 }
 
-/* ===== ID検索結果を「本体(表示中ID群)」と「同一人物候補ID」に分割 =====
-   - searchedIdRaw : 検索した元ID（生の値）
-   - activeSet     : 追加表示中IDの正規化キー集合
-   比較は normId（ドット除去）で行う。
-   候補は「searchedIdが4文字なら非4文字」「searchedIdが非4文字なら4文字」のIDのみ。 */
+/* ===== ID検索結果を「本体(表示中ID群)」と「同一人物候補ID」に分割 ===== */
 function splitIdResults(results, searchedIdRaw, activeSet) {
   const searchedKey = normId(searchedIdRaw);
   const searchedIs4 = (searchedKey.length === 4);
 
-  // 本体に表示する正規化キー集合（検索ID + 追加選択ID）
   const showKeys = new Set([searchedKey, ...activeSet]);
 
   const mainMap = new Map();
-  const altMap = new Map();   // 正規化キー → {displayId, count}
+  const altMap = new Map();
 
   results.forEach(r => {
     const matched = r.matchedPosts.filter(p => showKeys.has(normId(p.user_id)));
@@ -165,11 +153,10 @@ function splitIdResults(results, searchedIdRaw, activeSet) {
     r.matchedPosts.forEach(p => {
       const key = normId(p.user_id);
       if (!key) return;
-      // 元表記を覚えておく（バナー・ボタン用）
       if (p.user_id && !idDisplayMap.has(key)) idDisplayMap.set(key, p.user_id);
-      if (showKeys.has(key)) return;                  // 既に表示中は候補に出さない
+      if (showKeys.has(key)) return;
       const is4 = (key.length === 4);
-      if (searchedIs4 ? !is4 : is4) {                 // 4文字検索→非4文字 / 非4文字検索→4文字
+      if (searchedIs4 ? !is4 : is4) {
         if (!altMap.has(key)) {
           altMap.set(key, { displayId: p.user_id || key, count: 0 });
         }
@@ -181,17 +168,12 @@ function splitIdResults(results, searchedIdRaw, activeSet) {
   let altIds = Array.from(altMap.entries())
     .map(([key, v]) => ({ key, id: v.displayId, count: v.count }));
 
-  /* 並び順を固定する。
-     - 検索キーワードが変わったら順序記憶をリセットし、件数降順で初期順を確定
-     - 同じ検索中は、最初に確定した順序（altOrderMap）を維持する
-       → タップで件数が変わっても並びが動かない */
   if (altOrderKeyword !== currentKeyword) {
     altOrderKeyword = currentKeyword;
     altOrderMap = new Map();
     altIds.sort((a, b) => b.count - a.count || (a.key < b.key ? -1 : 1));
     altIds.forEach((e, i) => altOrderMap.set(e.key, i));
   } else {
-    // 既知のキーは記憶順、新規キーは末尾に追加して順序を確定
     altIds.forEach(e => {
       if (!altOrderMap.has(e.key)) altOrderMap.set(e.key, altOrderMap.size);
     });
@@ -260,7 +242,6 @@ function mkSameUserBlock(entries) {
     btn.type = "button";
     btn.setAttribute("aria-pressed", active ? "true" : "false");
 
-    // 選択中はチェック、未選択はプラスのアイコンで見た目を明確に区別
     const mark = document.createElement("span");
     mark.className = "same-user-mark";
     mark.textContent = active ? "✓" : "＋";
@@ -279,13 +260,12 @@ function mkSameUserBlock(entries) {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       if (activeIdSet.has(key)) {
-        activeIdSet.delete(key);   // 解除
+        activeIdSet.delete(key);
       } else {
-        activeIdSet.add(key);      // 追加表示
+        activeIdSet.add(key);
       }
       pushUrl(currentKeyword, Array.from(activeIdSet));
       renderAll(currentKeyword);
-      // スクロール位置は動かさない（タップした場所から飛ばないように）
     });
 
     list.appendChild(btn);
@@ -297,7 +277,7 @@ function mkSameUserBlock(entries) {
 
 
 
-/* ===== スレッドカード（PC=右ペイン展開 / モバイル=カード内展開） ===== */
+/* ===== スレッドカード ===== */
 function mkCard(thread, q, opts) {
   opts = opts || {};
   const card = document.createElement("div");
@@ -310,7 +290,6 @@ function mkCard(thread, q, opts) {
   const ta = document.createElement("div"); ta.className = "thread-title-area";
   const ts = document.createElement("span"); ts.className = "thread-title";
   hlSet(ts, thread.title || "スレッド " + thread.thread_id, q); ta.appendChild(ts);
-  /* thread-url の行は削除（hayabusa.open2ch.net › ... を非表示） */
   const ml = document.createElement("div"); ml.className = "thread-meta-line";
   setText(ml, "更新: " + (thread.updated_at ? new Date(thread.updated_at).toLocaleDateString("ja-JP") : "")); ta.appendChild(ml);
 
@@ -324,10 +303,9 @@ function mkCard(thread, q, opts) {
   inlineDet.className = "thread-details-inline";
   inlineDet.style.display = "none";
 
-  // モバイルで開いた展開を閉じる共通処理
   const closeInline = () => {
     inlineDet.style.display = "none";
-    inlineDet.classList.remove("open");   // ★ 外す
+    inlineDet.classList.remove("open");
     inlineDet.innerHTML = "";
     card.classList.remove("selected");
   };
@@ -356,7 +334,7 @@ function mkCard(thread, q, opts) {
         inlineDet.appendChild(body);
 
         inlineDet.style.display = "block";
-        inlineDet.classList.add("open");   // ★ 開いたフラグ
+        inlineDet.classList.add("open");
         card.classList.add("selected");
       }
       return;
@@ -480,8 +458,9 @@ async function showDetail(tid, q) {
    ================================================================ */
 function mkPost(post, tid, q, showRange, highlightKeys) {
   const div = document.createElement("div"); div.className = "post"; div.dataset.postNum = post.post_num;
+  div.dataset.threadId = tid;  // ★ aresObserver が thread_id を読むために必要
 
-  /* ID検索で本人ID・追加IDに該当するレスをハイライト（ドット表記ゆれも吸収）*/
+  /* ID検索で本人ID・追加IDに該当するレスをハイライト */
   if (highlightKeys && highlightKeys.has(normId(post.user_id))) {
     div.classList.add("highlight-id");
   }
@@ -506,7 +485,6 @@ function mkPost(post, tid, q, showRange, highlightKeys) {
   const uid = document.createElement("span");
   const uidKey = normId(post.user_id);
   if (highlightIdKeys && highlightIdKeys.has(uidKey)) {
-    // 本人ID・同一人物かもで追加したIDは、通常の検索ヒットと同じ mark.hl で強調
     const mk = document.createElement("mark");
     mk.className = "hl";
     setText(mk, post.user_id || "?");
@@ -555,29 +533,36 @@ function mkPost(post, tid, q, showRange, highlightKeys) {
   renderBody(body, post.body || "", tid, q);
   div.appendChild(body);
 
-  /* ===== 安価数フッター ===== */
+  /* ===== 安価数フッター（Observer方式） ===== */
   {
-    const footer2  = document.createElement("div"); footer2.className = "post-footer";
+    const footer2  = document.createElement("div");
+    footer2.className = "post-footer-ares";  // ★ クラス名を変更（updateAresDisplay と対応）
+    footer2.style.display = "none";
+
     const aresBtn2 = document.createElement("button"); aresBtn2.className = "ares-btn";
     aresBtn2.title = "このレスへの安価一覧";
     aresBtn2.appendChild(document.createTextNode("💬 "));
     const countSpan2 = document.createElement("span"); countSpan2.className = "ares-count";
     setText(countSpan2, "…");
     aresBtn2.appendChild(countSpan2);
-    footer2.style.display = "none";
     footer2.appendChild(aresBtn2);
     div.appendChild(footer2);
+
     const aresList2 = document.createElement("div"); aresList2.className = "ares-list";
     div.appendChild(aresList2);
 
-    (async () => {
-      try {
-        const cnt = await countAres(tid, post.post_num);
-        if (cnt <= 0) return;
-        setText(countSpan2, String(cnt));
+    // キャッシュにあれば即表示、なければ Observer に任せる
+    const cachedCount = countAresFromCache(tid, post.post_num);
+    if (cachedCount >= 0) {
+      // キャッシュヒット → ネットワーク不要
+      if (cachedCount > 0) {
+        setText(countSpan2, String(cachedCount));
         footer2.style.display = "";
-      } catch (e) {}
-    })();
+      }
+    } else {
+      // キャッシュに無い → 画面に入ったらバッチ取得
+      aresObserver.observe(div);
+    }
 
     aresBtn2.addEventListener("click", async e => {
       e.stopPropagation();
