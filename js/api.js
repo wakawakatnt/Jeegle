@@ -5,6 +5,101 @@ const postsCache  = new Map();
 const threadCache = new Map();
 
 /* ================================================================
+   ares_count 一括取得（IntersectionObserver + バッチ化）
+   ================================================================ */
+const aresPending = new Map();   // key: "tid:pnum" → { el, tid, pnum }
+let aresTimer = null;
+const ARES_BATCH_DELAY = 300;    // 300ms分をまとめて1リクエストにする
+
+const aresObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target;
+    const pnum = parseInt(el.dataset.postNum, 10);
+    const tid  = parseInt(el.dataset.threadId, 10);
+
+    // キャッシュに既にあればネットワーク不要
+    if (postsCache.has(tid)) {
+      const p = postsCache.get(tid).find(x => x.post_num === pnum);
+      if (p && p.ares_count !== undefined) {
+        updateAresDisplay(el, Number(p.ares_count) || 0);
+        aresObserver.unobserve(el);
+        return;
+      }
+    }
+
+    const key = tid + ":" + pnum;
+    if (!aresPending.has(key)) {
+      aresPending.set(key, { el, tid, pnum });
+    }
+    aresObserver.unobserve(el);
+
+    // タイマーリセット → まとめて取得
+    if (aresTimer) clearTimeout(aresTimer);
+    aresTimer = setTimeout(flushAresBatch, ARES_BATCH_DELAY);
+  });
+});
+
+async function flushAresBatch() {
+  if (aresPending.size === 0) return;
+
+  // スレッドIDごとにグループ化
+  const groups = new Map();
+  aresPending.forEach(({ el, tid, pnum }) => {
+    if (!groups.has(tid)) groups.set(tid, []);
+    groups.get(tid).push({ el, pnum });
+  });
+  aresPending.clear();
+
+  for (const [tid, items] of groups) {
+    const pnums = items.map(i => i.pnum).sort((a, b) => a - b);
+    const min = pnums[0];
+    const max = pnums[pnums.length - 1];
+
+    // 連続性を判定：範囲の幅と実際の要素数が近ければ範囲指定
+    const rangeSize = max - min + 1;
+    const useRange = rangeSize <= pnums.length * 2;
+
+    try {
+      let rows;
+      if (useRange) {
+        // 範囲指定（URLも短く、インデックスも効く）
+        rows = await sbFetch(
+          `posts?select=post_num,ares_count`
+          + `&thread_id=eq.${tid}`
+          + `&post_num=gte.${min}&post_num=lte.${max}`
+        );
+      } else {
+        // 歯抜けが多い場合は in で列挙
+        rows = await sbFetch(
+          `posts?select=post_num,ares_count`
+          + `&thread_id=eq.${tid}`
+          + `&post_num=in.(${pnums.join(",")})`
+        );
+      }
+
+      const map = new Map();
+      rows.forEach(r => map.set(Number(r.post_num), Number(r.ares_count) || 0));
+
+      items.forEach(({ el, pnum }) => {
+        updateAresDisplay(el, map.get(pnum) || 0);
+      });
+    } catch (e) {
+      // 失敗しても何もしない（表示されないだけ）
+    }
+  }
+}
+
+function updateAresDisplay(postEl, count) {
+  if (count <= 0) return;
+  const footer = postEl.querySelector(".post-footer-ares");
+  if (!footer) return;
+  const span = footer.querySelector(".ares-count");
+  if (span) setText(span, String(count));
+  footer.style.display = "";
+}
+
+/* ================================================================
    境界日時
    ================================================================ */
 function getBoundaryISO() {
@@ -142,11 +237,7 @@ async function tursoSearchPostsExact(col, word, fromISO, toISO, limit) {
   return tursoQuery(sql, [word, fromISO, toISO, limit || 300]);
 }
 
-/* 前方一致（末尾ワイルドカード）でレス検索。
-   '77' → user_id LIKE '77%'。インデックスが効くのでタイムアウトしない。
-   ID検索の上限はデフォルトで大きめ(5000)に取る。 */
 async function tursoSearchPostsPrefix(col, prefix, fromISO, toISO, limit) {
-  // LIKE のメタ文字 % _ \ をエスケープ（'.' はメタ文字ではないのでそのまま）
   const safe = String(prefix).replace(/[%_\\]/g, m => "\\" + m);
   const sql = `SELECT ${TURSO_POSTS_COLS} FROM posts`
     + ` WHERE ${col} LIKE ? ESCAPE '\\' AND posted_at >= ? AND posted_at < ?`
@@ -162,36 +253,16 @@ async function tursoFetchThreadsByIds(ids) {
   );
 }
 
-
 /* ================================================================
-   安価カウント（ares_countカラムを読む。RPCは使わない）
+   安価カウント（キャッシュからのみ取得。ネットワークは aresObserver が担当）
    ================================================================ */
-async function countAres(tid, pnum) {
+function countAresFromCache(tid, pnum) {
   const id = Number(tid);
-
   if (postsCache.has(id)) {
     const p = postsCache.get(id).find(x => x.post_num === pnum);
     if (p) return Number(p.ares_count) || 0;
   }
-
-  const promises = [
-    sbFetch(`posts?select=ares_count&thread_id=eq.${id}&post_num=eq.${pnum}&limit=1`)
-      .then(rows => (rows[0] && Number(rows[0].ares_count)) || 0)
-      .catch(() => 0)
-  ];
-
-  if (threadNeedsTurso(id)) {
-    promises.push(
-      tursoQuery(
-        `SELECT ares_count FROM posts WHERE thread_id = ? AND post_num = ? LIMIT 1`,
-        [id, pnum]
-      ).then(rows => (rows[0] && Number(rows[0].ares_count)) || 0)
-       .catch(() => 0)
-    );
-  }
-
-  const counts = await Promise.all(promises);
-  return Math.max(...counts);
+  return -1; // キャッシュに無い
 }
 
 /* ================================================================
