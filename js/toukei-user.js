@@ -89,7 +89,104 @@
   }
 
   var st = { gran: 'lv', view: 'raw', scale: 'linear' };
-  var chart = null, rendered = false;   /* ★ active を削除 */
+  var chart = null, rendered = false;
+
+  /* ==========================================================
+     ▼▼▼ ここから追加：スマホ用 横スクロール ▼▼▼
+     ========================================================== */
+  var MOBILE_MAX = 768;   /* この幅以下をスマホ扱い */
+  var SLOT_PX    = 46;    /* 1カテゴリ（棒1本）あたりの確保幅 */
+  var SC_KEY     = 'tk-uchart-scroll';
+
+  var scMode = 'scroll';  /* 'scroll' | 'all' */
+  try { scMode = localStorage.getItem(SC_KEY) || 'scroll'; } catch (_) {}
+
+  var sc = { host: null, inner: null, tog: null, hint: null };
+
+  function isMobile() {
+    return window.matchMedia('(max-width:' + MOBILE_MAX + 'px)').matches;
+  }
+
+  /* canvas を <div>（inner）で包み、その親（host）をスクロール領域にする */
+  function ensureScrollDOM() {
+    if (sc.inner) return;
+    var cv = document.getElementById('uChart');
+    if (!cv || !cv.parentNode) return;
+
+    var host = cv.parentNode;               /* .tk-chart-wrap.tall */
+    var inner = document.createElement('div');
+    inner.style.position = 'relative';
+    inner.style.height   = '100%';
+    host.insertBefore(inner, cv);
+    inner.appendChild(cv);
+
+    host.style.overflowY = 'hidden';
+    host.style.overscrollBehaviorX = 'contain';
+    host.style.WebkitOverflowScrolling = 'touch';
+
+    var hint = document.createElement('div');
+    hint.textContent = '← 横にスクロールできます';
+    hint.style.cssText = 'display:none;font-size:11px;color:#5f6368;margin-top:4px;';
+    host.parentNode.insertBefore(hint, host.nextSibling);
+
+    sc.host = host; sc.inner = inner; sc.hint = hint;
+    buildScrollToggle(host);
+  }
+
+  /* 「全部表示 / スクロール」ボタンをカード内ツールバーへ追加 */
+  function buildScrollToggle(host) {
+    var card  = host.closest('.tk-card');
+    var tools = card && card.querySelector('.tk-card-tools');
+    if (!tools) return;
+
+    var box = document.createElement('div');
+    box.className = 'tk-tog';
+    box.innerHTML =
+      '<button type="button" data-sc="all">全部表示</button>' +
+      '<button type="button" data-sc="scroll">スクロール</button>';
+    tools.appendChild(box);
+
+    box.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button');
+      if (!b) return;
+      if (b.dataset.sc === scMode) return;      /* 同じボタンの連打は無視 */
+      scMode = b.dataset.sc;
+      try { localStorage.setItem(SC_KEY, scMode); } catch (_) {}
+      renderChart();                            /* 幅ごと作り直す */
+    });
+
+    sc.tog = box;
+  }
+
+  /* チャート生成の「前」に呼ぶ。戻り値 true = スクロール状態 */
+  function applyScrollLayout(n) {
+    ensureScrollDOM();
+    if (!sc.inner) return false;
+
+    var mob = isMobile();
+    if (sc.tog) {
+      sc.tog.style.display = mob ? '' : 'none';
+      Array.prototype.forEach.call(sc.tog.children, function (b) {
+        b.classList.toggle('active', b.dataset.sc === scMode);
+      });
+    }
+
+    sc.host.scrollLeft = 0;
+
+    /* 非表示中は clientWidth が 0 になるのでフォールバック */
+    var base = sc.host.clientWidth
+            || (sc.host.parentNode && sc.host.parentNode.clientWidth)
+            || window.innerWidth;
+
+    var on = mob && scMode === 'scroll' && n > 0 && n * SLOT_PX > base;
+
+    sc.host.style.overflowX = on ? 'auto' : 'hidden';
+    sc.inner.style.width    = on ? (n * SLOT_PX) + 'px' : '100%';
+    sc.hint.style.display   = on ? 'block' : 'none';
+
+    return on;
+  }
+  /* ▲▲▲ 追加ここまで ▲▲▲ */
 
   /* ===== 指標カード ===== */
   function renderMetrics() {
@@ -130,6 +227,10 @@
 
     var type = (isLv && isCum) ? 'line' : 'bar';
 
+    /* ★ 旧チャートを先に破棄 → 幅を確定 → そのあと生成 */
+    if (chart) { chart.destroy(); chart = null; }
+    var scrolling = applyScrollLayout(labels.length);
+
     var se = document.getElementById('uChartSub');
     if (se) se.textContent = (isLv ? 'レベル別' : '帯域別') + ' / '
       + (isCum ? '累積（そのレベル以上）' : '実数') + ' / ' + (isLog ? '対数軸' : '通常軸')
@@ -149,7 +250,6 @@
       maxBarThickness: 46
     };
 
-    if (chart) { chart.destroy(); chart = null; }
     chart = new Chart(document.getElementById('uChart'), {
       type: type,
       data: { labels: labels, datasets: [ds] },
@@ -207,7 +307,12 @@
         scales: {
           x: {
             grid: { display: false },
-            ticks: { autoSkip: true, maxTicksLimit: isLv ? 26 : 13, maxRotation: 0 }
+            /* ★ スクロール時はラベルを間引かない */
+            ticks: {
+              autoSkip: !scrolling,
+              maxTicksLimit: scrolling ? labels.length : (isLv ? 26 : 13),
+              maxRotation: 0
+            }
           },
           y: {
             type: isLog ? 'logarithmic' : 'linear',
@@ -241,12 +346,22 @@
     if (ft) ft.textContent = f(TOTAL, 1);
   }
 
-  /* ===== ★ 外部（toukei-main.js）から呼ばれる描画エントリ ===== */
+  /* ===== 外部（toukei-main.js）から呼ばれる描画エントリ ===== */
   TK.renderUserMode = function () {
     if (!rendered) { renderMetrics(); renderTable(); rendered = true; }
     renderChart();
   };
-  TK.resizeUserChart = function () { if (chart) chart.resize(); };
+  /* ★ resize ではなく作り直す（寸法の残留を防ぐ） */
+  TK.resizeUserChart = function () { if (rendered) renderChart(); };
+
+  /* ===== 画面幅変化 ===== */
+  var rzTimer = null;
+  function onResize() {
+    clearTimeout(rzTimer);
+    rzTimer = setTimeout(function () { if (rendered) renderChart(); }, 200);
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
 
   /* ===== 表示切替トグル（このセクション内で完結） ===== */
   function bindTog(id, key, attr) {
