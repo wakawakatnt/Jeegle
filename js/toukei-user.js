@@ -1,9 +1,10 @@
 /* ==========================================================
    ユーザー（忍法帖レベル） — 1日あたり平均ユーザー数 + 偏差値
-   既存モジュール（toukei-main.js 等）には非干渉
+   モード制御は toukei-main.js 側。ここは描画のみ担当。
    ========================================================== */
 (function () {
   'use strict';
+  window.TK = window.TK || {};
 
   /* ===== [レベル, 1日あたり平均ユーザー数] ===== */
   var RAW = [
@@ -40,8 +41,7 @@
   var levels = [], counts = [];
   for (var lv = 1; lv <= MAX_LV; lv++) { levels.push(lv); counts.push(cnt[lv]); }
 
-  var TOTAL     = counts.reduce(function (a, b) { return a + b; }, 0); /* 人/日 の総和 */
-  var TOTAL_ALL = TOTAL * PERIOD_DAYS;                                  /* 期間合計の推定 */
+  var TOTAL = counts.reduce(function (a, b) { return a + b; }, 0); /* 人/日 の総和 */
 
   /* ===== 偏差値の基礎統計（ユーザー数で重み付け） ===== */
   var MEAN = 0, E2 = 0;
@@ -65,9 +65,6 @@
   }
   var MEDIAN = quantile(0.5), P90 = quantile(0.9), P99 = quantile(0.99);
 
-  var MODE_LV = 1, MODE_C = -1;
-  counts.forEach(function (c, i) { if (c > MODE_C) { MODE_C = c; MODE_LV = i + 1; } });
-
   var BANDS = [
     ['LV1',1,1],['2-4',2,4],['5-9',5,9],['10-19',10,19],['20-29',20,29],['30-39',30,39],
     ['40-49',40,49],['50-59',50,59],['60-69',60,69],['70-79',70,79],['80-89',80,89],
@@ -90,10 +87,9 @@
     var t = Math.min(1, (lv - 1) / (MAX_LV - 1));
     return 'hsl(' + Math.round(210 - 210 * Math.pow(t, 0.7)) + ',72%,52%)';
   }
-  function shortDate(d) { var p = d.split('-'); return (+p[1]) + '/' + (+p[2]); }
 
   var st = { gran: 'lv', view: 'raw', scale: 'linear' };
-  var chart = null, active = false, rendered = false;
+  var chart = null, rendered = false;   /* ★ active を削除 */
 
   /* ===== 指標カード ===== */
   function renderMetrics() {
@@ -191,12 +187,12 @@
                   var lv = c.dataIndex + 1;
                   out.push('LV' + lv + '以上: ' + av(cumAtLeast[lv]) + ' 人/日（上位 '
                            + pctNum(cumAtLeast[lv]) + '%）');
-                  out.push('期間合計換算: 約' + nf(cnt[lv] * PERIOD_DAYS) + ' 件');
+                  out.push('97日間の延べ: 約' + nf(cnt[lv] * PERIOD_DAYS) + ' 件');
                 } else {
                   var b = BANDS[c.dataIndex];
                   out.push('LV' + b.from + '以上: ' + av(cumAtLeast[b.from]) + ' 人/日（上位 '
                            + pctNum(cumAtLeast[b.from]) + '%）');
-                  out.push('期間合計換算: 約' + nf(b.sum * PERIOD_DAYS) + ' 件');
+                  out.push('97日間の延べ: 約' + nf(b.sum * PERIOD_DAYS) + ' 件');
                 }
                 return out;
               },
@@ -245,78 +241,14 @@
     if (ft) ft.textContent = f(TOTAL, 1);
   }
 
-  /* ===== モード切替（既存UIを隠して差し替えるだけ） ===== */
-  var HIDE_IDS = ['ctrlBar', 'statusBar', 'metrics', 'mainCard', 'tableSection', 'advancedSection'];
-
-  function enter() {
-    if (active) return;
-    active = true;
-    HIDE_IDS.forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) { el.dataset.tkPrev = el.style.display; el.style.display = 'none'; }
-    });
-    document.getElementById('userSection').style.display = '';
-    document.querySelectorAll('#modeSel .tk-modebtn').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.mode === 'user');
-    });
-    var t = document.querySelector('.tk-header-title');
-    if (t) t.textContent = '🥷 ユーザー（忍法帖レベル）';
+  /* ===== ★ 外部（toukei-main.js）から呼ばれる描画エントリ ===== */
+  TK.renderUserMode = function () {
     if (!rendered) { renderMetrics(); renderTable(); rendered = true; }
     renderChart();
-    history.replaceState(null, '', location.pathname + '?m=u');
-  }
-
-  function leave() {
-    if (!active) return;
-    active = false;
-    HIDE_IDS.forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) { el.style.display = el.dataset.tkPrev || ''; delete el.dataset.tkPrev; }
-    });
-    document.getElementById('userSection').style.display = 'none';
-    var t = document.querySelector('.tk-header-title');
-    if (t) t.textContent = '📊 統計';
-  }
-
-  /* 既存ハンドラより先に捕まえる（キャプチャ段階） */
-  document.getElementById('modeSel').addEventListener('click', function (e) {
-    var btn = e.target.closest ? e.target.closest('.tk-modebtn') : null;
-    if (!btn) return;
-    if (btn.dataset.mode === 'user') {
-      e.stopPropagation(); e.preventDefault();
-      enter();
-    } else {
-      leave();   /* 以降は既存ハンドラがそのまま動く */
-    }
-  }, true);
-
-  /* ユーザーモード中は既存コードのURL書き換えを ?m=u に固定 */
-  var origReplace = history.replaceState.bind(history);
-  history.replaceState = function (s, t, url) {
-    if (active) url = location.pathname + '?m=u';
-    return origReplace(s, t, url);
   };
+  TK.resizeUserChart = function () { if (chart) chart.resize(); };
 
-  /* 共有ボタン */
-  var shareBtn = document.getElementById('shareBtn');
-  if (shareBtn) {
-    shareBtn.addEventListener('click', function (e) {
-      if (!active) return;
-      e.stopPropagation(); e.preventDefault();
-      var url = location.origin + location.pathname + '?m=u';
-      var orig = shareBtn.textContent;
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(url).then(function () {
-          shareBtn.textContent = '✅ コピー完了';
-          setTimeout(function () { shareBtn.textContent = orig; }, 2000);
-        }).catch(function () { prompt('URLをコピーしてください:', url); });
-      } else {
-        prompt('URLをコピーしてください:', url);
-      }
-    }, true);
-  }
-
-  /* トグル群 */
+  /* ===== 表示切替トグル（このセクション内で完結） ===== */
   function bindTog(id, key, attr) {
     var box = document.getElementById(id);
     if (!box) return;
@@ -333,22 +265,10 @@
   bindTog('uViewTog', 'view',  'view');
   bindTog('uScaleTog', 'scale', 'scale');
 
-  /* リサイズ追従 */
-  var rzTimer;
-  window.addEventListener('resize', function () {
-    clearTimeout(rzTimer);
-    rzTimer = setTimeout(function () { if (active && chart) chart.resize(); }, 150);
-  });
-
-  /* ?m=u で直接開いた場合 */
-  if (new URLSearchParams(location.search).get('m') === 'u') enter();
-
-  /* 外部から参照できるように公開 */
-  window.TK = window.TK || {};
+  /* ===== 外部から参照できるように公開 ===== */
   TK.userStats = {
     data: RAW, periodDays: PERIOD_DAYS,
     total: TOTAL, mean: MEAN, sd: SD, median: MEDIAN, maxLv: MAX_LV,
-    hensachi: hensachi, lvOfHensachi: lvOfH,
-    enter: enter, leave: leave
+    hensachi: hensachi, lvOfHensachi: lvOfH
   };
 })();
