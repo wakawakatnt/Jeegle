@@ -99,25 +99,21 @@
   function renderMetrics() {
     var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
     set('uPeriodTxt', PERIOD_FROM + ' 〜 ' + PERIOD_TO + '／' + PERIOD_DAYS + '日間');
+
     set('uTotal', f(TOTAL, 1));
-    set('uTotalSub', '全レベル合計 ／ 97日間の延べ ' + nf(TOTAL_ALL) + ' 件を平均した値');
-    set('uMean', f(MEAN, 2));
-    set('uMeanSub', '偏差値50 = LV' + f(MEAN, 1) + '相当');
-    set('uSd', f(SD, 2));
-    set('uSdSub', '偏差値60=LV' + Math.round(lvOfH(60)) + ' / 70=LV' + Math.round(lvOfH(70))
-                + ' / 80=LV' + Math.round(lvOfH(80)));
+    set('uTotalSub', '忍法帖レベルを取得できた投稿者のみ（板全体の人数ではありません）');
+
+    set('uMean', 'LV' + f(MEAN, 1));
+    set('uMeanSub', '偏差値50の位置 ／ 標準偏差 ' + f(SD, 1));
+
     set('uMedian', 'LV' + MEDIAN);
-    set('uMedianSub', '偏差値' + hstr(MEDIAN) + ' ／ 上位10%=LV' + P90 + '・1%=LV' + P99);
-    set('uMode', 'LV' + MODE_LV);
-    set('uModeSub', av(MODE_C) + '人/日 (' + pct(MODE_C) + ') 偏差値' + hstr(MODE_LV));
-    set('uLv1', pct(cnt[1]));
-    set('uLv1Sub', av(cnt[1]) + '人/日 ・ 偏差値' + hstr(1));
-    set('uGte50', av(cumAtLeast[50]));
-    set('uGte50Sub', '全体の' + pct(cumAtLeast[50]) + ' ・ 偏差値' + hstr(50) + '以上');
-    set('uGte100', av(cumAtLeast[100]));
-    set('uGte100Sub', '全体の' + pct(cumAtLeast[100]) + ' ・ 偏差値' + hstr(100) + '以上');
+    set('uMedianSub', '半数がLV' + MEDIAN + '以下');
+
+    set('uTop10', 'LV' + P90);
+    set('uTop10Sub', '上位1%は LV' + P99 + '以上');
+
     set('uMax', 'LV' + MAX_LV);
-    set('uMaxSub', '偏差値' + hstr(MAX_LV) + '（' + av(cnt[MAX_LV]) + '人/日）');
+    set('uMaxSub', av(cnt[MAX_LV]) + '人/日（偏差値' + hstr(MAX_LV) + '）');
   }
 
   /* ===== グラフ（ツールチップに偏差値） ===== */
