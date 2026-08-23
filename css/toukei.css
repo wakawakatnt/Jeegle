@@ -419,25 +419,23 @@
   .tk-user-method h4 { font-size:12px; }
 }
 /* ===== スマホ向け 横スクロールチャート ===== */
-.tk-scroll-host   { position: relative; }
-.tk-scroll-inner  { position: relative; height: 100%; }
-
-.tk-scroll-host.is-scroll {
+.tk-scroll-host {
+  position: relative;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
 }
-.tk-scroll-host.is-scroll::-webkit-scrollbar        { height: 6px; }
-.tk-scroll-host.is-scroll::-webkit-scrollbar-thumb  { background: #c6c9cd; border-radius: 3px; }
-.tk-scroll-host.is-scroll::-webkit-scrollbar-track  { background: #f1f3f4; }
+.tk-scroll-inner { position: relative; height: 100%; width: 100%; }
 
-/* 切替ボタンはスマホだけ出す */
-.tk-scroll-tog { display: none; }
+.tk-scroll-host::-webkit-scrollbar       { height: 6px; }
+.tk-scroll-host::-webkit-scrollbar-thumb { background: #c6c9cd; border-radius: 3px; }
+.tk-scroll-host::-webkit-scrollbar-track { background: transparent; }
+
+.tk-scroll-tog  { display: none; }
 .tk-scroll-hint { display: none; font-size: 11px; color: #5f6368; margin-top: 4px; }
 
 @media (max-width: 768px) {
-  .tk-scroll-tog  { display: inline-flex; }
-  .tk-scroll-host.is-scroll + .tk-scroll-hint,
+  .tk-scroll-tog     { display: inline-flex; }
   .tk-scroll-hint.on { display: block; }
 }
