@@ -100,7 +100,7 @@
     var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
     set('uPeriodTxt', PERIOD_FROM + ' 〜 ' + PERIOD_TO + '／' + PERIOD_DAYS + '日間');
     set('uTotal', f(TOTAL, 1));
-    set('uTotalSub', '期間合計 約' + nf(TOTAL_ALL) + '（日×ユーザー）');
+    set('uTotalSub', '全レベル合計 ／ 97日間の延べ ' + nf(TOTAL_ALL) + ' 件を平均した値');
     set('uMean', f(MEAN, 2));
     set('uMeanSub', '偏差値50 = LV' + f(MEAN, 1) + '相当');
     set('uSd', f(SD, 2));
