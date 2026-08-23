@@ -62,23 +62,32 @@
   function apply(e) {
     var chart = (window.Chart && Chart.getChart) ? Chart.getChart(e.canvas) : null;
     var n = (chart && chart.data && chart.data.labels) ? chart.data.labels.length : 0;
-    var on = isMobile() && mode === 'scroll' && n > 0 && n * SLOT_PX > e.host.clientWidth;
 
-    if (on) {
-      e.host.classList.add('is-scroll');
-      e.inner.style.width = (n * SLOT_PX) + 'px';
-    } else {
-      e.host.classList.remove('is-scroll');
-      e.inner.style.width = '';
-    }
+    e.host.scrollLeft = 0;                       // ① 先に必ず戻す
+
+    var base = e.host.clientWidth;               // ② 常に可視幅（inner を変えても不変）
+    if (!base) return;                           //    幅0（非表示中）なら何もしない
+    var on = isMobile() && mode === 'scroll' && n > 0 && n * SLOT_PX > base;
+    var w  = on ? n * SLOT_PX : base;
+
+    e.inner.style.width = w + 'px';              // ③ 全部表示でも px を明示
     e.hint.classList.toggle('on', on);
+    e.host.classList.toggle('is-scroll', on);    //    （旧クラス。参照が無ければ実害なし）
 
     if (e.tog) {
       Array.prototype.forEach.call(e.tog.children, function (b) {
         b.classList.toggle('active', b.dataset.sc === mode);
       });
     }
-    if (chart) chart.resize();
+
+    if (chart) {                                 // ④ canvas の実寸を強制的に作り直す
+      var h = e.host.clientHeight;
+      e.canvas.style.width  = w + 'px';
+      e.canvas.style.height = h + 'px';
+      chart.resize(w, h);
+    }
+
+    e.host.scrollLeft = 0;                       // ⑤ レイヤ確定後にもう一度（iOS対策）
   }
 
   function applyAll() { reg.forEach(apply); }
