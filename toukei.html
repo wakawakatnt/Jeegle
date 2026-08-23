@@ -47,9 +47,16 @@
           <div class="sub">複数日を1日単位で見る</div>
         </div>
       </button>
+      <button class="tk-modebtn" data-mode="user">
+        <div class="ic">🥷</div>
+        <div class="txt">
+          <div class="ttl">ユーザー</div>
+          <div class="sub">忍法帖レベル分布・偏差値</div>
+        </div>
+      </button>
     </div>
 
-    <div class="tk-controls">
+    <div class="tk-controls" id="ctrlBar">
       <div class="tk-ctrl-group" id="hourlyCtrls">
         <strong>日付</strong>
         <div class="tk-pbtns" id="hourlyPbtns">
@@ -139,7 +146,7 @@
       </div>
     </div>
 
-    <div class="tk-card">
+    <div class="tk-card" id="mainCard">
       <div class="tk-card-head">
         <div>
           <span class="tk-card-title" id="mainChartTitle">⏰ 時別推移</span>
@@ -250,6 +257,210 @@
       </div>
     </details>
 
+    <!-- ============== ユーザー（忍法帖レベル） ============== -->
+    <div id="userSection" class="tk-user" style="display:none;">
+
+      <div class="tk-user-note">
+        🥷 <strong>忍法帖レベル別・1日あたり平均ユーザー数</strong>（<span id="uPeriodTxt"></span>）
+        ― 日付ごと・ユーザーごとにレベルを確定し、レベル別のユニークユーザー数を対象日数で割った値です。
+        グラフや表にカーソルを合わせると、そのレベルの<strong>偏差値</strong>が表示されます。
+        この欄は固定集計データのため、上部の日付指定の影響を受けません。
+      </div>
+
+      <div class="tk-metrics" id="uMetrics">
+        <div class="tk-metric" data-color="blue">
+          <div class="tk-metric-icon">👥</div>
+          <div class="tk-metric-val" id="uTotal">-</div>
+          <div class="tk-metric-label">1日あたり平均ユーザー数</div>
+          <div class="tk-metric-sub" id="uTotalSub"></div>
+        </div>
+        <div class="tk-metric" data-color="purple">
+          <div class="tk-metric-icon">📈</div>
+          <div class="tk-metric-val" id="uMean">-</div>
+          <div class="tk-metric-label">平均レベル</div>
+          <div class="tk-metric-sub" id="uMeanSub"></div>
+        </div>
+        <div class="tk-metric" data-color="indigo">
+          <div class="tk-metric-icon">📐</div>
+          <div class="tk-metric-val" id="uSd">-</div>
+          <div class="tk-metric-label">標準偏差（偏差値の基準）</div>
+          <div class="tk-metric-sub" id="uSdSub"></div>
+        </div>
+        <div class="tk-metric" data-color="teal">
+          <div class="tk-metric-icon">📊</div>
+          <div class="tk-metric-val" id="uMedian">-</div>
+          <div class="tk-metric-label">中央値レベル</div>
+          <div class="tk-metric-sub" id="uMedianSub"></div>
+        </div>
+        <div class="tk-metric" data-color="yellow">
+          <div class="tk-metric-icon">🥇</div>
+          <div class="tk-metric-val" id="uMode">-</div>
+          <div class="tk-metric-label">最頻レベル</div>
+          <div class="tk-metric-sub" id="uModeSub"></div>
+        </div>
+        <div class="tk-metric" data-color="green">
+          <div class="tk-metric-icon">🌱</div>
+          <div class="tk-metric-val" id="uLv1">-</div>
+          <div class="tk-metric-label">LV1の割合</div>
+          <div class="tk-metric-sub" id="uLv1Sub"></div>
+        </div>
+        <div class="tk-metric" data-color="orange">
+          <div class="tk-metric-icon">🔥</div>
+          <div class="tk-metric-val" id="uGte50">-</div>
+          <div class="tk-metric-label">LV50以上（人/日）</div>
+          <div class="tk-metric-sub" id="uGte50Sub"></div>
+        </div>
+        <div class="tk-metric" data-color="cyan">
+          <div class="tk-metric-icon">💎</div>
+          <div class="tk-metric-val" id="uGte100">-</div>
+          <div class="tk-metric-label">LV100以上（人/日）</div>
+          <div class="tk-metric-sub" id="uGte100Sub"></div>
+        </div>
+        <div class="tk-metric" data-color="red">
+          <div class="tk-metric-icon">👑</div>
+          <div class="tk-metric-val" id="uMax">-</div>
+          <div class="tk-metric-label">最高レベル</div>
+          <div class="tk-metric-sub" id="uMaxSub"></div>
+        </div>
+      </div>
+
+      <div class="tk-card">
+        <div class="tk-card-head">
+          <div>
+            <span class="tk-card-title">🥷 忍法帖レベル分布</span>
+            <span class="tk-card-title-sub" id="uChartSub"></span>
+          </div>
+          <div class="tk-card-tools">
+            <div class="tk-tog" id="uGranTog">
+              <button class="active" data-gran="lv">レベル別</button>
+              <button data-gran="band">帯域別</button>
+            </div>
+            <div class="tk-tog" id="uViewTog">
+              <button class="active" data-view="raw">実数</button>
+              <button data-view="cum">累積（以上）</button>
+            </div>
+            <div class="tk-tog" id="uScaleTog">
+              <button class="active" data-scale="linear">通常</button>
+              <button data-scale="log">対数</button>
+            </div>
+          </div>
+        </div>
+        <div class="tk-chart-wrap tall"><canvas id="uChart"></canvas></div>
+        <div class="tk-3d-help">🖱️ バーや線にカーソルを合わせると偏差値・構成比・上位％が表示されます</div>
+      </div>
+
+      <details class="tk-card tk-collapse" id="uTableSection">
+        <summary class="tk-collapse-head">
+          <span class="tk-card-title">📋 データ一覧（レベル別・偏差値つき）</span>
+          <span class="tk-collapse-arrow">▾</span>
+        </summary>
+        <div class="tk-collapse-body">
+          <div class="tk-table-wrap">
+            <table class="tk-table" id="uTable">
+              <thead>
+                <tr>
+                  <th>レベル</th>
+                  <th>偏差値</th>
+                  <th>平均ユーザー数/日</th>
+                  <th>構成比</th>
+                  <th>累積（以上）</th>
+                  <th>累積比（以上）</th>
+                </tr>
+              </thead>
+              <tbody id="uTableBody"></tbody>
+              <tfoot>
+                <tr>
+                  <td>合計</td><td>-</td><td id="uFtTotal">-</td>
+                  <td>100.0%</td><td>-</td><td>-</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="tk-card tk-collapse" id="uMethodSection">
+        <summary class="tk-collapse-head">
+          <span class="tk-card-title">ℹ️ 集計方法と注意点</span>
+          <span class="tk-collapse-arrow">▾</span>
+        </summary>
+        <div class="tk-collapse-body tk-user-method">
+
+          <h4>対象期間</h4>
+          <p>2026年5月14日から8月18日までの<strong>97日間</strong>に投稿された全レスが対象です。</p>
+
+          <h4>レベルの取得元</h4>
+          <p>忍法帖のレベルは「ID」と「名前欄」の2か所から読み取っています。</p>
+          <p><strong>1つ目はIDからの取得です。</strong>IDには通常の4文字ID（例:
+          <code>ABCD</code>）と、レベル情報が付加された<strong>jienID</strong>（例:
+          <code>AB.XY.L100</code>）があります。jienIDは末尾の <code>L</code> 以降の数字が
+          そのままレベルを表すため、ここから抽出します。上の例なら LV100 です。
+          一方、通常の4文字IDそのものにはレベル情報が含まれていないため、IDだけからは
+          レベルを判定できません。</p>
+          <p><strong>2つ目は名前欄からの取得です。</strong>
+          <code>■忍【LV100,ヤノサトル,YN】</code> のような忍法帖表示がある場合、
+          「LV」直後からカンマまでの数字がレベルになります。通常の4文字IDのユーザーでも
+          こちらにレベルが表示されていることがあり、IDから取れないケースを補完します。</p>
+          <p><strong>両方にレベル情報がある場合は、高い方の値を採用しています。</strong>
+          表示が古いままだったり、片方が欠けていたりするケースがあるためです。</p>
+
+          <h4>同一ユーザーの判定（重複排除）</h4>
+          <p>同一ユーザーの判定には<strong>IDの先頭2文字</strong>を使用しています。
+          jienIDの <code>AB.XY.L100</code> と4文字IDの <code>ABCD</code> のように、
+          同一ユーザーでもIDの形式が異なる場合があるため、IDの文字列全体では
+          同じ人物を別人として数えてしまいます。そこで、
+          <strong>先頭2文字が一致し、かつ同じ日付の投稿は同一ユーザーとみなして
+          1回だけカウント</strong>しています。同じ人が1日に何レスしても、その日は1人です。</p>
+
+          <h4>集計手順と「1日あたり平均」の意味</h4>
+          <p>まず日付ごと・ユーザーごとにレベルを確定し、次に日付ごと・レベルごとに
+          ユニークユーザー数を集計します。この時点では、同じ人が3日間書き込んでいれば
+          3件と数えられるため、97日分を足し上げた値は「延べ件数」になります。
+          最後にこの合計を対象期間の日数（97日）で割ったものが、画面に表示している
+          <strong>1日あたり平均ユーザー数（人/日）</strong>です。</p>
+          <p>割った時点で単位から「日」が消えるため、表示値は延べ人数ではなく
+          <strong>「ある1日を切り取ったとき、そのレベルの人が平均して何人いるか」</strong>
+          を表します。たとえばLV1の 65.20 は「LV1の実在ユーザーが65人しかいない」
+          という意味ではなく、「平均的な1日にLV1の書き込み手が65人観測される」という意味です。
+          実際に期間中一度でも現れた人数は、毎日来る人と月に一度だけの人が混在するため、
+          これより多くなります。この指標は掲示板の実人口ではなく、
+          日々の<strong>活動人数</strong>を測っていると考えてください。</p>
+          <p>なお、そのレベルのユーザーが1人もいなかった日も分母の97日に含めています。
+          出現した日だけで平均すると値が過大になるためです。</p>
+
+          <h4>偏差値の定義</h4>
+          <p>レベル分布をユーザー数で重み付けした母集団とみなし、
+          <code>偏差値 = 50 + 10 × (レベル − 平均レベル) ÷ 標準偏差</code>
+          で算出しています。偏差値50がちょうど平均レベルに相当します。
+          ただしこの分布は低レベル側に大きく偏り、高レベル側へ長い裾を引く形
+          （右に歪んだ分布）であって正規分布ではありません。そのため
+          偏差値が100を超えるレベルも存在します。「上位何％か」を知りたい場合は、
+          ツールチップや表に併記している<strong>累積比（そのレベル以上の割合）</strong>
+          のほうが直感に近い指標です。</p>
+
+          <h4>注意点・既知の偏り</h4>
+          <p><strong>jienIDは野球スレの影響が大きい点に注意してください。</strong>
+          jienIDが表示される場のうち野球関連スレッドが占める比率が高く、そこには
+          長期間・高頻度で書き込んでいる常連が多く集まります。レベルは書き込みを
+          積み重ねるほど上がる仕組みであるため、結果として全体の分布が
+          <strong>実際の掲示板全体より高レベル寄りに表示される可能性</strong>があります。
+          板全体の平均像としてではなく、あくまで「レベル情報が取得できた投稿の分布」
+          として読むのが安全です。</p>
+          <p><strong>先頭2文字の偶然の一致にも注意が必要です。</strong>
+          同一ユーザー判定に使っているのはIDの先頭2文字だけなので、
+          まったくの別人同士でも偶然その2文字が完全一致することがあります。
+          その場合、本来2人と数えるべきところを1人として集計してしまうため、
+          ユーザー数はやや<strong>過少に出る方向へ誤差</strong>を持ちます。
+          さらに、一致した2人のレベルが異なるときは高い方が採用されるため、
+          わずかながら高レベル側へ寄る要因にもなります。
+          1日あたりの母数が大きいほどこの衝突は起きやすく、特にLV1のような
+          人数の多い層で影響が出やすい点に留意してください。</p>
+
+        </div>
+      </details>
+
+    </div>
+
     <div class="tk-last-updated" id="lastUpdated"></div>
   </div>
 </div>
@@ -259,5 +470,6 @@
 <script src="js/toukei-data.js"></script>
 <script src="js/toukei-render.js"></script>
 <script src="js/toukei-main.js"></script>
+<script src="js/toukei-user.js"></script>
 </body>
 </html>
