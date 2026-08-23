@@ -18,6 +18,12 @@
   /* ========== URL生成（短縮版） ========== */
   function buildShareURL() {
     var s = TK.state;
+
+    /* ★ ユーザーモードは日付非依存なので m=u のみ */
+    if (s.mode === 'user') {
+      return location.origin + location.pathname + '?m=u';
+    }
+
     var params = new URLSearchParams();
     var range = TK.resolveRange();
 
@@ -71,11 +77,18 @@
     /* --- モード --- */
     if (isLegacy) {
       var mOld = p.get('mode');
-      if (mOld === 'hourly' || mOld === 'daily') s.mode = mOld;
+      if (mOld === 'hourly' || mOld === 'daily' || mOld === 'user') s.mode = mOld;
     } else {
       var mNew = p.get('m');
       if (mNew === 'h') s.mode = 'hourly';
       else if (mNew === 'd') s.mode = 'daily';
+      else if (mNew === 'u') s.mode = 'user';   /* ★ 追加 */
+    }
+
+    /* ★ ユーザーモードは日付・系列の解釈が不要 */
+    if (s.mode === 'user') {
+      if (isLegacy) TK._needURLRewrite = true;
+      return;
     }
 
     /* --- 日付 --- */
@@ -208,6 +221,18 @@
     document.querySelectorAll('#modeSel .tk-modebtn').forEach(function(b) {
       b.classList.toggle('active', b.dataset.mode === s.mode);
     });
+
+    /* ★ ユーザーモード: 既存ブロックを隠して userSection を出す */
+    var isUser = (s.mode === 'user');
+    ['ctrlBar','statusBar','metrics','mainCard','tableSection','advancedSection'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = isUser ? 'none' : '';
+    });
+    var us = document.getElementById('userSection');
+    if (us) us.style.display = isUser ? '' : 'none';
+    var ht = document.querySelector('.tk-header-title');
+    if (ht) ht.textContent = isUser ? '🥷 ユーザー（忍法帖レベル）' : '📊 統計';
+
     document.getElementById('hourlyCtrls').style.display = (s.mode==='hourly') ? 'flex' : 'none';
     document.getElementById('dailyCtrls').style.display  = (s.mode==='daily')  ? 'flex' : 'none';
     document.querySelectorAll('#hourlyPbtns .tk-pbtn').forEach(function(b) {
@@ -256,6 +281,16 @@
   async function loadData(force) {
     if (force === undefined) force = false;
     var s = TK.state;
+
+    /* ★ ユーザーモード: 固定データなので通信しない */
+    if (s.mode === 'user') {
+      if (TK.renderUserMode) TK.renderUserMode();
+      history.replaceState(null, '', buildShareURL());
+      document.getElementById('cacheInfo').textContent = '';
+      document.getElementById('lastUpdated').textContent = '';
+      return;
+    }
+
     var range = TK.resolveRange();
     if (!range) { TK.showStatus('日付を選択してください', 'warn'); return; }
 
@@ -300,6 +335,8 @@
 
   function rerenderOnly() {
     var s = TK.state;
+    /* ★ ユーザーモードは専用チャートのみ */
+    if (s.mode === 'user') { if (TK.resizeUserChart) TK.resizeUserChart(); return; }
     if (s.lastSeries) TK.renderMainChart(s.lastSeries);
     history.replaceState(null, '', buildShareURL());
   }
@@ -431,6 +468,7 @@
     window.addEventListener('resize', function() {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function() {
+        if (s.mode === 'user') { if (TK.resizeUserChart) TK.resizeUserChart(); return; }
         if (s.advancedOpen && typeof Plotly !== 'undefined') {
           Plotly.Plots.resize(document.getElementById('scatter3d'));
         }
