@@ -656,12 +656,12 @@ function idaCalcTraits(posts, threadList, threadsMade, hourCounts, totalPosts) {
   }
 
   /* ペタッw: メディア付きレスが5個以上 かつ レスの20%以上 */
-  if (mediaPostCount >= 5 && (mediaPostCount / totalPosts) >= 0.20) {
+  if (mediaPostCount >= 10 && (mediaPostCount / totalPosts) >= 0.20) {
     scores.peta = mediaPostCount;
   }
 
   /* スレ立て魔: スレ立て10件以上 */
-  if (threadsMade.length >= 10) {
+  if (threadsMade.length >= 15) {
     scores.threadking = threadsMade.length * 10;
   }
 
@@ -676,7 +676,7 @@ function idaCalcTraits(posts, threadList, threadsMade, hourCounts, totalPosts) {
   }
 
   /* 連投マン: 20レス以上、平均投稿間隔が2分以内 */
-  if (sortedPosts.length >= 20) {
+  if (sortedPosts.length >= 30) {
     var firstT = new Date(sortedPosts[0].posted_at).getTime();
     var lastT = new Date(sortedPosts[sortedPosts.length - 1].posted_at).getTime();
     var avgMin = (lastT - firstT) / 60000 / (sortedPosts.length - 1);
@@ -697,7 +697,7 @@ function idaCalcTraits(posts, threadList, threadsMade, hourCounts, totalPosts) {
   }
 
   /* 渡り鳥: 参加スレ25以上 */
-  if (threadList.length >= 25) {
+  if (threadList.length >= 40) {
     scores.nomad = threadList.length;
   }
 
@@ -707,7 +707,7 @@ function idaCalcTraits(posts, threadList, threadsMade, hourCounts, totalPosts) {
   }
 
   /* 草生やし民: 草出現10回以上 かつ 草を含むレスが全体の20%以上（割合条件を適用） */
-  if (grassTotalCount >= 10 && (grassPostCount / totalPosts) >= 0.20) {
+  if (grassTotalCount >= 10 && (grassPostCount / totalPosts) >= 0.30) {
     scores.grass = grassTotalCount;
   }
 
