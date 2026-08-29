@@ -160,8 +160,8 @@ async function runAnalysis() {
     var threadIds=[]; var seenTid={};
     posts.forEach(function(p){if(!seenTid[p.thread_id]){seenTid[p.thread_id]=true;threadIds.push(p.thread_id);}});
     var threadInfoMap=new Map();
-    for(var i=0;i<threadIds.length;i+=20){
-      var batch=threadIds.slice(i,i+20);
+    for(var i=0;i<threadIds.length;i+=200){
+      var batch=threadIds.slice(i,i+200);
       var ts=await idaSbFetch(SB_URL,SB_KEY,"threads?select=thread_id,title,updated_at&thread_id=in.("+batch.join(",")+")");
       ts.forEach(function(t){threadInfoMap.set(t.thread_id,t);});
     }
