@@ -100,7 +100,7 @@
 .ida-card-title { font-size:13px; font-weight:700; color:#202124; margin-bottom:10px; }
 .ida-card-title-sm { font-size:12px; margin-bottom:6px; }
 
-/* 棒グラフ修正版 */
+/* 棒グラフ */
 .ida-barchart-wrap { flex-shrink:0; }
 .ida-barchart { display:flex; align-items:flex-end; gap:2px; height:140px; }
 .ida-bar-col { flex:1; display:flex; flex-direction:column; align-items:center; min-width:0; height:100%; }
@@ -114,18 +114,141 @@
 .ida-bar-lbl { font-size:8px; color:#70757a; margin-top:2px; text-align:center; flex-shrink:0; }
 .ida-chart-note { font-size:11px; color:#5f6368; margin-top:6px; text-align:center; }
 
-/* 属性バッジ */
+/* ============================================================
+   属性バッジ & レア度別演出 (★1〜★5 キラキラ・発光)
+   ============================================================ */
 .ida-trait-section { flex:1; display:flex; flex-direction:column; }
-.ida-trait-wrap { display:flex; flex-wrap:wrap; gap:6px; }
+.ida-trait-wrap { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+
 .ida-trait-badge {
-  display:inline-flex; align-items:center; gap:4px;
-  background:linear-gradient(135deg,#f8f9fa,#e8f0fe); border:1px solid #c5cae9;
-  border-radius:20px; padding:5px 14px; cursor:default;
-  transition:transform 0.1s, box-shadow 0.1s;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 20px;
+  padding: 5px 13px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+  user-select: none;
+  font-weight: 700;
 }
-.ida-trait-badge:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-.ida-trait-icon { font-size:16px; }
-.ida-trait-name { font-size:12px; font-weight:700; color:#3c4043; }
+.ida-trait-badge:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+.ida-trait-icon { font-size: 15px; }
+.ida-trait-name { font-size: 12px; }
+
+/* --- キラキラ光るシマー光線（共通定義） --- */
+.ida-trait-badge::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -80%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    rgba(255, 255, 255, 0) 10%,
+    rgba(255, 255, 255, 0.7) 50%,
+    rgba(255, 255, 255, 0) 90%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+}
+
+/* ★1: N (ノーマル / 単発) */
+.ida-trait-badge[data-rarity="1"] {
+  background: #f1f3f4;
+  border: 1px solid #dadce0;
+}
+.ida-trait-badge[data-rarity="1"] .ida-trait-name { color: #5f6368; }
+
+/* ★2: R (レア / 趣味・関心・早起きなど) */
+.ida-trait-badge[data-rarity="2"] {
+  background: linear-gradient(135deg, #ffffff, #e8f0fe);
+  border: 1px solid #aecbfa;
+  box-shadow: 0 1px 3px rgba(66, 133, 244, 0.08);
+}
+.ida-trait-badge[data-rarity="2"] .ida-trait-name { color: #1967d2; }
+.ida-trait-badge[data-rarity="2"]:hover {
+  box-shadow: 0 3px 8px rgba(66, 133, 244, 0.22);
+}
+
+/* ★3: SR (スーパーレア / レスバ・ニート・特化系) */
+.ida-trait-badge[data-rarity="3"] {
+  background: linear-gradient(135deg, #fff5f7, #f3e8ff);
+  border: 1px solid #d0bfff;
+  box-shadow: 0 2px 6px rgba(156, 39, 176, 0.15);
+}
+.ida-trait-badge[data-rarity="3"] .ida-trait-name { color: #7b1fa2; }
+.ida-trait-badge[data-rarity="3"]:hover {
+  box-shadow: 0 4px 12px rgba(156, 39, 176, 0.35);
+}
+
+/* ★4: SSR (激レア / スレ立て魔・渡り鳥・連投マン・コピペ) */
+.ida-trait-badge[data-rarity="4"] {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1.5px solid #f59e0b;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+.ida-trait-badge[data-rarity="4"] .ida-trait-name {
+  color: #b45309;
+  text-shadow: 0 0 1px rgba(245, 158, 11, 0.3);
+}
+.ida-trait-badge[data-rarity="4"]::after {
+  animation: ida-shimmer 3s infinite ease-in-out;
+}
+.ida-trait-badge[data-rarity="4"]:hover {
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.55);
+}
+
+/* ★5: UR / LEGEND (最高峰・24時間戦士) */
+.ida-trait-badge[data-rarity="5"] {
+  background: linear-gradient(135deg, #ffffff, #fff0f6, #f0f7ff);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 0 10px rgba(255, 0, 128, 0.35), 0 0 16px rgba(66, 133, 244, 0.3);
+  animation: ida-rainbow-glow 3.5s ease infinite;
+}
+.ida-trait-badge[data-rarity="5"]::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 22px;
+  background: linear-gradient(90deg, #ff007f, #7928ca, #0070f3, #00dfd8, #ffbf00, #ff007f);
+  background-size: 300% 300%;
+  z-index: -1;
+  animation: ida-rainbow-border 3s linear infinite;
+}
+.ida-trait-badge[data-rarity="5"] .ida-trait-name {
+  background: linear-gradient(90deg, #d81b60, #8e24aa, #1967d2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+}
+.ida-trait-badge[data-rarity="5"]::after {
+  animation: ida-shimmer 2s infinite ease-in-out;
+}
+.ida-trait-badge[data-rarity="5"]:hover {
+  box-shadow: 0 0 18px rgba(255, 0, 128, 0.65), 0 0 25px rgba(0, 112, 243, 0.55);
+}
+
+/* キラキラ・虹色アニメーション定義 */
+@keyframes ida-shimmer {
+  0% { left: -100%; opacity: 0; }
+  35% { left: 160%; opacity: 1; }
+  100% { left: 160%; opacity: 0; }
+}
+@keyframes ida-rainbow-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes ida-rainbow-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 0, 128, 0.35), 0 0 16px rgba(0, 112, 243, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(255, 191, 0, 0.5), 0 0 20px rgba(156, 39, 176, 0.45); }
+}
 
 /* スレッド一覧 */
 .ida-thread-list { display:flex; flex-direction:column; overflow:hidden; }
@@ -191,6 +314,14 @@
 .ida-loading { text-align:center; padding:48px; color:#70757a; font-size:14px; }
 .ida-error { color:#c0392b; padding:24px; font-size:14px; text-align:center; background:#fff; border-radius:10px; }
 
+/* ツールチップ */
+.ida-trait-tip {
+  position:fixed; display:none; background:#202124; color:#fff;
+  font-size:12px; line-height:1.4; padding:6px 12px; border-radius:6px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.25); z-index:1000;
+  max-width:240px; pointer-events:none;
+}
+
 /* ============================================================ スマホ ============================================================ */
 @media (max-width:768px) {
   .ida-header { padding:8px 10px; gap:6px; }
@@ -215,12 +346,6 @@
   .ida-trait-badge { padding:4px 10px; }
   .ida-trait-icon { font-size:14px; }
   .ida-trait-name { font-size:11px; }
-}
-  .ida-trait-tip {
-  position:fixed; display:none; background:#202124; color:#fff;
-  font-size:12px; line-height:1.4; padding:6px 12px; border-radius:6px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.25); z-index:1000;
-  max-width:240px; pointer-events:none;
 }
 </style>
 </head>
