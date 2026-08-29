@@ -49,7 +49,6 @@ function idaFmtTime(posted_at) {
 }
 function idaEscHtml(s) { var d=document.createElement("div"); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
 function idaCharCount(body) { return (body||"").replace(/\n/g,"").length; }
-function idaCharCount(body) { return (body||"").replace(/\n/g,"").length; }
 
 var idaHasHover = !!(window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches);
 var idaTraitTip = null;
@@ -73,10 +72,6 @@ document.addEventListener("click", function(e){
   if (!e.target.closest || !e.target.closest(".ida-trait-badge")) idaHideTraitTip();
 });
 window.addEventListener("scroll", idaHideTraitTip, true);
-
-/* ================================================================
-   Supabase通信
-   ================================================================ */
 
 /* ================================================================
    Supabase通信
@@ -295,25 +290,27 @@ async function runAnalysis() {
     idaSetText(peakNote,"🔥 ピーク: "+peakHour+"時台 ("+peakVal+"レス) | Top: "+activeHoursText);
     chartCard.appendChild(peakNote);
 
-    /* 属性バッジ (チャートの下) */
+    /* 属性バッジ (チャートの下・最大10件表示) */
     if(traits.length>0){
       var traitSection=idaCE("div","ida-trait-section");
       var traitTitle=idaCE("div","ida-card-title"); traitTitle.style.marginTop="10px";
       idaSetText(traitTitle,"🏷️ ユーザー属性"); traitSection.appendChild(traitTitle);
       var traitWrap=idaCE("div","ida-trait-wrap");
-traits.forEach(function(tr){
+      traits.forEach(function(tr){
         var badge=idaCE("div","ida-trait-badge");
+        badge.dataset.rarity = tr.rarity; // レア度(1〜5)を属性として保持
         var bIcon=idaCE("span","ida-trait-icon"); bIcon.textContent=tr.icon; badge.appendChild(bIcon);
         var bName=idaCE("span","ida-trait-name"); idaSetText(bName,tr.name); badge.appendChild(bName);
+        var tipText = (tr.rarity >= 3 ? "★" + tr.rarity + " | " : "") + tr.desc;
         if (idaHasHover) {
-          badge.addEventListener("mouseenter",function(){ idaShowTraitTip(badge,tr.desc); });
+          badge.addEventListener("mouseenter",function(){ idaShowTraitTip(badge,tipText); });
           badge.addEventListener("mouseleave",idaHideTraitTip);
         } else {
           badge.addEventListener("click",function(e){
             e.stopPropagation();
             var wasOpen = badge.classList.contains("tip-open");
             idaHideTraitTip();
-            if (!wasOpen) { idaShowTraitTip(badge,tr.desc); badge.classList.add("tip-open"); }
+            if (!wasOpen) { idaShowTraitTip(badge,tipText); badge.classList.add("tip-open"); }
           });
         }
         traitWrap.appendChild(badge);
