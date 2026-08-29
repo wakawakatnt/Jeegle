@@ -17,8 +17,8 @@ var TRAIT_DICT = {
       "裏金","政治資金","103万の壁","年収の壁","減税","増税","基礎控除","夫婦別姓","マイナ保険証","防衛増税",
       "憲法改正","改憲","護憲","ネトウヨ","パヨク","保守","リベラル"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -33,8 +33,8 @@ var TRAIT_DICT = {
       "甲子園","センバツ","ドラフト","オープン戦","クライマックスシリーズ","日本シリーズ",
       "打率","本塁打","打点","防御率","奪三振","盗塁","犠打","先発","中継ぎ","クローザー","捕手","遊撃手","外野手"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -49,8 +49,8 @@ var TRAIT_DICT = {
       "Jリーグ","J1","J2","町田ゼルビア","ヴィッセル神戸","横浜Fマリノス","浦和レッズ","川崎フロンターレ","鹿島アントラーズ","ガンバ大阪",
       "ハットトリック","オフサイド","フリーキック","コーナーキック","PK","VAR","ドリブル","アシスト"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -64,8 +64,8 @@ var TRAIT_DICT = {
       "ヒロアカ","ワンピース","ガンダム","エヴァンゲリオン","ドラゴンボール","NARUTO","BLEACH",
       "MAPPA","ufotable","京都アニメーション","京アニ","クローバーワークス","ボンズ","シャフト","動画工房","A-1"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -78,8 +78,8 @@ var TRAIT_DICT = {
       "エルデンリング","ドラクエ","ファイナルファンタジー","ゼルダの伝説","スプラトゥーン","スマブラ","マインクラフト","マイクラ",
       "APEX","VALORANT","フォートナイト","オーバーウォッチ","LoL","FPS","RPG","格ゲー","eスポーツ","周回","ログインボーナス"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -93,8 +93,8 @@ var TRAIT_DICT = {
       "花芽すみれ","一ノ瀬うるは","猫汰つな","橘ひなの","英リサ",
       "箱推し","ガチ恋","中の人","前世","3Dお披露目","新衣装"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -107,8 +107,8 @@ var TRAIT_DICT = {
       "ME:I","ミーアイ","TWICE","LE_SSERAFIM","NewJeans","aespa","IVE",
       "握手会","ミーグリ","お渡し会","リリイベ","サイン会","選抜","福神","センター","卒業","加入","卒コン","冠番組","写真集"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -123,8 +123,8 @@ var TRAIT_DICT = {
       "イクイノックス","ドウデュース","リバティアイランド","フォーエバーヤング",
       "馬券","単勝","複勝","馬連","馬単","ワイド","三連複","三連単","WIN5","種牡馬","血統"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -138,8 +138,8 @@ var TRAIT_DICT = {
       "ボーダー","釘調整","甘デジ","ミドル","ライトミドル","右打ち","止め打ち",
       "競艇","ボートレース","競輪","オートレース","カジノ","オンカジ"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -153,8 +153,8 @@ var TRAIT_DICT = {
       "NVIDIA","GeForce","RTX","Radeon","半導体","TSMC","CPU","GPU","マザーボード","メモリ","SSD",
       "iPhone","Android","Apple","ガジェット","自作PC","セキュリティ","脆弱性","API","バックエンド","フロントエンド"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -168,8 +168,8 @@ var TRAIT_DICT = {
       "ビール","クラフトビール","ハイボール","レモンサワー","日本酒","焼酎","ウイスキー","ワイン",
       "スイーツ","ケーキ","パフェ","アイス","自炊","レシピ","食べログ","UberEats","出前館"
     ],
-    threadBonus: 2,
-    nusiBonus: 4,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 4
   },
 
@@ -182,8 +182,8 @@ var TRAIT_DICT = {
       "結婚","婚約","プロポーズ","指輪","式場","披露宴","新婚","同棲",
       "非モテ","童貞","処女","浮気","不倫","離婚","復縁","メンヘラ","ヤンデレ"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -196,8 +196,8 @@ var TRAIT_DICT = {
       "ブラック企業","ホワイト企業","社畜","過労死","パワハラ","セクハラ","モラハラ","退職代行","リストラ",
       "転職","退職","履歴書","面接","就活","内定","新卒","中途","テレワーク","在宅勤務"
     ],
-    threadBonus: 2,
-    nusiBonus: 4,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 4
   },
 
@@ -211,8 +211,8 @@ var TRAIT_DICT = {
       "現役生","浪人生","一浪","二浪","仮面浪人","留年","休学","退学","単位","GPA","卒論","修論",
       "TOEIC","英検","簿記","宅建","司法試験","予備試験","公認会計士"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -226,8 +226,8 @@ var TRAIT_DICT = {
       "特急","急行","快速","各駅停車","グリーン車","指定席","自由席",
       "撮り鉄","乗り鉄","音鉄","駅メロ","廃線","秘境駅","青春18きっぷ"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -241,8 +241,8 @@ var TRAIT_DICT = {
       "セダン","SUV","ミニバン","クーペ","オープンカー","ハイブリッド","EV","ガソリン",
       "MT車","AT車","マニュアル","オートマ","運転免許","高速道路","ETC","ドラレコ","煽り運転","タイヤ","ホイール","バイク","ツーリング"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -256,8 +256,8 @@ var TRAIT_DICT = {
       "戦車","装甲車","榴弾砲","ロケット砲","HIMARS","パトリオット","トマホーク","ミサイル","魚雷","機雷",
       "核兵器","弾道ミサイル","巡航ミサイル","防空","兵站","補給","制空権","制海権","特殊部隊","徴兵制"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -271,8 +271,8 @@ var TRAIT_DICT = {
       "ビットコイン","BTC","イーサリアム","仮想通貨","暗号資産",
       "決算発表","上方修正","下方修正","自社株買い","増配","減配","IPO","信用取引","空売り","損切り","利確","デイトレ"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -286,8 +286,8 @@ var TRAIT_DICT = {
       "インバウンド","外国人","外国人観光客","移民","難民","駐在員","現地採用","帰国子女",
       "空港","フライト","国際線","マイル","空港ラウンジ","外貨両替","時差","チップ"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -301,8 +301,8 @@ var TRAIT_DICT = {
       "花粉症","アレルギー","インフルエンザ","コロナウイルス","ワクチン",
       "筋トレ","ジム","エニタイム","プロテイン","クレアチン","サプリメント","有酸素運動","ダイエット","カロリー","体脂肪率","基礎代謝","整体"
     ],
-    threadBonus: 2,
-    nusiBonus: 4,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -316,8 +316,8 @@ var TRAIT_DICT = {
       "腕時計","ロレックス","オメガ","セイコー","財布","バッグ","ネックレス","リング","香水",
       "スキンケア","化粧水","乳液","美容液","日焼け止め","クレンジング","洗顔料","メイク","コスメ","美容院","縮毛矯正","パーマ","医療脱毛"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -330,8 +330,8 @@ var TRAIT_DICT = {
       "超能力","テレパシー","透視","予知","予言","予知夢","ノストラダムス",
       "スピリチュアル","前世","輪廻転生","引き寄せ","タロットカード","占い","霊感","呪い","呪物","コトリバコ","八尺様","きさらぎ駅","廃墟","ドッペルゲンガー"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -344,8 +344,8 @@ var TRAIT_DICT = {
       "関ヶ原の戦い","本能寺の変","大政奉還","戊辰戦争","日清戦争","日露戦争","第一次世界大戦","第二次世界大戦","太平洋戦争",
       "三国志","曹操","劉備","諸葛孔明","始皇帝","ローマ帝国","ナポレオン","フランス革命","大河ドラマ"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -358,8 +358,8 @@ var TRAIT_DICT = {
       "ギター","エレキギター","アコースティックギター","ベース","ドラム","キーボード","ピアノ","ボーカル","作曲","作詞","DTM","DAW","音源",
       "米津玄師","YOASOBI","Ado","KingGnu","Mrs.GREEN_APPLE","Vaundy","Official髭男dism","back_number","B'z"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -373,8 +373,8 @@ var TRAIT_DICT = {
       "ドラマ","朝ドラ","大河ドラマ","日曜劇場","月9","韓国ドラマ","韓ドラ","海外ドラマ",
       "MCU","マーベル","アベンジャーズ","スターウォーズ","スタジオジブリ","ジブリ","新海誠","庵野秀明"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -387,8 +387,8 @@ var TRAIT_DICT = {
       "飛行機","ANA","JAL","LCC","ピーチ","ジェットスター","新幹線","特急列車","夜行バス","高速バス","レンタカー",
       "じゃらん","楽天トラベル","一休","Booking.com","宿泊","素泊まり","朝食バイキング","ご当地グルメ","お土産","道の駅"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -403,8 +403,8 @@ var TRAIT_DICT = {
       "停電","断水","給水車","災害復旧","義援金","ボランティア","自衛隊派遣",
       "防災","防災グッズ","非常食","保存水","備蓄","耐震補強","防災ラジオ","ポータブル電源"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -417,8 +417,8 @@ var TRAIT_DICT = {
       "仏教","密教","禅宗","浄土真宗","神道","キリスト教","カトリック","プロテスタント","教会","聖書","牧師","神父","礼拝","賛美歌",
       "イスラム教","モスク","コーラン","ハラール","ラマダン","創価学会","統一教会"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   },
 
@@ -433,8 +433,8 @@ var TRAIT_DICT = {
       "爪とぎ","キャットタワー","猫じゃらし","トリミング",
       "ハムスター","うさぎ","インコ","文鳥","カメ","レオパ","トカゲ","金魚","メダカ","熱帯魚","アクアリウム","水槽"
     ],
-    threadBonus: 3,
-    nusiBonus: 5,
+    threadBonus: 1,
+    nusiBonus: 3,
     minPostCount: 3
   }
 };
