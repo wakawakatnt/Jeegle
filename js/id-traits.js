@@ -445,15 +445,15 @@ var TRAIT_DEFS = {
   allday:      { icon:"📡", name:"24時間戦士",     desc:"24時間中18時間帯以上に書き込みがあり、総レス30以上", minScore:1, rarity:5 },
 
   // --- ★4: SSR (激レア行動) ---
-  threadking:  { icon:"👑", name:"スレ立て魔",     desc:"自分が立てたスレッドが10件以上", minScore:1, rarity:4 },
-  nomad:       { icon:"🦋", name:"渡り鳥",         desc:"参加したスレッドが25以上", minScore:1, rarity:4 },
-  machinegun:  { icon:"⚡", name:"連投マン",       desc:"投稿間隔の平均が2分以内(20レス以上)", minScore:1, rarity:4 },
+  threadking:  { icon:"👑", name:"スレ立て魔",     desc:"自分が立てたスレッドが15件以上", minScore:1, rarity:4 },
+  nomad:       { icon:"🦋", name:"渡り鳥",         desc:"参加したスレッドが40以上", minScore:1, rarity:4 },
+  machinegun:  { icon:"⚡", name:"連投マン",       desc:"投稿間隔の平均が2分以内(30レス以上)", minScore:1, rarity:4 },
   copipe:      { icon:"📋", name:"コピペ職人",     desc:"同一内容(15文字以上)のレスを3回以上投稿", minScore:1, rarity:4 },
 
   // --- ★3: SR (尖った行動・特化属性) ---
   replymagnet: { icon:"🧲", name:"レスバトラー",   desc:"煽り・レスバ用語の使用が全投稿の15%以上(5回以上)", minScore:1, rarity:3 },
   anchor:      { icon:"⛓️", name:"安価職人",       desc:"安価(>>)の使用率が70%以上かつ安価付きレス10件以上", minScore:1, rarity:3 },
-  peta:        { icon:"📎", name:"ペタッw",        desc:"画像・動画リンク付きレスが全投稿の20%以上(5回以上)", minScore:1, rarity:3 },
+  peta:        { icon:"📎", name:"ペタッw",        desc:"画像・動画リンク付きレスが全投稿の20%以上(10回以上)", minScore:1, rarity:3 },
   chatty:      { icon:"🗣️", name:"長文民",         desc:"平均文字数60字以上、または120字以上の長文が全体の25%以上", minScore:1, rarity:3 },
   sniper:      { icon:"🎯", name:"短文スナイパー", desc:"平均文字数15字以下、かつ全体の70%以上が短文(10レス以上)", minScore:1, rarity:3 },
   neet:        { icon:"🌙", name:"ニート",         desc:"深夜1〜5時の投稿が8回以上、かつ全投稿の25%以上", minScore:1, rarity:3 },
@@ -464,7 +464,7 @@ var TRAIT_DEFS = {
 
   // --- ★2: R (主要ジャンル・生活スタイル) ---
   earlybird:   { icon:"🌅", name:"早起き民",       desc:"朝5〜6時台に初投稿があり、深夜帯の活動が少ない", minScore:1, rarity:2 },
-  grass:       { icon:"🌿", name:"草生やし民",     desc:"「草」やwの出現が10回以上、かつ全投稿の20%以上で使用", minScore:1, rarity:2 },
+  grass:       { icon:"🌿", name:"草生やし民",     desc:"「草」やwの出現が10回以上、かつ全投稿の30%以上で使用", minScore:1, rarity:2 },
   politics:    { icon:"🏛️", name:"政治豚",         desc:"政治・時事関連語を複数レスで頻発", minScore:12, rarity:2 },
   baseball:    { icon:"⚾", name:"野球民",         desc:"野球関連語を複数レスで頻発", minScore:12, rarity:2 },
   soccer:      { icon:"⚽", name:"サッカー民",     desc:"サッカー関連語を複数レスで頻発", minScore:12, rarity:2 },
