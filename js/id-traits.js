@@ -1,7 +1,7 @@
 "use strict";
 
 /* ================================================================
-   ID属性判定システム — js/id-traits.js (単語精査＆最新厳格化版)
+   ID属性判定システム — js/id-traits.js (レア度＆最大10個表示対応版)
    ================================================================ */
 
 /* ===== キーワード辞書 (全カテゴリ45〜60語の純粋な単語/名詞) ===== */
@@ -439,51 +439,60 @@ var TRAIT_DICT = {
   }
 };
 
-/* ===== 属性マスター ===== */
+/* ===== 属性マスター (rarity: 1〜5) ===== */
 var TRAIT_DEFS = {
-  neet:        { icon:"🌙", name:"ニート",         desc:"深夜1〜5時の投稿が8回以上、かつ全投稿の25%以上", minScore:1 },
-  earlybird:   { icon:"🌅", name:"早起き民",       desc:"朝5〜6時台に初投稿があり、深夜帯の活動が少ない", minScore:1 },
-  politics:    { icon:"🏛️", name:"政治豚",         desc:"政治・時事関連語を複数レスで頻発", minScore:12 },
-  baseball:    { icon:"⚾", name:"野球民",         desc:"野球関連語を複数レスで頻発", minScore:12 },
-  soccer:      { icon:"⚽", name:"サッカー民",     desc:"サッカー関連語を複数レスで頻発", minScore:12 },
-  anime:       { icon:"🎌", name:"アニ豚",         desc:"アニメ・漫画関連語を複数レスで頻発", minScore:12 },
-  game:        { icon:"🎮", name:"ゲーマー",       desc:"ゲーム関連語を複数レスで頻発", minScore:12 },
-  vtuber:      { icon:"📺", name:"V豚",            desc:"VTuber関連語を複数レスで頻発", minScore:12 },
-  idol:        { icon:"🎤", name:"ドルオタ",       desc:"アイドル関連語を複数レスで頻発", minScore:12 },
-  horse:       { icon:"🐴", name:"馬民",           desc:"競馬関連語を複数レスで頻発", minScore:12 },
-  gambling:    { icon:"🎰", name:"養分",           desc:"ギャンブル関連語を複数レスで頻発", minScore:12 },
-  tech:        { icon:"💻", name:"IT民",           desc:"IT・AI・ガジェット関連語を複数レスで頻発", minScore:12 },
-  food:        { icon:"🍜", name:"グルメ民",       desc:"食事・グルメ関連語を複数レスで頻発", minScore:15 },
-  love:        { icon:"💕", name:"恋愛脳",         desc:"恋愛・婚活関連語を複数レスで頻発", minScore:12 },
-  work:        { icon:"💼", name:"社畜",           desc:"労働・会社関連語を複数レスで頻発", minScore:15 },
-  study:       { icon:"📚", name:"受験戦士",       desc:"受験・学歴関連語を複数レスで頻発", minScore:12 },
-  train:       { icon:"🚃", name:"鉄オタ",         desc:"鉄道関連語を複数レスで頻発", minScore:12 },
-  car:         { icon:"🚗", name:"車カス",         desc:"車関連語を複数レスで頻発", minScore:12 },
-  military:    { icon:"🔫", name:"ミリオタ",       desc:"軍事関連語を複数レスで頻発", minScore:12 },
-  economy:     { icon:"📈", name:"投資民",         desc:"投資・経済関連語を複数レスで頻発", minScore:12 },
-  overseas:    { icon:"🌏", name:"海外通",         desc:"海外・移住関連語を複数レスで頻発", minScore:12 },
-  health:      { icon:"💊", name:"健康オタク",     desc:"健康・医療関連語を複数レスで頻発", minScore:12 },
-  fashion:     { icon:"👔", name:"オシャレ民",     desc:"ファッション関連語を複数レスで頻発", minScore:12 },
-  occult:      { icon:"👻", name:"オカルト民",     desc:"オカルト・未解決関連語を複数レスで頻発", minScore:12 },
-  history:     { icon:"📜", name:"歴史民",         desc:"歴史関連語を複数レスで頻発", minScore:12 },
-  music:       { icon:"🎵", name:"音楽民",         desc:"音楽・ライブ関連語を複数レスで頻発", minScore:12 },
-  movie:       { icon:"🎬", name:"映画民",         desc:"映画・配信関連語を複数レスで頻発", minScore:12 },
-  travel:      { icon:"✈️", name:"旅行民",         desc:"旅行・宿関連語を複数レスで頻発", minScore:12 },
-  disaster:    { icon:"🌊", name:"防災民",         desc:"災害・防災関連語を複数レスで頻発", minScore:12 },
-  religion:    { icon:"⛩️", name:"宗教民",         desc:"宗教関連語を複数レスで頻発", minScore:12 },
-  pet:         { icon:"🐾", name:"ペット民",       desc:"ペット・動物関連語を複数レスで頻発", minScore:12 },
-  peta:        { icon:"📎", name:"ペタッw",        desc:"画像・動画リンク付きレスが全投稿の20%以上(5回以上)", minScore:1 },
-  threadking:  { icon:"👑", name:"スレ立て魔",     desc:"自分が立てたスレッドが10件以上", minScore:1 },
-  chatty:      { icon:"🗣️", name:"長文民",         desc:"平均文字数60字以上、または120字以上の長文が全体の25%以上", minScore:1 },
-  sniper:      { icon:"🎯", name:"短文スナイパー", desc:"平均文字数15字以下、かつ全体の70%以上が短文(10レス以上)", minScore:1 },
-  machinegun:  { icon:"⚡", name:"連投マン",       desc:"投稿間隔の平均が2分以内(20レス以上)", minScore:1 },
-  anchor:      { icon:"⛓️", name:"安価職人",       desc:"安価(>>)の使用率が70%以上かつ安価付きレス10件以上", minScore:1 },
-  tanpatsu:    { icon:"👤", name:"単発",           desc:"参加したスレッドが1つだけ", minScore:1 },
-  nomad:       { icon:"🦋", name:"渡り鳥",         desc:"参加したスレッドが25以上", minScore:1 },
-  allday:      { icon:"📡", name:"24時間戦士",     desc:"24時間中18時間帯以上に書き込みがあり、総レス30以上", minScore:1 },
-  copipe:      { icon:"📋", name:"コピペ職人",     desc:"同一内容(15文字以上)のレスを3回以上投稿", minScore:1 },
-  grass:       { icon:"🌿", name:"草生やし民",     desc:"「草」やwの出現が10回以上、かつ全投稿の20%以上で使用", minScore:1 },
-  replymagnet: { icon:"🧲", name:"レスバトラー",   desc:"煽り・レスバ用語の使用が全投稿の15%以上(5回以上)", minScore:1 }
+  // --- ★5: LEGEND (最高峰・最上位) ---
+  allday:      { icon:"📡", name:"24時間戦士",     desc:"24時間中18時間帯以上に書き込みがあり、総レス30以上", minScore:1, rarity:5 },
+
+  // --- ★4: SSR (激レア行動) ---
+  threadking:  { icon:"👑", name:"スレ立て魔",     desc:"自分が立てたスレッドが10件以上", minScore:1, rarity:4 },
+  nomad:       { icon:"🦋", name:"渡り鳥",         desc:"参加したスレッドが25以上", minScore:1, rarity:4 },
+  machinegun:  { icon:"⚡", name:"連投マン",       desc:"投稿間隔の平均が2分以内(20レス以上)", minScore:1, rarity:4 },
+  copipe:      { icon:"📋", name:"コピペ職人",     desc:"同一内容(15文字以上)のレスを3回以上投稿", minScore:1, rarity:4 },
+
+  // --- ★3: SR (尖った行動・特化属性) ---
+  replymagnet: { icon:"🧲", name:"レスバトラー",   desc:"煽り・レスバ用語の使用が全投稿の15%以上(5回以上)", minScore:1, rarity:3 },
+  anchor:      { icon:"⛓️", name:"安価職人",       desc:"安価(>>)の使用率が70%以上かつ安価付きレス10件以上", minScore:1, rarity:3 },
+  peta:        { icon:"📎", name:"ペタッw",        desc:"画像・動画リンク付きレスが全投稿の20%以上(5回以上)", minScore:1, rarity:3 },
+  chatty:      { icon:"🗣️", name:"長文民",         desc:"平均文字数60字以上、または120字以上の長文が全体の25%以上", minScore:1, rarity:3 },
+  sniper:      { icon:"🎯", name:"短文スナイパー", desc:"平均文字数15字以下、かつ全体の70%以上が短文(10レス以上)", minScore:1, rarity:3 },
+  neet:        { icon:"🌙", name:"ニート",         desc:"深夜1〜5時の投稿が8回以上、かつ全投稿の25%以上", minScore:1, rarity:3 },
+  military:    { icon:"🔫", name:"ミリオタ",       desc:"軍事関連語を複数レスで頻発", minScore:12, rarity:3 },
+  occult:      { icon:"👻", name:"オカルト民",     desc:"オカルト・未解決関連語を複数レスで頻発", minScore:12, rarity:3 },
+  religion:    { icon:"⛩️", name:"宗教民",         desc:"宗教関連語を複数レスで頻発", minScore:12, rarity:3 },
+  disaster:    { icon:"🌊", name:"防災民",         desc:"災害・防災関連語を複数レスで頻発", minScore:12, rarity:3 },
+
+  // --- ★2: R (主要ジャンル・生活スタイル) ---
+  earlybird:   { icon:"🌅", name:"早起き民",       desc:"朝5〜6時台に初投稿があり、深夜帯の活動が少ない", minScore:1, rarity:2 },
+  grass:       { icon:"🌿", name:"草生やし民",     desc:"「草」やwの出現が10回以上、かつ全投稿の20%以上で使用", minScore:1, rarity:2 },
+  politics:    { icon:"🏛️", name:"政治豚",         desc:"政治・時事関連語を複数レスで頻発", minScore:12, rarity:2 },
+  baseball:    { icon:"⚾", name:"野球民",         desc:"野球関連語を複数レスで頻発", minScore:12, rarity:2 },
+  soccer:      { icon:"⚽", name:"サッカー民",     desc:"サッカー関連語を複数レスで頻発", minScore:12, rarity:2 },
+  anime:       { icon:"🎌", name:"アニ豚",         desc:"アニメ・漫画関連語を複数レスで頻発", minScore:12, rarity:2 },
+  game:        { icon:"🎮", name:"ゲーマー",       desc:"ゲーム関連語を複数レスで頻発", minScore:12, rarity:2 },
+  vtuber:      { icon:"📺", name:"V豚",            desc:"VTuber関連語を複数レスで頻発", minScore:12, rarity:2 },
+  idol:        { icon:"🎤", name:"ドルオタ",       desc:"アイドル関連語を複数レスで頻発", minScore:12, rarity:2 },
+  horse:       { icon:"🐴", name:"馬民",           desc:"競馬関連語を複数レスで頻発", minScore:12, rarity:2 },
+  gambling:    { icon:"🎰", name:"養分",           desc:"ギャンブル関連語を複数レスで頻発", minScore:12, rarity:2 },
+  tech:        { icon:"💻", name:"IT民",           desc:"IT・AI・ガジェット関連語を複数レスで頻発", minScore:12, rarity:2 },
+  food:        { icon:"🍜", name:"グルメ民",       desc:"食事・グルメ関連語を複数レスで頻発", minScore:15, rarity:2 },
+  love:        { icon:"💕", name:"恋愛脳",         desc:"恋愛・婚活関連語を複数レスで頻発", minScore:12, rarity:2 },
+  work:        { icon:"💼", name:"社畜",           desc:"労働・会社関連語を複数レスで頻発", minScore:15, rarity:2 },
+  study:       { icon:"📚", name:"受験戦士",       desc:"受験・学歴関連語を複数レスで頻発", minScore:12, rarity:2 },
+  train:       { icon:"🚃", name:"鉄オタ",         desc:"鉄道関連語を複数レスで頻発", minScore:12, rarity:2 },
+  car:         { icon:"🚗", name:"車カス",         desc:"車関連語を複数レスで頻発", minScore:12, rarity:2 },
+  economy:     { icon:"📈", name:"投資民",         desc:"投資・経済関連語を複数レスで頻発", minScore:12, rarity:2 },
+  overseas:    { icon:"🌏", name:"海外通",         desc:"海外・移住関連語を複数レスで頻発", minScore:12, rarity:2 },
+  health:      { icon:"💊", name:"健康オタク",     desc:"健康・医療関連語を複数レスで頻発", minScore:12, rarity:2 },
+  fashion:     { icon:"👔", name:"オシャレ民",     desc:"ファッション関連語を複数レスで頻発", minScore:12, rarity:2 },
+  history:     { icon:"📜", name:"歴史民",         desc:"歴史関連語を複数レスで頻発", minScore:12, rarity:2 },
+  music:       { icon:"🎵", name:"音楽民",         desc:"音楽・ライブ関連語を複数レスで頻発", minScore:12, rarity:2 },
+  movie:       { icon:"🎬", name:"映画民",         desc:"映画・配信関連語を複数レスで頻発", minScore:12, rarity:2 },
+  travel:      { icon:"✈️", name:"旅行民",         desc:"旅行・宿関連語を複数レスで頻発", minScore:12, rarity:2 },
+  pet:         { icon:"🐾", name:"ペット民",       desc:"ペット・動物関連語を複数レスで頻発", minScore:12, rarity:2 },
+
+  // --- ★1: N (一般) ---
+  tanpatsu:    { icon:"👤", name:"単発",           desc:"参加したスレッドが1つだけ", minScore:1, rarity:1 }
 };
 
 /* ===== メディアURL検出パターン ===== */
@@ -717,13 +726,20 @@ function idaCalcTraits(posts, threadList, threadsMade, hourCounts, totalPosts) {
       id: id,
       icon: def.icon,
       name: def.name,
+      rarity: def.rarity || 1,
       score: scores[id],
       desc: def.desc
     });
   });
 
-  /* スコア降順 */
-  result.sort(function(a, b) { return b.score - a.score; });
+  /* ソート: レア度が高い順 (降順) → 同レア度の場合はスコアが高い順 (降順) */
+  result.sort(function(a, b) {
+    if (b.rarity !== a.rarity) {
+      return b.rarity - a.rarity;
+    }
+    return b.score - a.score;
+  });
 
-  return result.slice(0, 8);
+  /* 最大10個を返す */
+  return result.slice(0, 10);
 }
