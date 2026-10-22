@@ -324,7 +324,7 @@ function rebuildThinkingOptions() {
 function updateSettingHints() {
   modelHintText.textContent = MODEL_HINTS[modelSelect.value] || "";
   thinkingHintText.textContent = THINKING_HINTS[thinkingSelect.value] || "";
-  temperatureHintText.textContent = "低いほど安定的、高いほど表現が多様になります(0〜2、空欄はサーバー既定)。";
+  temperatureHintText.textContent = "低いほど安定的、高いほど表現が多様になります(0〜2、空欄はサーバー既定)。新しいGeminiモデルでは無視されます。";
 }
 
 function updateCharCount() {
