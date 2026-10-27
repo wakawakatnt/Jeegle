@@ -860,3 +860,11 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   .npb-latest-pc { display: none !important; }
   .npb-latest-sp { display: block; }
 }
+/* マウス操作の端末（縦長モニターのPCなど）では横スクロールをやめて折り返す */
+@media (max-width: 1319px) and (hover: hover) and (pointer: fine) {
+  .npb-latest-sp .npb-list {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: visible;
+  }
+}
