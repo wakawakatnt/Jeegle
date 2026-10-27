@@ -811,36 +811,37 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   text-decoration: underline;
 }
 /* ===== 球団別 最新スレ ===== */
-.top-search-controls { position: relative; }
+.top-search-controls { position: relative; margin-bottom: 36px; }  /* 消したボタンの代わりの余白 */
 .npb-latest[hidden] { display: none !important; }
 .npb-latest { font-size: 12px; color: #3c4043; text-align: left; }
-.npb-head {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
-  margin-bottom: 6px; padding: 0 8px;
-}
+.npb-head { margin-bottom: 8px; }
 .npb-head-title { font-size: 12px; font-weight: 700; color: #5f6368; white-space: nowrap; }
-.npb-updated { font-size: 10px; color: #9aa0a6; white-space: nowrap; }
-.npb-item { text-decoration: none; color: #1a0dab; transition: background .15s, border-color .15s; }
+.npb-item { text-decoration: none; color: #1a0dab; transition: background .15s, border-color .15s, box-shadow .15s; }
 .npb-name { font-weight: 600; white-space: nowrap; }
 .npb-meta { font-size: 10.5px; color: #70757a; white-space: nowrap; }
 .npb-item.npb-full .npb-meta { color: #c5221f; }
-.npb-notes { margin-top: 8px; padding: 0 8px; font-size: 10.5px; line-height: 1.5; color: #9aa0a6; }
+.npb-notes { margin-top: 10px; font-size: 10.5px; line-height: 1.5; color: #9aa0a6; }
 
-/* PC: 検索窓の左の空きスペースに縦並びで表示 */
+/* PC: 検索窓の左に枠付きカードで表示 */
 .npb-latest-pc {
-  position: absolute; right: calc(100% + 18px); top: 50%; transform: translateY(-50%);
-  width: 184px;
+  position: absolute; right: calc(100% + 20px); top: 50%; transform: translateY(-50%);
+  width: 200px; padding: 12px;
+  border: 1px solid #dfe1e5; border-radius: 12px; background: #fff;
+  box-shadow: 0 1px 3px rgba(60,64,67,.12);
 }
-.npb-latest-pc .npb-list { display: flex; flex-direction: column; gap: 1px; }
+.npb-latest-pc .npb-head { padding-bottom: 8px; border-bottom: 1px solid #eceff1; }
+.npb-latest-pc .npb-list { display: flex; flex-direction: column; gap: 5px; }
 .npb-latest-pc .npb-item {
   display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
-  padding: 4px 8px; border-radius: 6px;
+  padding: 6px 10px; border: 1px solid #e3e5e8; border-radius: 8px; background: #fafbfc;
 }
-.npb-latest-pc .npb-item:hover { background: #f1f3f4; }
+.npb-latest-pc .npb-item:hover {
+  background: #f1f6fe; border-color: #a8c7fa; box-shadow: 0 1px 2px rgba(26,115,232,.15);
+}
 
-/* スマホ・狭い画面: 検索ボタンの下に横スクロールのチップで表示 */
-.npb-latest-sp { display: none; width: 94%; max-width: 584px; margin-top: 18px; }
-.npb-latest-sp .npb-head { justify-content: center; }
+/* スマホ・狭い画面: 検索窓の下に横スクロールのチップで表示 */
+.npb-latest-sp { display: none; width: 94%; max-width: 584px; }
+.npb-latest-sp .npb-head { text-align: center; }
 .npb-latest-sp .npb-list {
   display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 4px;
   scrollbar-width: none; -webkit-overflow-scrolling: touch;
@@ -855,7 +856,7 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .npb-latest-sp .npb-notes { text-align: center; margin-top: 6px; }
 
 /* 左側の空きが足りない幅ではチップ表示に切り替える */
-@media (max-width: 1259px) {
+@media (max-width: 1319px) {
   .npb-latest-pc { display: none !important; }
   .npb-latest-sp { display: block; }
 }
