@@ -133,6 +133,7 @@ function showTopPage() {
   document.getElementById("threadDetailPage").classList.remove("active");
   document.getElementById("topInput").value = "";
   if (typeof renderSearchHistory === "function") renderSearchHistory();
+  if (typeof NpbLatest !== "undefined") NpbLatest.onHomeShown();   // ★追加
   currentResults = [];
   currentKeyword = "";
   searchedId = null;
