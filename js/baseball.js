@@ -140,8 +140,6 @@ const NpbLatest = (() => {
 
     const head = el("div", "npb-head");
     head.append(el("span", "npb-head-title", "⚾ 球団別 最新スレ"));
-    const upd = fmtUpdated(data.u);
-    if (upd) head.append(el("span", "npb-updated", upd));
     frag.append(head);
 
     const list = el("div", "npb-list");
@@ -170,6 +168,7 @@ const NpbLatest = (() => {
     frag.append(notes);
     return frag;
   }
+
 
   function render(data) {
     MOUNT_IDS.forEach(id => {
