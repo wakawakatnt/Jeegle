@@ -4,6 +4,9 @@
    球団別 最新スレ（Firestore /stats/baseball を Worker 経由で取得）
    - localStorage にキャッシュし、前回取得から5分以上経っていたら
      ホーム表示時に自動で取り直す
+   - 表示は textContent のみ（innerHTML 不使用）
+   - URL は open2ch なんJのスレURLの形だけ許可
+   - キャッシュから読み出した値も毎回チェックし直す
    ================================================================ */
 const NpbLatest = (() => {
   const ENDPOINT   = SB_URL + "/fs/stats/baseball";
@@ -12,10 +15,70 @@ const NpbLatest = (() => {
   const RETRY_MS   = 60 * 1000;       // 失敗後、再試行まで最低60秒あける
   const ORDER      = ["npb", "draft", "hanshin", "baystars", "giants", "dragons", "carp", "orix", "eagles"];
   const MOUNT_IDS  = ["npbLatestPc", "npbLatestSp"];
+  const MAX_TEAMS  = 30;              // 球団が増えても常識的な上限で打ち切る
 
-  let memCache  = null;   // localStorage が使えない環境用
-  let inflight  = null;
+  let memCache   = null;   // localStorage が使えない環境用
+  let inflight   = null;
   let lastFailAt = 0;
+
+  /* ---------- 値のチェック ---------- */
+  // open2ch なんJのスレURLだけ許可（ホスト名・パス・スレIDの形まで確認）
+  const URL_RE = /^https:\/\/hayabusa\.open2ch\.net\/test\/read\.cgi\/livejupiter\/\d{9,11}\/?$/;
+
+  function safeUrl(u) {
+    if (typeof u !== "string" || !URL_RE.test(u)) return null;
+    try {
+      const parsed = new URL(u);
+      if (parsed.protocol !== "https:" || parsed.hostname !== "hayabusa.open2ch.net") return null;
+      return parsed.href;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function safeInt(v) {
+    return Number.isInteger(v) && v >= 0 && v < 1e7 ? v : null;
+  }
+
+  function safeStr(v, max) {
+    if (v == null) return "";
+    return String(v).slice(0, max);
+  }
+
+  // u は ISO文字列 / UNIX秒・ミリ秒 / {seconds} / {_seconds} のどれで来ても受ける
+  function toMs(u) {
+    if (u == null) return null;
+    let ms = null;
+    if (typeof u === "number") ms = u > 1e12 ? u : u * 1000;
+    else if (typeof u === "string") { const t = Date.parse(u); ms = isNaN(t) ? null : t; }
+    else if (typeof u === "object") {
+      const s = u.seconds ?? u._seconds;
+      ms = typeof s === "number" ? s * 1000 : null;
+    }
+    return Number.isFinite(ms) ? ms : null;
+  }
+
+  function normalize(raw) {
+    raw = raw && typeof raw === "object" ? raw : {};
+    const teams = (Array.isArray(raw.teams) ? raw.teams : [])
+      .slice(0, MAX_TEAMS)
+      .map(t => {
+        if (!t || typeof t !== "object" || typeof t.k !== "string" || !t.k) return null;
+        const url = safeUrl(t.url);
+        if (!url) return null;
+        const k = t.k.slice(0, 32);
+        return {
+          k,
+          name:  safeStr(t.name || k, 40),
+          title: safeStr(t.title, 200),
+          no:    safeInt(t.no),
+          r:     safeInt(t.r),
+          url
+        };
+      })
+      .filter(Boolean);
+    return { u: toMs(raw.u), teams };
+  }
 
   /* ---------- キャッシュ ---------- */
   function readCache() {
@@ -23,7 +86,9 @@ const NpbLatest = (() => {
       const raw = localStorage.getItem(CACHE_KEY);
       if (raw) {
         const o = JSON.parse(raw);
-        if (o && typeof o.ts === "number" && o.data && Array.isArray(o.data.teams)) return o;
+        if (o && typeof o.ts === "number" && o.data) {
+          return { ts: o.ts, data: normalize(o.data) };   // 読み出し時も再チェック
+        }
       }
     } catch (_) {}
     return memCache;
@@ -41,34 +106,7 @@ const NpbLatest = (() => {
     return age < 0 || age >= TTL_MS;   // 端末の時計が戻った場合も取り直す
   }
 
-  /* ---------- 正規化 ---------- */
-  // u は ISO文字列 / UNIX秒・ミリ秒 / {seconds} / {_seconds} のどれで来ても受ける
-  function toMs(u) {
-    if (u == null) return null;
-    if (typeof u === "number") return u > 1e12 ? u : u * 1000;
-    if (typeof u === "string") { const t = Date.parse(u); return isNaN(t) ? null : t; }
-    if (typeof u === "object") {
-      const s = u.seconds ?? u._seconds;
-      return typeof s === "number" ? s * 1000 : null;
-    }
-    return null;
-  }
-
-  function normalize(raw) {
-    raw = raw || {};
-    const teams = (Array.isArray(raw.teams) ? raw.teams : [])
-      .filter(t => t && typeof t.k === "string" && typeof t.url === "string" && /^https:\/\//.test(t.url))
-      .map(t => ({
-        k: t.k,
-        name: String(t.name || t.k),
-        title: String(t.title || ""),
-        no: Number.isFinite(t.no) ? t.no : null,
-        r: Number.isFinite(t.r) ? t.r : null,
-        url: t.url
-      }));
-    return { u: toMs(raw.u), teams };
-  }
-
+  /* ---------- 並び順 ---------- */
   // 既知のキーは決まった順に並べ、知らないキーは受け取った順のまま末尾へ
   function sortTeams(teams) {
     const rank = k => { const i = ORDER.indexOf(k); return i === -1 ? ORDER.length : i; };
@@ -92,7 +130,9 @@ const NpbLatest = (() => {
       return new Date(ms).toLocaleString("ja-JP", {
         timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit"
       }) + " 更新";
-    } catch (_) { return ""; }
+    } catch (_) {
+      return "";
+    }
   }
 
   function build(data) {
@@ -107,16 +147,16 @@ const NpbLatest = (() => {
     const list = el("div", "npb-list");
     sortTeams(data.teams).forEach(t => {
       const a = el("a", "npb-item");
-      a.href = t.url;
+      a.href   = t.url;                 // safeUrl を通過した値のみ
       a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.title = t.title + (t.r != null ? `（${t.r}レス）` : "");
+      a.rel    = "noopener noreferrer";
+      a.title  = t.title + (t.r != null ? `（${t.r}レス）` : "");
       if (t.r != null && t.r >= 1000) a.classList.add("npb-full");
 
       a.append(el("span", "npb-name", t.name));
       const meta = [];
       if (t.no != null) meta.push("#" + t.no);
-      if (t.r != null) meta.push(t.r + "レス");
+      if (t.r  != null) meta.push(t.r + "レス");
       if (meta.length) a.append(el("span", "npb-meta", meta.join(" · ")));
       list.append(a);
     });
@@ -147,7 +187,7 @@ const NpbLatest = (() => {
     if (inflight) return inflight;
     if (Date.now() - lastFailAt < RETRY_MS) return Promise.resolve();
 
-    inflight = fetch(ENDPOINT)
+    inflight = fetch(ENDPOINT, { credentials: "omit" })
       .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(raw => {
         const data = normalize(raw);
