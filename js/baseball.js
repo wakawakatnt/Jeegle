@@ -208,12 +208,5 @@ const NpbLatest = (() => {
     if (isStale(c)) refresh();   // 5分以上経っていたら裏で取り直す
   }
 
-  // タブを開いたまま時間が経ってから戻ってきた場合も対象にする
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible") return;
-    const top = document.getElementById("topPage");
-    if (top && !top.classList.contains("hidden")) onHomeShown();
-  });
-
   return { onHomeShown, refresh };
 })();
