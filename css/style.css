@@ -876,3 +876,15 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
   border-radius: 11px; background: #d93025; color: #fff;
   font-size: 12px; font-weight: 700; line-height: 1; white-space: nowrap;
 }
+/* ===== ID分析バナー: 同一人物かもを含めるボタン ===== */
+.id-analysis-banner-actions { display: flex; flex-direction: column; align-items: stretch; gap: 6px; flex-shrink: 0; }
+.id-analysis-banner-actions .id-analysis-banner-btn { text-align: center; }
+.id-analysis-banner-btn-alt {
+  background: #fff !important; color: #1967d2 !important;
+  border: 1px solid #a8c7fa; font-size: 12px;
+}
+.id-analysis-banner-btn-alt:hover { background: #e8f0fe !important; }
+.id-analysis-banner-hint { display: block; margin-top: 3px; font-size: 11px; color: #9aa0a6; }
+@media (max-width: 600px) {
+  .id-analysis-banner-actions { width: 100%; }
+}
