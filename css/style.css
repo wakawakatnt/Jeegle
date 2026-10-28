@@ -912,3 +912,8 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
 .ida-include-toggle:hover { box-shadow: 0 1px 3px rgba(26,115,232,.3); }
 .ida-include-note { flex-basis: 100%; font-size: 10.5px; color: #9aa0a6; }
 .ida-post-id { color: #5f6368; }
+/* ===== ID分析ページ: ID表示の切り替え ===== */
+.ida-hide-ids .ida-post-id { display: none; }
+.ida-made-by { margin-left: 6px; font-size: 11px; white-space: nowrap; }
+.ida-id-toggle { border-color: #5f6368; color: #5f6368; }
+.ida-id-toggle.on { background: #5f6368; color: #fff; }
