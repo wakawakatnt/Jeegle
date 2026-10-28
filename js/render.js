@@ -239,29 +239,22 @@ function mkIdAnalysisBanner(userId, opts) {
   banner.appendChild(textWrap);
 
   const dr = getDateRange();
-  const baseHref = `id-analysis.html?id=${encodeURIComponent(userId)}&d=${dr.urlParam}`;
-
-  const actions = document.createElement("div");
-  actions.className = "id-analysis-banner-actions";
+  let href = `id-analysis.html?id=${encodeURIComponent(userId)}&d=${dr.urlParam}`;
 
   const btn = document.createElement("a");
   btn.className = "id-analysis-banner-btn";
-  btn.textContent = "分析ページへ →";
-  btn.href = baseHref;
-  actions.appendChild(btn);
-
   if (extraIds.length) {
-    const inc = document.createElement("a");
-    inc.className = "id-analysis-banner-btn id-analysis-banner-btn-alt";
-    setText(inc, `👤 同一人物かも${extraIds.length}件も含めて分析 →`);
-    inc.href = baseHref + "&a=" + encodeURIComponent(extraIds.join(","));
-    inc.title = extraIds.map(id => "ID:" + id).join(" / ");
-    actions.appendChild(inc);
+    // 同一人物かもを選んでいるときは「含めて分析」だけを出す
+    href += "&a=" + encodeURIComponent(extraIds.join(","));
+    setText(btn, `👤 同一人物かも${extraIds.length}件も含めて分析 →`);
+    btn.title = extraIds.map(id => "ID:" + id).join(" / ");
+  } else {
+    setText(btn, "分析ページへ →");
   }
+  btn.href = href;
+  banner.appendChild(btn);
 
-  banner.appendChild(actions);
-
-  // ボタン以外の場所をクリックしたら通常の分析へ
+  // ボタン以外の場所をクリックしてもボタンと同じ動きにする
   banner.addEventListener("click", (e) => {
     if (e.target.closest("a")) return;
     btn.click();
