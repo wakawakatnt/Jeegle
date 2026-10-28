@@ -201,8 +201,13 @@ function splitIdResults(results, searchedIdRaw, activeSet) {
 }
 
 
-/* ===== ID分析バナー ===== */
-function mkIdAnalysisBanner(userId) {
+/* ===== ID分析バナー =====
+   opts.extraIds      : 同一人物かもで選択中のID（元表記）
+   opts.hasCandidates : 同一人物かもの候補があるか */
+function mkIdAnalysisBanner(userId, opts) {
+  opts = opts || {};
+  const extraIds = opts.extraIds || [];
+
   const banner = document.createElement("div");
   banner.className = "id-analysis-banner";
 
@@ -224,17 +229,41 @@ function mkIdAnalysisBanner(userId) {
   setText(sub, "書き込み時間帯・スレ立て一覧・ランキング順位などを確認");
   textWrap.appendChild(sub);
 
+  if (!extraIds.length && opts.hasCandidates) {
+    const hint = document.createElement("span");
+    hint.className = "id-analysis-banner-hint";
+    setText(hint, "👤 上の「同一人物かも」でIDを選ぶと、まとめて分析できます");
+    textWrap.appendChild(hint);
+  }
+
   banner.appendChild(textWrap);
+
+  const dr = getDateRange();
+  const baseHref = `id-analysis.html?id=${encodeURIComponent(userId)}&d=${dr.urlParam}`;
+
+  const actions = document.createElement("div");
+  actions.className = "id-analysis-banner-actions";
 
   const btn = document.createElement("a");
   btn.className = "id-analysis-banner-btn";
   btn.textContent = "分析ページへ →";
-  const dr = getDateRange();
-  btn.href = `id-analysis.html?id=${encodeURIComponent(userId)}&d=${dr.urlParam}`;
-  banner.appendChild(btn);
+  btn.href = baseHref;
+  actions.appendChild(btn);
 
+  if (extraIds.length) {
+    const inc = document.createElement("a");
+    inc.className = "id-analysis-banner-btn id-analysis-banner-btn-alt";
+    setText(inc, `👤 同一人物かも${extraIds.length}件も含めて分析 →`);
+    inc.href = baseHref + "&a=" + encodeURIComponent(extraIds.join(","));
+    inc.title = extraIds.map(id => "ID:" + id).join(" / ");
+    actions.appendChild(inc);
+  }
+
+  banner.appendChild(actions);
+
+  // ボタン以外の場所をクリックしたら通常の分析へ
   banner.addEventListener("click", (e) => {
-    if (e.target === btn) return;
+    if (e.target.closest("a")) return;
     btn.click();
   });
 
