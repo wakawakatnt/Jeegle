@@ -868,3 +868,11 @@ mark.hl { background:#ffeb3b; padding:1px 2px; border-radius:2px; font-style:nor
     overflow-x: visible;
   }
 }
+/* ===== ID検索: スレ主バッジ（件数ヒットの左） ===== */
+.thread-badge-area { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.badge-nusi {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 6px;
+  border-radius: 11px; background: #d93025; color: #fff;
+  font-size: 12px; font-weight: 700; line-height: 1; white-space: nowrap;
+}
