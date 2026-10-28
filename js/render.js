@@ -201,6 +201,31 @@ function splitIdResults(results, searchedIdRaw, activeSet) {
 }
 
 
+/* ===== 検索結果から、指定IDが実際に書き込んでいた日の範囲を求める =====
+   戻り値: "YYMMDD" または "YYMMDD-YYMMDD"（見つからなければ null） */
+function idPostedDateParam(keys) {
+  let min = null, max = null;
+  currentResults.forEach(r => {
+    r.matchedPosts.forEach(p => {
+      if (!keys.has(normId(p.user_id))) return;
+      const t = new Date(p.posted_at).getTime();
+      if (isNaN(t)) return;
+      if (min === null || t < min) min = t;
+      if (max === null || t > max) max = t;
+    });
+  });
+  if (min === null) return null;
+
+  const ymd = (ms) => {
+    const d = new Date(ms);
+    return String(d.getFullYear()).slice(2).padStart(2, "0")
+      + String(d.getMonth() + 1).padStart(2, "0")
+      + String(d.getDate()).padStart(2, "0");
+  };
+  const from = ymd(min), to = ymd(max);
+  return from === to ? from : from + "-" + to;
+}
+
 /* ===== ID分析バナー =====
    opts.extraIds      : 同一人物かもで選択中のID（元表記）
    opts.hasCandidates : 同一人物かもの候補があるか */
@@ -238,8 +263,12 @@ function mkIdAnalysisBanner(userId, opts) {
 
   banner.appendChild(textWrap);
 
-  const dr = getDateRange();
-  let href = `id-analysis.html?id=${encodeURIComponent(userId)}&d=${dr.urlParam}`;
+  /* 期間は検索条件ではなく、対象IDが実際に書き込んでいた日から決める。
+     万一見つからなければ検索条件の期間を使う */
+  const keys = new Set([normId(userId), ...extraIds.map(normId)]);
+  const dParam = idPostedDateParam(keys) || getDateRange().urlParam;
+
+  let href = `id-analysis.html?id=${encodeURIComponent(userId)}&d=${dParam}`;
 
   const btn = document.createElement("a");
   btn.className = "id-analysis-banner-btn";
@@ -262,6 +291,7 @@ function mkIdAnalysisBanner(userId, opts) {
 
   return banner;
 }
+
 
 function mkSameUserBlock(entries) {
   const box = document.createElement("div");
