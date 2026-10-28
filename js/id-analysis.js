@@ -16,6 +16,15 @@ var IDA_ID_RE = /^[A-Za-z0-9.+\/_-]{1,24}$/;
 var idaRunSeq = 0;        // 連続実行時に古い結果を捨てるための番号
 var idaCombined = false;  // 同一人物かもを含めて分析中か
 
+/* 分析ページでレスごとのIDを表示するか（端末に保存） */
+var IDA_SHOW_ID_KEY = "jeegle_ida_show_id";
+function idaGetShowId() {
+  try { return localStorage.getItem(IDA_SHOW_ID_KEY) !== "0"; } catch (_) { return true; }
+}
+function idaSetShowId(v) {
+  try { localStorage.setItem(IDA_SHOW_ID_KEY, v ? "1" : "0"); } catch (_) {}
+}
+
 /* ================================================================
    ユーティリティ
    ================================================================ */
@@ -162,6 +171,24 @@ function idaMkIncludeBar(params, idCounts) {
   bar.appendChild(tg);
 
   if (on) {
+    /* ID表示の切り替え（CSSで隠すだけなので即時・再取得なし） */
+    var show = idaGetShowId();
+    var idTg = idaCE("button", "ida-include-toggle ida-id-toggle");
+    idTg.type = "button";
+    var paintIdTg = function(){
+      idTg.classList.toggle("on", show);
+      idTg.setAttribute("aria-pressed", String(show));
+      idaSetText(idTg, show ? "🆔 ID表示：ON" : "🆔 ID表示：OFF");
+    };
+    paintIdTg();
+    idTg.addEventListener("click", function(){
+      show = !show;
+      idaSetShowId(show);
+      document.getElementById("idaBody").classList.toggle("ida-hide-ids", !show);
+      paintIdTg();
+    });
+    bar.appendChild(idTg);
+
     var note = idaCE("div", "ida-include-note");
     idaSetText(note, "※別人のIDが混ざっている可能性があります。順位はID単体の値なので、まとめて分析中は表示しません");
     bar.appendChild(note);
@@ -192,6 +219,7 @@ async function runAnalysis() {
   document.title="ID:"+params.userId+(idaCombined?" ほか"+params.extraIds.length+"件":"")+" の分析 - Jeegle!";
 
   body.replaceChildren();
+  body.classList.toggle("ida-hide-ids", idaCombined && !idaGetShowId());
   var loading=idaCE("div","ida-loading"); idaSetText(loading,"読み込み中…"); body.appendChild(loading);
 
   try {
@@ -466,8 +494,14 @@ async function runAnalysis() {
         var a=idaCE("a","ida-thread-link");
         a.href="https://hayabusa.open2ch.net/test/read.cgi/livejupiter/"+tm.thread_id+"/?id="+encodeURIComponent(tm.user_id||params.userId);
         a.target="_blank"; a.rel="noopener noreferrer";
-        idaSetText(a,(info.title||"スレッド "+tm.thread_id)+(idaCombined?"（ID:"+(tm.user_id||"?")+"）":""));
+        idaSetText(a,info.title||"スレッド "+tm.thread_id);
         r.appendChild(a);
+        /* まとめて分析中は、どのIDで立てたかを出す（ID表示OFFで隠れる） */
+        if(idaCombined){
+          var by=idaCE("span","ida-post-id ida-made-by");
+          idaSetText(by,"ID:"+(tm.user_id||"?"));
+          r.appendChild(by);
+        }
         nusiList.appendChild(r);
       });
       if(threadsMade.length>6){
@@ -559,7 +593,7 @@ function idaAppendPostMeta(meta, post) {
   meta.appendChild(num); meta.appendChild(document.createTextNode(" "));
   var nmEl=idaCE("span",""); nmEl.style.color="#008000"; idaSetText(nmEl,post.name||"名無し"); meta.appendChild(nmEl);
   meta.appendChild(document.createTextNode(" | "+idaFmtDate(post.posted_at)));
-  /* まとめて分析中は、どのIDの書き込みか分かるようにIDも出す */
+  /* まとめて分析中は、どのIDの書き込みか分かるようにIDも出す（ID表示OFFで隠れる） */
   if(idaCombined){
     var idEl=idaCE("span","ida-post-id"); idaSetText(idEl," | ID:"+(post.user_id||"?")); meta.appendChild(idEl);
   }
