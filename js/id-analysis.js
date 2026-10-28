@@ -14,16 +14,7 @@ var IDA_ID_RE = /^[A-Za-z0-9.+\/_-]{1,24}$/;
 
 /* 実行状態 */
 var idaRunSeq = 0;        // 連続実行時に古い結果を捨てるための番号
-var idaCombined = false;  // 同一人物かもを含めて分析中か
-
-/* 分析ページでレスごとのIDを表示するか（端末に保存） */
-var IDA_SHOW_ID_KEY = "jeegle_ida_show_id";
-function idaGetShowId() {
-  try { return localStorage.getItem(IDA_SHOW_ID_KEY) !== "0"; } catch (_) { return true; }
-}
-function idaSetShowId(v) {
-  try { localStorage.setItem(IDA_SHOW_ID_KEY, v ? "1" : "0"); } catch (_) {}
-}
+var idaCombined = false;  // 同一人物かもを1つ以上含めて分析中か
 
 /* ================================================================
    ユーティリティ
@@ -104,8 +95,9 @@ async function idaSbFetch(url, key, path) {
 
 /* ================================================================
    パラメータ
-   - a  : 同一人物かもで追加するID（カンマ区切り）
-   - ax : "0" のとき追加IDを含めない
+   - a  : 同一人物かもの候補ID（カンマ区切り）
+   - x  : 候補のうち分析から外すID（カンマ区切り）
+   - ax : "0" のとき候補を全部外す（旧URL互換）
    ================================================================ */
 function idaParseParams() {
   var p = new URLSearchParams(location.search);
@@ -131,16 +123,47 @@ function idaParseParams() {
     seen[k] = true;
     if (extraIds.length < IDA_MAX_EXTRA) extraIds.push(s);
   });
-  var includeExtra = extraIds.length > 0 && p.get("ax") !== "0";
 
-  return {userId:userId, from:fromD, to:toD, dParam:dParam, extraIds:extraIds, includeExtra:includeExtra};
+  var allOff = p.get("ax") === "0";
+  var excluded = {};
+  (p.get("x")||"").split(",").forEach(function(s){
+    var k = idaNormId(s.trim());
+    if (k) excluded[k] = true;
+  });
+  var activeExtra = extraIds.filter(function(id){
+    return !allOff && !excluded[idaNormId(id)];
+  });
+
+  return {
+    userId:userId, from:fromD, to:toD, dParam:dParam,
+    extraIds:extraIds, activeExtra:activeExtra, includeExtra:activeExtra.length > 0
+  };
 }
 
 /* ================================================================
-   同一人物かも 切り替えバー
+   同一人物かも ID選択バー
    ================================================================ */
+function idaToggleExtra(params, id) {
+  var k = idaNormId(id);
+  var activeKeys = params.activeExtra.map(idaNormId);
+  var nextActive = activeKeys.indexOf(k) === -1
+    ? activeKeys.concat([k])
+    : activeKeys.filter(function(x){ return x !== k; });
+  var excludedIds = params.extraIds.filter(function(e){
+    return nextActive.indexOf(idaNormId(e)) === -1;
+  });
+
+  var u = new URL(location.href);
+  u.searchParams.delete("ax");
+  if (excludedIds.length) u.searchParams.set("x", excludedIds.join(","));
+  else u.searchParams.delete("x");
+  history.replaceState(null, "", u.toString());
+  runAnalysis();
+}
+
 function idaMkIncludeBar(params, idCounts) {
   var on = params.includeExtra;
+  var activeKeys = params.activeExtra.map(idaNormId);
   var bar = idaCE("div", "ida-include-bar" + (on ? " on" : ""));
 
   var label = idaCE("span", "ida-include-label");
@@ -148,51 +171,32 @@ function idaMkIncludeBar(params, idCounts) {
   bar.appendChild(label);
 
   var ids = idaCE("div", "ida-include-ids");
-  [params.userId].concat(params.extraIds).forEach(function(id, i){
-    var chip = idaCE("span", "ida-include-id" + (i === 0 ? " main" : "") + (i > 0 && !on ? " off" : ""));
+
+  /* 検索したID本人（常に含む） */
+  var mainChip = idaCE("span", "ida-include-id main");
+  var mc = idCounts.get(idaNormId(params.userId));
+  idaSetText(mainChip, "ID:" + params.userId + (mc != null ? " (" + mc + ")" : ""));
+  ids.appendChild(mainChip);
+
+  /* 候補ID（1つずつ含める・外すを選べる） */
+  params.extraIds.forEach(function(id){
+    var active = activeKeys.indexOf(idaNormId(id)) !== -1;
+    var btn = idaCE("button", "ida-include-id ida-include-pick" + (active ? " on" : " off"));
+    btn.type = "button";
+    btn.setAttribute("aria-pressed", String(active));
+    btn.title = active ? "クリックで分析から外す" : "クリックで分析に含める";
     var c = idCounts.get(idaNormId(id));
-    idaSetText(chip, "ID:" + id + (c != null && (i === 0 || on) ? " (" + c + ")" : ""));
-    ids.appendChild(chip);
+    idaSetText(btn, (active ? "✓ " : "＋ ") + "ID:" + id + (active && c != null ? " (" + c + ")" : ""));
+    btn.addEventListener("click", function(){ idaToggleExtra(params, id); });
+    ids.appendChild(btn);
   });
   bar.appendChild(ids);
 
-  var tg = idaCE("button", "ida-include-toggle" + (on ? " on" : ""));
-  tg.type = "button";
-  tg.setAttribute("aria-pressed", String(on));
-  idaSetText(tg, on ? "✓ 含めて分析中" : "＋ 含めて分析する");
-  tg.addEventListener("click", function(){
-    var u = new URL(location.href);
-    if (on) u.searchParams.set("ax", "0");
-    else u.searchParams.delete("ax");
-    history.replaceState(null, "", u.toString());
-    window.scrollTo(0, 0);
-    runAnalysis();
-  });
-  bar.appendChild(tg);
-
-  if (on) {
-    /* ID表示の切り替え（CSSで隠すだけなので即時・再取得なし） */
-    var show = idaGetShowId();
-    var idTg = idaCE("button", "ida-include-toggle ida-id-toggle");
-    idTg.type = "button";
-    var paintIdTg = function(){
-      idTg.classList.toggle("on", show);
-      idTg.setAttribute("aria-pressed", String(show));
-      idaSetText(idTg, show ? "🆔 ID表示：ON" : "🆔 ID表示：OFF");
-    };
-    paintIdTg();
-    idTg.addEventListener("click", function(){
-      show = !show;
-      idaSetShowId(show);
-      document.getElementById("idaBody").classList.toggle("ida-hide-ids", !show);
-      paintIdTg();
-    });
-    bar.appendChild(idTg);
-
-    var note = idaCE("div", "ida-include-note");
-    idaSetText(note, "※別人のIDが混ざっている可能性があります。順位はID単体の値なので、まとめて分析中は表示しません");
-    bar.appendChild(note);
-  }
+  var note = idaCE("div", "ida-include-note");
+  idaSetText(note, on
+    ? "※✓のIDをまとめて集計中。別人が混ざっている可能性があります。順位はID単体の値なので表示しません"
+    : "※含めたいIDをタップすると、まとめて集計します");
+  bar.appendChild(note);
   return bar;
 }
 
@@ -210,16 +214,15 @@ async function runAnalysis() {
   }
 
   idaCombined = params.includeExtra;
-  var ids = idaCombined ? [params.userId].concat(params.extraIds) : [params.userId];
+  var ids = [params.userId].concat(params.activeExtra);
 
   var backLink = document.getElementById("idaBack");
   backLink.href="index.html?s="+encodeURIComponent("id:"+params.userId)+"&t=i&m=t"
     +(params.dParam?"&d="+params.dParam:"")
     +(params.extraIds.length?"&a="+encodeURIComponent(params.extraIds.join(",")):"");
-  document.title="ID:"+params.userId+(idaCombined?" ほか"+params.extraIds.length+"件":"")+" の分析 - Jeegle!";
+  document.title="ID:"+params.userId+(idaCombined?" ほか"+params.activeExtra.length+"件":"")+" の分析 - Jeegle!";
 
   body.replaceChildren();
-  body.classList.toggle("ida-hide-ids", idaCombined && !idaGetShowId());
   var loading=idaCE("div","ida-loading"); idaSetText(loading,"読み込み中…"); body.appendChild(loading);
 
   try {
@@ -284,7 +287,7 @@ async function runAnalysis() {
     var firstPost=posts[0];
     var lastPost=posts[posts.length-1];
 
-    /* ID別レス数（切り替えバー用） */
+    /* ID別レス数（選択バー用） */
     var idCounts=new Map();
     posts.forEach(function(p){var k=idaNormId(p.user_id);idCounts.set(k,(idCounts.get(k)||0)+1);});
 
@@ -342,7 +345,7 @@ async function runAnalysis() {
     /* トップバー */
     var topBar=idaCE("div","ida-topbar");
     var idBadge=idaCE("div","ida-id-badge");
-    idaSetText(idBadge,"ID:"+params.userId+(idaCombined?" ＋"+params.extraIds.length:""));
+    idaSetText(idBadge,"ID:"+params.userId+(idaCombined?" ＋"+params.activeExtra.length:""));
     topBar.appendChild(idBadge);
     var dateBadge=idaCE("div","ida-date-badge"); idaSetText(dateBadge,dateDisp); topBar.appendChild(dateBadge);
     var cpId=idaCE("button","ida-copy-id-btn"); idaSetText(cpId,"📋 IDコピー");
@@ -354,7 +357,7 @@ async function runAnalysis() {
     topBar.appendChild(cpId);
     body.appendChild(topBar);
 
-    /* 同一人物かも 切り替えバー */
+    /* 同一人物かも ID選択バー */
     if (params.extraIds.length) body.appendChild(idaMkIncludeBar(params, idCounts));
 
     /* メトリクス */
@@ -496,7 +499,7 @@ async function runAnalysis() {
         a.target="_blank"; a.rel="noopener noreferrer";
         idaSetText(a,info.title||"スレッド "+tm.thread_id);
         r.appendChild(a);
-        /* まとめて分析中は、どのIDで立てたかを出す（ID表示OFFで隠れる） */
+        /* まとめて分析中は、どのIDで立てたかを出す */
         if(idaCombined){
           var by=idaCE("span","ida-post-id ida-made-by");
           idaSetText(by,"ID:"+(tm.user_id||"?"));
@@ -593,7 +596,7 @@ function idaAppendPostMeta(meta, post) {
   meta.appendChild(num); meta.appendChild(document.createTextNode(" "));
   var nmEl=idaCE("span",""); nmEl.style.color="#008000"; idaSetText(nmEl,post.name||"名無し"); meta.appendChild(nmEl);
   meta.appendChild(document.createTextNode(" | "+idaFmtDate(post.posted_at)));
-  /* まとめて分析中は、どのIDの書き込みか分かるようにIDも出す（ID表示OFFで隠れる） */
+  /* まとめて分析中は、どのIDの書き込みか分かるようにIDも出す */
   if(idaCombined){
     var idEl=idaCE("span","ida-post-id"); idaSetText(idEl," | ID:"+(post.user_id||"?")); meta.appendChild(idEl);
   }
