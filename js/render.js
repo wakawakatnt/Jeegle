@@ -316,6 +316,17 @@ function mkCard(thread, q, opts) {
 
   const ba = document.createElement("div"); ba.className = "thread-badge-area";
   const bk = document.createElement("span");
+
+  /* ID検索で、表示中のIDがこのスレでスレ主なら「主」バッジを件数の左に出す */
+  if (highlightIdKeys && thread.matchedPosts.some(p =>
+        p.is_nusi && highlightIdKeys.has(normId(p.user_id)))) {
+    const nb = document.createElement("span");
+    nb.className = "badge-nusi";
+    nb.textContent = "主";
+    nb.title = "このIDはこのスレのスレ主です";
+    ba.appendChild(nb);
+  }
+
   if (thread.matchedPosts.length > 0) { bk.className = "badge-match"; setText(bk, thread.matchedPosts.length + "件ヒット"); }
   else { bk.className = "badge-title"; setText(bk, "タイトル一致"); }
   ba.appendChild(bk); hdr.appendChild(ta); hdr.appendChild(ba);
