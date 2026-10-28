@@ -89,15 +89,14 @@ function renderAll(q, elapsed) {
   }
 
 
-  /* ID分析バナー: 検索ID + 追加表示中の各ID をそれぞれ並べる */
+  /* ID分析バナー: 検索ID（同一人物かもを含めるボタン付き）+ 追加表示中の各ID */
   if (sorted.length > 0 && isIdSearch) {
-    res.appendChild(mkIdAnalysisBanner(searchedId));
     const searchedKey = normId(searchedId);
-    activeIdSet.forEach(key => {
-      if (key === searchedKey) return;
-      const disp = idDisplayMap.get(key) || key;
-      res.appendChild(mkIdAnalysisBanner(disp));
-    });
+    const extraIds = Array.from(activeIdSet)
+      .filter(key => key !== searchedKey)
+      .map(key => idDisplayMap.get(key) || key);
+    res.appendChild(mkIdAnalysisBanner(searchedId, { extraIds, hasCandidates: altIds.length > 0 }));
+    extraIds.forEach(disp => res.appendChild(mkIdAnalysisBanner(disp)));
   }
 
 
